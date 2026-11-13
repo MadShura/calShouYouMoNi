@@ -1,6 +1,7 @@
 /**
- * compare2.ts — 挂机刷怪掉落期望模拟(零 import,数据全部内联)
- * 口径来源(反编译):
+ * calzhanli.ts — 挂机手游养成模拟与「材料 → 战力」计算(只 import data.ts)
+ * 全部映射表,固定口径常量与类型定义已集中到 data.ts,口径出处逐条写在 data.ts 里.
+ * 口径来源(反编译)摘要:
  * - 波次构成:MapRecorder.GetEnemyCount(MapRecorder.cs:159-186),按 CurRound % 5 给 5 个站位
  * - 每只怪掉落:MapRecorder.GetDrop(MapRecorder.cs:208-240)；死亡时逐只结算(Battle_Character_Info.cs:281-285)
  * - 幸运/掉率:Drop_Recorder.GetTrueDrop(Drop_Recorder.cs:37-45),概率 = min(1000, round(概率‰×(100+加成)/100))
@@ -18,691 +19,140 @@
  * - VIP 16；翅膀等级,万魂帆等级为参数,默认 0
  * - 5 图 × 3 品质的真实掉落表全部内联；幸运 50010 时所有条目都封顶 1000‰,必掉
  */
-// #region 初始数值(逐项确认)
-export type MapID = 1 | 2 | 3 | 4 | 5;
+import {
+  type AllProperties,
+  BOOK_YULI_BASE,
+  type CiTiaoPercentKey,
+  CRAFT_EXP_BASE,
+  type DropRow,
+  EMPTY_PERCENT_PROPERTIES,
+  EMPTY_PROPERTIES,
+  EQUIP_BASE,
+  EQUIP_CI_TIAO_POOL,
+  EQUIP_PER_LEVEL,
+  EQUIP_PINZHI,
+  EQUIP_PINZHI_FACTOR,
+  EQUIP_PINZHI_PER_LEVEL,
+  EQUIP_RANDOM_AVG,
+  EQUIP_SLOT_COUNT,
+  type EquipStrengthenResult,
+  type FarmModeResult,
+  type FarmResult,
+  type HantieToZhanliResult,
+  LIANQI_START_EXP,
+  LIANQI_START_LEVEL,
+  LUCKY,
+  MAKE_EQUIP_COST_CAP,
+  MAP_EFFECT,
+  type MapConfig,
+  type MapID,
+  MAPS,
+  MATERIAL_COST_PER_UNIT,
+  NORMAL_SECONDS,
+  PERCENT_BASE,
+  POJING_COST_PER_100_LEVEL,
+  POJING_MAX_LEVEL_STEP,
+  POJING_STAR_DIVISOR,
+  POJING_STAR_PCT_CAP,
+  POJING_STAR_PCT_PER_STEP,
+  POJING_START_MAX_LEVEL,
+  POJING_START_STAR,
+  POJING_YINGLING_COUNT,
+  PROP_NAMES,
+  PROPERTY_TO_KEY,
+  QIDING_LEVEL_CAP,
+  QIDING_START_LEVEL,
+  QILU_COST_BASE,
+  QILU_TIER_SIZE,
+  RAGE_SECONDS,
+  RESEARCH,
+  RESEARCH_15_HANTIE_REDUCE,
+  RESEARCH_16_EXP_ADD,
+  RESEARCH_18_EQUIP_ADD,
+  RESEARCH_20_WUCAI_REDUCE,
+  RESEARCH_24_RONGLIAN_ADD,
+  RESEARCH_25_STRENGTH_REDUCE,
+  RESEARCH_26_LINGWEN_REDUCE,
+  RESEARCH_34_POJING_REDUCE,
+  RESEARCH_35_SHENTONG_REDUCE,
+  RESEARCH_48_BOOK_EXP_ADD,
+  type ResearchReduce,
+  RONGLIAN_LEVEL_DIVISOR,
+  SAO_DANG_REMAIN_TIMER,
+  SECONDS_PER_HOUR,
+  SHEN_BING_COST_CAP,
+  SHEN_BING_COST_PER_LEVEL,
+  SHEN_BING_FIRE_HIT_TRACKS,
+  SHEN_BING_MAX_LV,
+  SHEN_BING_WATER_CRIT_TRACKS,
+  SHEN_BING_WATER_DAMAGE_TRACKS,
+  SHEN_TONG_COST_BY_PINZHI,
+  SHEN_TONG_ENTRY_EFFECT,
+  SHEN_TONG_NODES,
+  SHEN_TONG_PROPERTY_EFFECT,
+  SHENG_SHOU_ADD_BASE,
+  SHENG_SHOU_ADD_PER_LEVEL,
+  SHENG_SHOU_COST_BASE,
+  SHENG_SHOU_COST_CAP,
+  SHENG_SHOU_COST_PER_LEVEL,
+  SHENG_SHOU_LEVEL_CAP,
+  SHENG_SHOU_MAX_ROUND,
+  SHENG_SHOU_SPECIAL_CYCLE,
+  SHENG_SHOU_START_LEVEL,
+  START_ROUND,
+  STRENGTH_ADD_BASE,
+  STRENGTH_ADD_PER_LEVEL,
+  STRENGTH_COST_BASE,
+  STRENGTH_COST_CAP,
+  STRENGTH_COST_MIN,
+  STRENGTH_COST_PER_LEVEL,
+  STRENGTH_HIGH_MULTIPLIER,
+  STRENGTH_HIGH_THRESHOLD,
+  type SweepResult,
+  type SystemGain,
+  type ToZhanliResult,
+  VIP_PERCENT_ADD_COUNT,
+  VIP_SAO_DANG_SPEED,
+  VIP_YU_LI_DROP,
+  WAVE_COMPOSITION,
+  WING_EXP_PER_LEVEL,
+  WING_FLAT_BASE,
+  WING_FLAT_PER_LEVEL,
+  YULING_LEVEL_CAP,
+  YULINGSHI_START_EXP,
+  YULINGSHI_START_LEVEL,
+  ZHENFA_ADD_BASE,
+  ZHENFA_ADD_PER_LEVEL,
+  ZHENFA_COST_PER_LEVEL,
+  ZHENFA_LEVEL_CAP,
+  ZHENFA_START_LEVEL,
+  ZHENFA_UNLOCK_COST,
+  ZHENFA_UNLOCK_COUNT,
+  ZHUANZHI_ADD_BASE,
+  ZHUANZHI_ADD_PER_LEVEL,
+  ZHUANZHI_COST_BASE,
+  ZHUANZHI_COST_PER_LEVEL,
+  ZHUANZHI_LEVEL_CAP,
+  ZHUANZHI_SPEED_PER_LEVEL,
+  ZHUANZHI_START_LEVEL
+} from "./data.ts";
 
-// 一波 5 只怪,清完一波 CurRound + 1(MapRecorder.AddRound :414-433)
-const START_ROUND = 1;
-const SECONDS_PER_HOUR = 3600;
-const RAGE_SECONDS = 1.1;
-const NORMAL_SECONDS = 0.85;
-
-// 幸运 = 基础 50000 + 研究 14 洪福齐天满级 10(keji.json id14:perLevel 1 × maxLevel 10)
-const BASE_LUCKY = 50_000;
-const VIP_LEVEL = 16;
-
-// VIPHelper.GetEffect:VIP_YuLiDrop = Lv×20,VIP_PercentAddCount = min(100, Lv/2),VIP_SaoDangSpeed = Lv×10
-const VIP_YU_LI_DROP = VIP_LEVEL * 20;
-const VIP_PERCENT_ADD_COUNT = Math.min(100,Math.trunc(VIP_LEVEL / 2));
-const VIP_SAO_DANG_SPEED = VIP_LEVEL * 10;
-
-// 研究 64 节点全满；这里只列会影响掉落的节点,数值 = keji.json 的 perLevel × maxLevel
-const RESEARCH = {
-  addDropYuLi:        100, // 31 满载而归:御力掉落 +1%/级 × 100
-  allEnemyDrop:       100, // 39 遍地开花:全部敌人掉率 +1%/级 × 100
-  bossDrop:           50,  // 40 鹤立鸡群:BOSS 掉率 +1%/级 × 50
-  extalGuaiWuTuJian:  5,   // 62 枭蛇鬼怪:1 × 5
-  extalHanTie:        10,  // 58 天降陨铁:perLevel 2 × 5
-  extalLianQiBaoDian: 5,   // 63 积厚成器:1 × 5
-  extalLiShiBenJi:    10,  // 57 偶有所得:perLevel 2 × 5
-  extalMoney:         10,  // 56 意外收获:perLevel 2 × 5,源码再 ×2
-  extalRandomJinNang: 5,   // 60 念兹在兹:1 × 5
-  extalYuLingBaoDian: 5,   // 61 灵心慧性:1 × 5
-  extalZhenWen:       10,  // 59 严阵以待:perLevel 2 × 5
-  jingYingDrop:       50,  // 41 独树一帜:精英掉率 +1%/级 × 50
-  louLouDrop:         50,  // 42 硕果累累:喽啰掉率 +1%/级 × 50
-  lucky:              10,  // 14 洪福齐天:1 × 10
-  saoDangShouYi:      50  // 43 事半功倍:扫荡收益 +1%/级 × 50
-} as const;
-const LUCKY = BASE_LUCKY + RESEARCH.lucky;
-const SAO_DANG_REMAIN_TIMER = 48; // MapRecorder.cs:33
-
-// MapEffectEnum(MapEffectEnum.cs:6-14)
-const MAP_EFFECT = {
-  dropPercent:   3,
-  finishGame:    5,
-  getProp:       4,
-  saoDangShouYi: 2,
-  saoDangUnLoad: 1,
-  unloadMap:     0
-} as const;
-
-// CurRound % 5 → 5 个站位的品质(1 喽啰 / 2 精英 / 3 BOSS),MapRecorder.cs:159-186
-const WAVE_COMPOSITION: Record<number,readonly number[]> = {
-  0: [1,1,2,3,2], // 2 喽啰 + 2 精英 + 1 BOSS
-  1: [1,1,1,1,1], // 5 喽啰
-  2: [1,1,1,2,1], // 4 喽啰 + 1 精英
-  3: [1,1,2,2,1], // 3 喽啰 + 2 精英
-  4: [1,1,2,2,2] // 2 喽啰 + 3 精英
+// 保持原有对外类型/常量可用(data.ts 是唯一依赖).
+export type {
+  AllProperties,EquipStrengthenResult,FarmModeResult,FarmResult,HantieToZhanliResult,
+  MapID,ResearchReduce,SweepResult,SystemGain,ToZhanliResult
 };
+export {MATERIAL_COST_PER_UNIT};
 
 // #endregion
-// #region 地图与掉落表(MapSettingData_Config,sharedassets0.assets 导出)
-type DropRow = readonly [propID: number,nums: number,percent: number];
-interface MapConfig {
-  baseRound:     number;
-  bossDrops:     readonly DropRow[];
-  bossID:        number;
-  effects:       readonly MapEffectRow[];
-  jingYingDrops: readonly DropRow[];
-  jingYingID:    number;
-  louLouDrops:   readonly DropRow[];
-  louLouID:      number;
-}
-
-// [触发波次, 效果类型, 参数1, 参数2]
-type MapEffectRow = readonly [round: number,effect: number,value: number,value1: number];
-const PROP_NAMES: Record<number,string> = {
-  1:   "寒铁",
-  10:  "抽奖卷",
-  100: "檀木令",
-  11:  "寒铁宝箱",
-  12:  "强化宝箱",
-  13:  "神石宝箱",
-  14:  "神通宝箱",
-  15:  "研究宝箱",
-  16:  "灵纹宝箱",
-  18:  "残念锦囊",
-  19:  "自选残念锦囊",
-  2:   "五彩神石",
-  20:  "御力宝箱Lv1",
-  21:  "御力宝箱Lv2",
-  22:  "御力宝箱Lv3",
-  3:   "破境石",
-  30:  "宝石匣Lv1",
-  4:   "御力",
-  40:  "自选宝石匣Lv1",
-  41:  "自选宝石匣Lv2",
-  5:   "强化石",
-  50:  "灵宝匣Lv1",
-  6:   "神通卷轴",
-  60:  "自选灵宝匣Lv1",
-  61:  "自选灵宝匣Lv2",
-  7:   "灵纹",
-  70:  "套娃宝箱Lv1",
-  8:   "灵晶",
-  80:  "钱币",
-  84:  "御灵宝典",
-  85:  "三味真火",
-  86:  "炼器宝典",
-  87:  "御灵师经验",
-  89:  "挑战令",
-  9:   "历史本纪",
-  90:  "悬赏令",
-  901: "图鉴-掘金鼠",
-  902: "图鉴-金山甲",
-  903: "图鉴-山精",
-  904: "图鉴-熔岩影卫",
-  905: "图鉴-熔骨祭司",
-  906: "图鉴-熔渊神尸",
-  907: "图鉴-螃将军",
-  908: "图鉴-鳄统领",
-  909: "图鉴-沧溟蛟君",
-  91:  "世界令",
-  910: "图鉴-桃园众",
-  911: "图鉴-桃花小妖",
-  912: "图鉴-桃仙翁",
-  913: "图鉴-天兵",
-  914: "图鉴-雷鼓吏",
-  915: "图鉴-镇狱明王",
-  92:  "神速符",
-  95:  "元宝"
-};
-const MAPS: Record<number,MapConfig> = {
-  1: {
-    baseRound:     0,
-    bossDrops:     [[1,10,64],[2,3,5],[5,3,5],[3,3,5],[40,2,5],[11,1,8],[12,1,8],[13,1,8],[85,1,7],[10,5,5],[86,1,4]],
-    bossID:        3,
-    effects:       [[50,1,1,0],[100,0,2,0],[200,4,11,10],[400,4,13,10],[600,4,12,10],[1000,3,30,0],[1250,2,30,0],[1500,4,30,10],[1750,4,40,10],[2000,4,80,1000]],
-    jingYingDrops: [[1,3,1000],[1,5,32],[2,2,25],[5,2,25],[3,2,25],[40,1,2],[11,1,5],[12,1,5],[13,1,5],[10,3,5],[85,1,3]],
-    jingYingID:    2,
-    louLouDrops:   [[1,1,1000],[1,3,32],[2,1,15],[5,1,15],[3,1,15],[30,1,3],[11,1,3],[12,1,3],[13,1,3],[10,1,3],[85,1,2]],
-    louLouID:      1
-  },
-  2: {
-    baseRound:     100,
-    bossDrops:     [[6,5,1000],[6,10,30],[18,3,14],[19,3,9],[19,4,5],[14,1,12],[100,1,12],[50,1,12],[60,1,12],[61,1,6],[10,5,8]],
-    bossID:        6,
-    effects:       [[50,1,1,0],[100,0,3,0],[200,4,14,10],[400,4,18,100],[600,4,19,30],[1000,3,30,0],[1250,2,30,0],[1500,4,50,20],[1750,4,60,10],[2000,4,80,2000]],
-    jingYingDrops: [[6,3,1000],[6,5,30],[18,2,9],[19,2,6],[19,3,3],[14,1,5],[100,1,5],[50,1,5],[60,1,5],[61,1,3],[10,3,5]],
-    jingYingID:    5,
-    louLouDrops:   [[6,1,1000],[6,3,22],[18,1,6],[19,1,4],[19,2,2],[14,1,3],[100,1,3],[50,1,3],[60,1,3],[61,1,2],[10,1,3]],
-    louLouID:      4
-  },
-  3: {
-    baseRound:     200,
-    bossDrops:     [[7,5,1000],[7,7,42],[7,10,15],[8,3,15],[8,4,8],[8,5,5],[16,1,8],[20,1,14],[21,1,12],[22,1,7],[10,5,12]],
-    bossID:        9,
-    effects:       [[50,1,1,0],[100,0,4,0],[200,4,16,10],[400,4,8,100],[600,4,10,25],[1000,3,30,0],[1250,2,30,0],[1500,4,8,300],[1750,4,10,50],[2000,4,80,3000]],
-    jingYingDrops: [[7,3,1000],[7,5,27],[7,7,9],[8,2,9],[8,3,4],[8,4,3],[16,1,5],[20,1,8],[21,1,6],[22,1,4],[10,3,5]],
-    jingYingID:    8,
-    louLouDrops:   [[7,1,1000],[7,3,18],[7,5,6],[8,1,6],[8,2,3],[8,3,2],[16,1,3],[20,1,5],[21,1,4],[22,1,2],[10,1,3]],
-    louLouID:      7
-  },
-  4: {
-    baseRound:     300,
-    bossDrops:     [[9,3,1000],[9,4,34],[9,5,14],[15,1,8],[70,1,8],[20,1,15],[21,1,8],[22,1,5],[10,5,8],[92,3,5]],
-    bossID:        12,
-    effects:       [[50,1,1,0],[100,4,15,10],[200,4,15,20],[600,3,30,10],[800,2,30,10],[1000,0,5,0],[1250,4,10,30],[1500,4,15,30],[1750,4,70,10],[2000,4,80,4000]],
-    jingYingDrops: [[9,2,1000],[9,3,21],[9,4,9],[15,1,5],[70,1,5],[20,1,9],[21,1,6],[22,1,3],[10,3,5],[92,2,3]],
-    jingYingID:    11,
-    louLouDrops:   [[9,1,1000],[9,2,14],[9,3,6],[15,1,3],[70,1,3],[20,1,6],[21,1,4],[22,1,2],[10,1,3],[92,1,2]],
-    louLouID:      10
-  },
-  5: {
-    baseRound:     1500,
-    bossDrops:     [[80,5,1000],[80,10,27],[19,3,5],[41,1,8],[61,1,8],[70,1,8],[89,1,6],[90,1,6],[91,1,6],[10,5,8],[84,1,3]],
-    bossID:        15,
-    effects:       [[1000,1,1,0],[2000,5,400,1000],[3000,5,600,1000],[4000,5,800,1000],[5000,5,1000,1000],[6000,5,1250,1000],[7000,5,1500,1000],[8000,5,1750,1000],[9000,5,2000,1000],[10000,5,2500,1000]],
-    jingYingDrops: [[80,3,1000],[80,5,18],[80,7,8],[19,2,3],[40,1,5],[60,1,5],[70,1,5],[89,1,4],[90,1,4],[91,1,4],[10,3,5]],
-    jingYingID:    14,
-    louLouDrops:   [[80,1,1000],[80,3,12],[80,5,5],[19,1,3],[40,1,3],[60,1,3],[70,1,3],[89,1,2],[90,1,2],[91,1,2],[10,1,3]],
-    louLouID:      13
-  }
-};
-
-/**
- * compare.ts — 同类对比(库函数版,不读取存档)
- * 每个养成系统的「等级 → 提升属性」公式都[直接写在对应函数体内](含中文注释 + 反编译源码出处),
- * 不再调用 game-formulas.ts 的黑盒函数,方便一眼看懂"升级一次要多少资源,加多少属性".
- * 传入"当前等级 level",返回对象描述的是"从 level 升到 level+1 这一级"的消耗与提升.
- * 例外:hantieTozhanli() 描述的是「投入寒铁 + 五彩神石 + 翅膀等级」后的完整制造模拟,不是单级对比,详见该函数注释.
- * 最后 materialCost() 给出「每一个材料消耗多少钱币」的兑换表(资源转换表与数值全部写在本文件内,不 import 其他文件).
- */
-// ============================== 2. 装备强化(强化石,3 维) ==============================
-// Equip_Using.cs:40-54 GetStrengthRemand(消耗=3+2L,先按研究25 减免取整,再在 L≥1000000 时 ×5)
-// :19-22 GetNextAddition(每级三维各+10+10L);×5 分支在 Strength(:28-37)与 ComputeStrengthAddByLevel(:86-98),不在 GetNextAddition
-// 平均强化:角色 10 个装备槽都强化到同等级的合计(yingling-output.ts:2196 注释"10 槽平均强化").
-export interface EquipStrengthenResult {
-  average: SystemGain; // 平均强化:全部 slots 槽都升级一级的合计(= 单件 × 槽数)
-  single:  SystemGain; // 强化单件:单槽装备升级一级的属性增量
-}
-
-// #endregion
-// #region 对外方法
-export interface FarmModeResult {
-  所得:   Record<string,number>;
-  执行次数: number;
-}
-export interface FarmResult {
-  主模式:  "怒气" | "普通攻击";
-  怒气:   FarmModeResult;
-  普通攻击: FarmModeResult;
-}
-export interface SweepResult {
-  所得:   Record<string,number>;
-  扫荡次数: number;
-}
-
-// 某养成系统"再升一级(L→L+1)"的统一结果.
-export interface SystemGain {
-  atk:            number; // [升级一次每维提升]升这一级,每一维属性增加多少
-  costPerLevelUp: number; // [升级一次所需资源]从 level 升到 level+1 要花多少资源
-  dims:           number; // 受益维数
-  level:          number; // 当前等级(描述从该等级升到下一级的消耗/提升)
-  peratk:         number; // 资源效率:每 1 单位资源换到每维多少属性 = atk / costPerLevelUp
-  resource:       string; // 消耗的资源名
-  system:         string; // 系统名
-  totalGain:      number; // [升级一次全维合计提升]= atk × dims
-}
-
-/**
- * 模拟主动刷怪:按时间算出怒气/普攻两边各能清多少波,并分别给数学期望掉落.
- * 一次执行 = 清一波 5 只怪；次数 = floor(小时×3600/周期),最后一次不足周期直接丢弃.
- * @param useRage true 为怒气(1.1 秒/波),false 为普通攻击(0.85 秒/波)
- * @param hours 限定时间,单位小时,必传
- * @param map 地图 1-5,默认 5 通天塔
- * @param wingLevel 翅膀 1(Wing_CB_1)等级,默认 0；只影响元宝
- * @param wanHunFanLevel 万魂帆 Entry 等级,默认 0；每级给御力掉落 +10%
- * @returns 两份并列结果；主模式由 useRage 标记,两边掉落都完整计算
- */
-export function simulateFarm (
-  useRage: boolean,
-  hours: number,
-  map: MapID = 5,
-  wingLevel = 0,
-  wanHunFanLevel = 0
-): FarmResult {
-  const safeHours = assertHours(hours);
-  const mapConfig = getMapConfig(map);
-  const safeWingLevel = assertWholeAtLeast(wingLevel,0,"翅膀等级");
-  const safeWanHunFanLevel = assertWholeAtLeast(wanHunFanLevel,0,"万魂帆等级");
-  return {
-    主模式:  useRage ? "怒气" : "普通攻击",
-    怒气:   simulateMode(safeHours,RAGE_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel),
-    普通攻击: simulateMode(safeHours,NORMAL_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel)
-  };
-}
-
-/**
- * 模拟扫荡:严格按 MapRecorder.AddTimer/CulSaoDangShouYi,每满 48 秒给 1 份喽啰原始掉落.
- * 扫荡不吃幸运,不吃 39-42 掉率研究,不吃 56-63 额外掉落；只吃研究 43,VIP 扫荡速度与阵型战力.
- * @param hours 限定时间,单位小时,必传
- * @param round 层数(CurRound),默认 1；影响御力波次系数与已触发的扫荡加成
- * @param power 扫荡阵容战力,默认 0；按 MapRecorder.GetZhanLiAddition 折算速度
- * @param map 地图 1-5,默认 5 通天塔
- */
-export function simulateSweep (
-  hours: number,
-  round = 1,
-  power = 0,
-  map: MapID = 5
-): SweepResult {
-  const safeHours = assertHours(hours);
-  const safeRound = assertWholeAtLeast(round,1,"层数");
-  const mapConfig = getMapConfig(map);
-  const safePower = Number.isFinite(power) ? Math.max(0,power) : 0;
-  const sweepAddition = getSweepAdditionPercent(mapConfig,safeRound);
-  const speed = (getZhanLiAddition(safePower) + sweepAddition + 100) / 100
-    * (100 + RESEARCH.saoDangShouYi) / 100
-    * (100 + VIP_SAO_DANG_SPEED) / 100;
-  const totalTimer = safeHours * SECONDS_PER_HOUR * speed;
-
-  // 源码 while (SaoDang_Timer > 48):正好 48 的整数倍会少结算一次
-  const ticks = totalTimer > 0
-    ? Math.max(0,Math.ceil(totalTimer / SAO_DANG_REMAIN_TIMER) - 1)
-    : 0;
-  const drops: Record<string,number> = {};
-  if (ticks <= 0) {
-    return {所得: drops,扫荡次数: 0};
-  }
-  const yuLiPerTick = getYuLiDrop(1,safeRound,mapConfig.baseRound,0,false);
-  for (const [propID,nums,percent] of mapConfig.louLouDrops) {
-    addDrop(drops,propID,nums * getTrueDrop(percent,0) / 1000 * ticks);
-  }
-  addDrop(drops,4,yuLiPerTick * ticks);
-  return {所得: drops,扫荡次数: ticks};
-}
-function addDrop (drops: Record<string,number>,propID: number,amount: number): void {
-  if (!(amount > 0)) {
-    return;
-  }
-  const name = PROP_NAMES[propID];
-  if (name === undefined) {
-    throw new Error(`未知道具 ID：${propID}`);
-  }
-  drops[name] = (drops[name] ?? 0) + amount;
-}
-function addMonsterDrops (
-  drops: Record<string,number>,
-  mapConfig: MapConfig,
-  pinZhi: number,
-  round: number,
-  extraCount: number,
-  wingYuanBao: number,
-  wanHunFanLevel: number,
-  dropAdditionPercent: number
-): void {
-  const addition = getDropAddition(pinZhi,dropAdditionPercent);
-  for (const [propID,nums,percent] of getDropTable(mapConfig,pinZhi)) {
-    addDrop(drops,propID,(nums + extraCount) * getTrueDrop(percent,addition) / 1000);
-  }
-  addResearchDrops(drops,mapConfig,pinZhi,addition);
-  addDrop(drops,4,getYuLiDrop(pinZhi,round,mapConfig.baseRound,wanHunFanLevel,true));
-  addDrop(drops,95,wingYuanBao);
-}
-
-// MapRecorder.KeJiDrop :242-318；87 御灵师经验按品质给 1/2/3,其余为必掉期望
-function addResearchDrops (
-  drops: Record<string,number>,
-  mapConfig: MapConfig,
-  pinZhi: number,
-  addition: number
-): void {
-  addDrop(drops,87,pinZhi);
-  addDrop(drops,80,2 * getOkToDropChance(RESEARCH.extalMoney * 2,addition));
-  addDrop(drops,9,getOkToDropChance(RESEARCH.extalLiShiBenJi,addition));
-  addDrop(drops,1,getOkToDropChance(RESEARCH.extalHanTie,addition));
-  addDrop(drops,7,getOkToDropChance(RESEARCH.extalZhenWen,addition));
-  addDrop(drops,18,getOkToDropChance(RESEARCH.extalRandomJinNang,addition));
-  addDrop(drops,84,getOkToDropChance(RESEARCH.extalYuLingBaoDian,addition));
-  addDrop(drops,86,getOkToDropChance(RESEARCH.extalLianQiBaoDian,addition));
-  addDrop(drops,900 + getEnemyID(mapConfig,pinZhi),getOkToDropChance(RESEARCH.extalGuaiWuTuJian,addition));
-}
-function assertHours (hours: number): number {
-  if (!Number.isFinite(hours) || hours < 0) {
-    throw new Error(`小时必须是非负有限数，收到 ${String(hours)}`);
-  }
-  return hours;
-}
-function assertWholeAtLeast (value: number,min: number,label: string): number {
-  if (!Number.isInteger(value) || value < min) {
-    throw new Error(`${label}必须是 ≥${min} 的整数，收到 ${String(value)}`);
-  }
-  return value;
-}
-
-// ToolClass.Cul_Percent_ToInt :107-117(正数四舍五入远离零)
-function culPercentToInt (baseValue: number,percentage: number): number {
-  return Math.round(baseValue * (100 + percentage) / 100);
-}
-
-// MapRecorder.GetDrop_Addition :341-363；LUCKY 已含研究 14
-function getDropAddition (pinZhi: number,extraPercent: number): number {
-  const qualityMark = pinZhi === 1
-    ? RESEARCH.louLouDrop
-    : pinZhi === 2
-      ? RESEARCH.jingYingDrop
-      : RESEARCH.bossDrop;
-  return LUCKY + RESEARCH.allEnemyDrop + qualityMark + extraPercent;
-}
-function getDropTable (mapConfig: MapConfig,pinZhi: number): readonly DropRow[] {
-  if (pinZhi === 1) {
-    return mapConfig.louLouDrops;
-  }
-  if (pinZhi === 2) {
-    return mapConfig.jingYingDrops;
-  }
-  return mapConfig.bossDrops;
-}
-function getEnemyID (mapConfig: MapConfig,pinZhi: number): number {
-  if (pinZhi === 3) {
-    return mapConfig.bossID;
-  }
-  if (pinZhi === 2) {
-    return mapConfig.jingYingID;
-  }
-  return mapConfig.louLouID;
-}
-
-// 每只怪的额外数量 num(MapRecorder.cs:218-230):
-// VIP_PercentAddCount 是 Random.Range(1,101) < 8 → 7%；CurRound/10000 是整数除法
-function getExpectedExtraCount (round: number): number {
-  const vipChance = Math.max(0,VIP_PERCENT_ADD_COUNT - 1) / 100;
-  const roundTier = Math.trunc(round / 10000);
-  const roundChance = roundTier >= 2 ? (roundTier - 1) / 100 : 0;
-  return vipChance + roundChance;
-}
-
-// 翅膀 1 = Wing_CB_1(Wing_Config_Data 的 TargetMark 68),等级直接写入印记
-// MapRecorder.KeJiDrop :281-316 的 switch,按期望折算
-function getExpectedWingYuanBao (wingLevel: number): number {
-  if (wingLevel <= 0) {
-    return 0;
-  }
-  if (wingLevel <= 10) {
-    return Math.min(1,wingLevel * 10 / 100);
-  }
-  const base = Math.trunc((wingLevel - 10) / 25) + 1;
-  const remainder = (wingLevel - 10) % 25;
-  return base + Math.min(1,remainder * 4 / 100);
-}
-function getMapConfig (map: number): MapConfig {
-  assertWholeAtLeast(map,1,"地图");
-  const config = MAPS[map];
-  if (config === undefined) {
-    throw new Error(`地图只能是 1-5，收到 ${String(map)}`);
-  }
-  return config;
-}
-
-// MapRecorder.OKToDrop :320-324；Random.Range(1,101) <= num,概率 = clamp(num,0,100)/100
-function getOkToDropChance (value: number,addition: number): number {
-  const threshold = Math.trunc(value * (100 + addition) / 100);
-  return Math.min(100,Math.max(0,threshold)) / 100;
-}
-function getSweepAdditionPercent (mapConfig: MapConfig,round: number): number {
-  let value = 0;
-  for (const [effectRound,effectType,effectValue] of mapConfig.effects) {
-    if (effectType === MAP_EFFECT.saoDangShouYi && effectRound <= round) {
-      value += effectValue;
-    }
-  }
-  return value;
-}
-
-// Drop_Recorder.GetTrueDrop :37-45
-function getTrueDrop (percent: number,addition: number): number {
-  return Math.min(1000,roundHalfToEven(percent * (100 + addition) / 100));
-}
-
-// MapRecorder.GetYuLiDrop :326-339；御力基数 150×(1+品质×0.5),再乘波次系数
-function getYuLiDrop (
-  pinZhi: number,
-  round: number,
-  baseRound: number,
-  wanHunFanLevel: number,
-  withAddition: boolean
-): number {
-  let value = Math.trunc(150 * (1 + pinZhi * 0.5));
-  value *= Math.trunc((round + baseRound + 1000) / 1000);
-  if (withAddition) {
-    value = culPercentToInt(value,RESEARCH.addDropYuLi);
-    value = culPercentToInt(value,VIP_YU_LI_DROP);
-    value = culPercentToInt(value,wanHunFanLevel * 10);
-  }
-  return value;
-}
-
-// MapRecorder.GetZhanLiAddition :120-146；战力 0 → 0
-function getZhanLiAddition (power: number): number {
-  if (!Number.isFinite(power) || power <= 0) {
-    return 0;
-  }
-  const powerTen = 100_000_000_000;
-  if (power <= powerTen) {
-    return Math.trunc(power * 100 / powerTen);
-  }
-  const powerEleven = 1_000_000_000_000;
-  if (power <= powerEleven) {
-    return 100 + Math.trunc((power - powerTen) * 100 / (powerEleven - powerTen));
-  }
-  const exponent = Math.floor(Math.log10(power / powerEleven));
-  const lower = powerEleven * 10 ** exponent;
-  const upper = lower * 10;
-  return 200 + exponent * 100 + Math.trunc((power - lower) * 100 / (upper - lower));
-}
-
-// #endregion
-// #endregion
-// #region 源码公式
-// Mathf.RoundToInt(Drop_Recorder.cs:39)在正数区间是四舍六入五取偶
-function roundHalfToEven (value: number): number {
-  const lower = Math.floor(value);
-  if (value - lower === 0.5) {
-    return lower % 2 === 0 ? lower : lower + 1;
-  }
-  return Math.round(value);
-}
-function simulateMode (
-  hours: number,
-  cycleSeconds: number,
-  mapConfig: MapConfig,
-  wingLevel: number,
-  wanHunFanLevel: number
-): FarmModeResult {
-  const executions = Math.floor(hours * SECONDS_PER_HOUR / cycleSeconds);
-  const drops: Record<string,number> = {};
-  if (executions <= 0) {
-    return {所得: drops,执行次数: 0};
-  }
-  const wingYuanBao = getExpectedWingYuanBao(wingLevel);
-  let dropAdditionPercent = 0;
-  for (let index = 0; index < executions; index += 1) {
-    const round = START_ROUND + index;
-    const extraCount = getExpectedExtraCount(round);
-    if (WAVE_COMPOSITION[round % 5] != null) {
-      for (const pinZhi of WAVE_COMPOSITION[round % 5]) {
-        addMonsterDrops(drops,mapConfig,pinZhi,round,extraCount,wingYuanBao,wanHunFanLevel,dropAdditionPercent);
-      }
-    }
-
-    // AddRound 在本波清完后触发；GetProp 给道具,DropPercent 从下一波开始生效
-    for (const [effectRound,effectType,value,value1] of mapConfig.effects) {
-      if (effectRound !== round) {
-        continue;
-      }
-      if (effectType === MAP_EFFECT.getProp) {
-        addDrop(drops,value,value1);
-      }
-      if (effectType === MAP_EFFECT.dropPercent) {
-        dropAdditionPercent += value;
-      }
-    }
-  }
-  return {所得: drops,执行次数: executions};
-}
-
-// 每一个材料 消耗多少钱币(含 30% 研究减免,保留小数点,不取整)—— 直接写死在此处,
-// 无需运行即可看数值;计算 = ValueCost × (100 - 30) / 100 = ValueCost × 0.7:
-export const MATERIAL_COST_PER_UNIT: Record<string,number> = {
-  三味真火: 1111.6,  // 1588×0.7
-  五彩神石: 3.5,    // 5×0.7
-  历史本纪: 1.4,    // 2×0.7
-  寒铁:   0.7,    // 1×0.7
-  强化石:  3.5,    // 5×0.7
-  御灵宝典: 52.5,   // 75×0.7
-  忘情水:  70,     // 100×0.7
-  灵晶:   3.5,    // 5×0.7
-  灵纹:   1.4,    // 2×0.7
-  破境石:  3.5,    // 5×0.7
-  神通卷轴: 1.4    // 2×0.7
-};
-
-// ============================== 研究(科技树,消耗 历史本纪) ==============================
-// 研究是「节点表驱动」的元系统(yingling-output.ts RESEARCH_STEPS):点满后给各养成系统的[消耗减免]与[属性加成].
-// 满研究共消耗 309,665 历史本纪(resource-allocation.ts:140).下面列出满级后各项[减免%]—— 即"研究的减免",
-// 可用来把对应系统的 costPerLevelUp 打折(本文件其它养成函数目前未自动叠加减免,需要时按此表乘 (100-减免)/100).
-export interface ResearchReduce {
-  cost:           number; // 点满研究共需历史本纪
-  hanTieReduce:   number; // 15 节衣缩食:寒铁消耗 -50%
-  historyReduce:  number; // 55 俭以养德:历史本纪(研究/转职) -20%(-1%/级×20)
-  lingWenReduce:  number; // 26 开源节流:灵纹(阵法) -50%
-  poJingReduce:   number; // 34 化繁为简:破境石 -30%
-  qiangHuaReduce: number; // 25 精打细算:强化石 -50%
-  scrollReduce:   number; // 35 删繁就简:神通卷轴 -20%
-  shopReduce:     number; // 44 价廉物美:商店买价 -30%(= 多买 Store_Sell_Price 折扣,已用于上面兑换表)
-  wucaiReduce:    number; // 20 省吃俭用:五彩神石(器鼎) -50%
-  yuLiReduce:     number; // 32 轻车熟路:御力(御灵师) -30%
-}
-
-// ---- 制作装备 / 品质 常量(数值均来自反编译源码,集中列出便于核对) ----
-const MAKE_EQUIP_COST_CAP = 200_0000; // 升一次炼器消耗寒铁封顶
-
+// #region 材料 → 战力(11 个 tozhanli)
 // ============================== 寒铁 → 战力(完整制造模拟,18 属性全量 + 词条百分比) ==============================
 // 固定口径:研究全部点满(config/keji.json),初始炼器 Lv.1/经验 0,器鼎 Lv.1700,品质 15,10 槽各 1 件.
 // 计算顺序:① 五彩神石把器鼎从 1700 继续往上顶 → 最终器鼎等级;
 // ② 寒铁按源码逐级模拟制造 → 最终炼器等级 + 制造次数 + 熔炼强化石;
 // ③ 10 件装备主属性按最终等级算;④ 翅膀加成按制造次数累计;
 // ⑤ 每件装备固定带该槽全部 5 条词条(共 50 条):13 项固定值合并,5 项百分比单列.
-// 本文件零 import;所有数值只取反编译源码与 config 导出,出处逐条标注.
-// ---- 研究全满(固定值:config/keji.json 的 maxLevel × perLevel = 50) ----
-const RESEARCH_15_HANTIE_REDUCE = 50; // id15 节衣缩食:寒铁消耗 -1%/级×50(keji.json:183-193)
-const RESEARCH_16_EXP_ADD = 50; // id16 日积月累:炼器经验 +1%/级×50(keji.json:195-205)
-const RESEARCH_18_EQUIP_ADD = 50; // id18 精益求精:装备属性 +1%/级×50(keji.json:219-229)
-const RESEARCH_20_WUCAI_REDUCE = 50; // id20 省吃俭用:五彩神石 -1%/级×50(keji.json)
-const RESEARCH_24_RONGLIAN_ADD = 50; // id24 聚沙成塔:熔炼强化石产出 +1%/级×50(keji.json:291-301)
-const RESEARCH_25_STRENGTH_REDUCE = 50; // id25 精打细算:强化石消耗 -1%/级×50(keji.json:302-312)
-
-// 研究22/23 是印记开关(>0 即生效):GetEqui_PropertyAddition 把 QiLu_Level / LianQiLevel 计进装备属性%(PropHelper.cs:424-438)
-// ---- 固定口径 ----
-const LIANQI_START_LEVEL = 1;      // NPC_EquipManager.cs:36-41 构造函数 LianQiLevel = 1
-const LIANQI_START_EXP = 0;      // 同上,初始 LianQiExp = 0
-const QIDING_START_LEVEL = 1700;   // 器鼎默认等级(品质概率表到此级 100% 品质 15)
-const EQUIP_PINZHI = 15;     // 固定最高品质(config/equip-percent.json 最高档 pinzhi 15)
-const EQUIP_SLOT_COUNT = 10;     // EquipType.cs:6-18 共 10 个槽位
-const PERCENT_BASE = 100;    // 百分比基数
-
-// ---- 装备主属性公式固定值(PropHelper.cs:395-405 GenerateEquip) ----
-const EQUIP_BASE = 30;   // (30 + 25×L + 6×品质×L) 基础值
-const EQUIP_PER_LEVEL = 25;   // 每级炼器 +25
-const EQUIP_PINZHI_PER_LEVEL = 6;    // 品质×炼器等级 ×6
-const EQUIP_PINZHI_FACTOR = 0.4;  // 品质系数 (0.4×品质 + 1)
-const EQUIP_RANDOM_MIN = 1;    // Random.Range(1f, 1.1f) 下限
-const EQUIP_RANDOM_MAX = 1.1;  // 上限(不含)
-const EQUIP_RANDOM_AVG = (EQUIP_RANDOM_MIN + EQUIP_RANDOM_MAX) / 2; // 随机期望 1.05
-
-// ---- 经验 / 翅膀 / 器鼎公式固定值 ----
-const CRAFT_EXP_BASE = 2;   // PropHelper.cs:478-485 CulExp_Single = 2 + 炼器等级
-const WING_FLAT_BASE = 75;  // NPC_EquipManager.cs:119-126 翅膀固定值基数
-const WING_FLAT_PER_LEVEL = 25;  // 同上,翅膀每级 +25
-const WING_EXP_PER_LEVEL = 3;   // :145-149 翅膀每级给经验倍率 +3%(整行覆盖研究16)
-const QILU_COST_BASE = 10;  // lianqi.ts:72-76 / yingling-output.ts:2157 器鼎每档消耗基数
-const QILU_TIER_SIZE = 5;   // 每 5 级一档
-
-// ---- 分解(熔炼)→ 强化石固定值(GameRecorder.cs:386-407 GetRongLianEnding / PropHelper.cs:324-335 RongLianEuip) ----
-const RONGLIAN_LEVEL_DIVISOR = 5;   // 每件贡献 ⌊装备等级/5⌋ + 品质(装备等级 = 制造当时的炼器等级);强化石 PropID=5(config/names.json:7)
-
-// 整批求和后一次性乘 (100+研究24)/100,只取整一次(Cul_Percent_ToInt,ToolClass.cs:113-117,正数等价于 Math.round)
-// ---- 强化提升 / 消耗固定值(Equip_Using.cs:19-22,28-37,40-54,62-98,100-122,125-163) ----
-const STRENGTH_COST_BASE = 3;    // 每级消耗 3 + 2L 颗强化石
-const STRENGTH_COST_PER_LEVEL = 2;
-const STRENGTH_ADD_BASE = 10;   // 每级 HP/ATK/DEF 各 +(10 + 10L) 固定值(L 从 0 起算)
-const STRENGTH_ADD_PER_LEVEL = 10;
-const STRENGTH_HIGH_THRESHOLD = 100_0000; // L≥100 万时该级消耗与提升各 ×5
-const STRENGTH_HIGH_MULTIPLIER = 5;
-const STRENGTH_COST_CAP = 2147483646; // 消耗上限(Equip_Using.cs:107,123)
-const STRENGTH_COST_MIN = 1;          // 批量路径下限 1(:79-82)
-
-// 强化只加 HP/ATK/DEF 三条固定值,无穿透/速度/百分比(:159-161)
-// 属性全集:PropertyTypeEnum.cs:6-26 的 18 个枚举值,按枚举顺序排列,一个都不省略.
-// 低级(基础)RandomBaseProperty = 攻击/防御/生命/无视防御(Character_NPC.cs:52-58);
-// 高级 RandomMaxProperty = 命中/闪避/暴击/抗暴/暴伤/连击/反击/伤害加成/伤害减免(Character_NPC.cs:60-71).
-export interface AllProperties {
-  atk:            number; // 0 ATK 攻击[低级]
-  baoJi:          number; // 6 BaoJi 暴击[高级]
-  baoJiDamage:    number; // 8 BaoJi_Damage 暴伤[高级]
-  baoJiResist:    number; // 7 BaoJi_Resist 抗暴[高级]
-  damageAddition: number; // 13 DamageAddition 伤害加成[高级]
-  damageReduce:   number; // 14 DamageReduce 伤害减免[高级]
-  def:            number; // 1 DEF 防御[低级]
-  fanJi:          number; // 10 FanJi 反击[高级]
-  hp:             number; // 2 HP 生命[低级]
-  ignoreDef:      number; // 15 Igonore_DEF 无视防御/穿透[低级]
-  lianJi:         number; // 9 LianJi 连击[高级]
-  lucky:          number; // 17 Lucky 幸运
-  mingZhong:      number; // 4 MingZhong 命中[高级]
-  recovery:       number; // 11 Recovery 恢复
-  returnDamage:   number; // 16 RetrunDamage 反弹伤害
-  shanBi:         number; // 5 ShanBi 闪避[高级]
-  speed:          number; // 3 Speed 速度
-  xiXie:          number; // 12 XiXie 吸血
-}
-
-// 词条候选池:每槽固定 5 条(用户口径:每件装备默认都有该槽全部 5 条,不按品质/随机抽取).
-// 来自 MayEquipPropertyDic(PropHelper.cs:69-148),按 EquipType.cs 的 0~9 顺序排列.
-// 词条值固定 = 品质 15(PropHelper.cs:418 的 Params_2 = PinZhi, Bool_Value = true).
-const EQUIP_CI_TIAO_POOL: readonly (readonly (keyof AllProperties)[])[] = [
-  ["atk","baoJi","baoJiDamage","damageAddition","ignoreDef"],  // 0 Weapon 武器
-  ["def","hp","shanBi","baoJiResist","returnDamage"],          // 1 Cloth 衣服
-  ["def","hp","shanBi","damageReduce","lucky"],                // 2 Cape 披风
-  ["def","hp","mingZhong","baoJiResist","recovery"],           // 3 Belt 腰带
-  ["atk","def","baoJiDamage","lianJi","damageAddition"],       // 4 HuWan 护腕
-  ["atk","def","hp","mingZhong","fanJi"],                      // 5 XiangLian 项链
-  ["atk","def","hp","mingZhong","lucky"],                      // 6 GuaZhui 挂坠
-  ["atk","hp","xiXie","ignoreDef","lucky"],                    // 7 JieZhi 戒指
-  ["atk","def","hp","speed","ignoreDef"],                      // 8 XieZi 鞋子
-  ["atk","def","hp","baoJi","damageReduce"]                    // 9 HuFu 护符
-];
-
-// 18 项里走「真百分比」的 5 项(property.json 中 percent=0):
-// ChangeValue 走 PercentAddition += 15(BattleData_Recorder.cs:50-59),GetFinal 再乘 (100+百分比)/100(:34).
-// 其余 13 项在 property.json 里 percent=1,ChangeValue 直接 Base_Value += 15(:39-49),GetFinal 不乘百分比(:25-33),
-// 即它们虽然 UI 显示 "15%",源码实际是每条 +15 固定值.
-const CI_TIAO_PERCENT_KEYS = ["atk","def","hp","ignoreDef","speed"] as const;
-type CiTiaoPercentKey = typeof CI_TIAO_PERCENT_KEYS[number];
-const isCiTiaoPercentKey = (key: keyof AllProperties): key is CiTiaoPercentKey => key === "atk" || key === "def" || key === "hp" || key === "speed" || key === "ignoreDef";
-
-// 单层返回:18 项固定值(与 AllProperties 同名同序)+ 5 项词条百分比 + 过程量,全部平铺,不嵌套.
-// 固定值只加固定值(装备主属性 + 翅膀 + 高级词条),百分比只放百分比,两者不互相换算.
-export interface HantieToZhanliResult extends AllProperties {
-  atkPercent:       number; // 攻击词条百分比合计:7 槽 × 15 = 105(源码 PercentAddition,不是固定值)
-  craftCount:       number; // 制造次数
-  defPercent:       number; // 防御词条百分比合计:8 槽 × 15 = 120
-  finalLianqiExp:   number; // 最终等级内剩余经验
-  finalLianqiLevel: number; // 最终炼器等级
-  finalQidingLevel: number; // 最终器鼎等级
-  hantieLeft:       number; // 剩余寒铁
-  hantieUsed:       number; // 消耗寒铁
-  hpPercent:        number; // 生命词条百分比合计:8 槽 × 15 = 120
-  ignoreDefPercent: number; // 穿透词条百分比合计:3 槽 × 15 = 45
-  ronglianCount:    number; // 被熔炼的装备件数
-  ronglianStones:   number; // 制造数 − 10 件(留身上)熔炼出的强化石总数
-  speedPercent:     number; // 速度词条百分比合计:1 槽 × 15 = 15
-  wucaiLeft:        number; // 剩余五彩神石
-  wucaiUsed:        number; // 消耗五彩神石
-}
-
+// 本文件只 import data.ts;所有数值只取反编译源码与 config 导出,出处逐条标注.
 /**
  * 投入寒铁(配合五彩神石,翅膀等级)后的完整制造模拟,单层返回 18 项固定值 + 5 项词条百分比.
  * 词条口径:每件装备固定带该槽全部 5 条(共 50 条),词条值 = 品质 15.
@@ -868,6 +318,128 @@ export function hantieTozhanli (
   };
 }
 
+// ============================== 灵晶 → 解锁阵法 + 圣兽3(青龙) ==============================
+/**
+ * 灵晶投入的完整模拟:先按 ZhenFaRecorder.GetJieSuoRemand(:29-32) 每个阵法 100 个解锁 9 个阵法(共 900),
+ * 剩余全部投圣兽3 青龙(ShengShou_Record.cs:33-57,65-95),两条属性 = 攻击/防御(DESIGN.md).
+ * 圣兽从 Lv.0 起,每级消耗 min(50000,10+10L),每级攻/防各 +(20+50L) 固定值;
+ * 每升到 1,251,501... 级给 Property3 +1%(源码 (CurStrength+249)%250==0),记在 specialPercent.
+ * 等级上限取通天塔 1 万层 maxRound(CheckMaxOK :166-174);阵法解锁数不单列,消耗已计入 used.
+ * @param lingjing 投入的灵晶数量
+ */
+export function lingjingTozhanli (lingjing: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(lingjing,"灵晶");
+  let left = material;
+  let unlocked = 0;
+  while (unlocked < ZHENFA_UNLOCK_COUNT && left >= ZHENFA_UNLOCK_COST) {
+    left -= ZHENFA_UNLOCK_COST;
+    unlocked += 1;
+  }
+  let level = SHENG_SHOU_START_LEVEL;
+  const cap = Math.min(SHENG_SHOU_MAX_ROUND,SHENG_SHOU_LEVEL_CAP);
+  while (level < cap) {
+    const cost = Math.max(1,Math.min(SHENG_SHOU_COST_CAP,
+      SHENG_SHOU_COST_BASE + SHENG_SHOU_COST_PER_LEVEL * level));
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    const add = SHENG_SHOU_ADD_BASE + SHENG_SHOU_ADD_PER_LEVEL * level;
+    result.atk += add;
+    result.def += add;
+    level += 1;
+    if (level % SHENG_SHOU_SPECIAL_CYCLE === 1) {
+      result.specialPercent += 1;
+    }
+  }
+  result.count = unlocked + level - SHENG_SHOU_START_LEVEL;
+  result.finalLevel = level;
+  result.left = left;
+  result.maxLevel = cap;
+  result.used = material - left;
+  return result;
+}
+
+// ============================== 灵纹 → 阵法等级 ==============================
+/**
+ * 灵纹投入阵法升级(ZhenFaRecorder.cs:22-40,82-91,93-129)的完整模拟.
+ * 固定口径:阵法 Lv.1,四维初始各 500(初始态,不计入增量),只算 1 个上阵阵法,研究26 满 -50%.
+ * 每级消耗 round(L×20×0.5)(CulMaxLevelUpTimes 的 clamp [1,2147483646]),
+ * 每级 HP/ATK/DEF/穿透 各 +(200+35L) 固定值(:85-89).
+ * 研究 27/28/29 的攻/防/穿 +100% 属初始态 PercentAddition,不重复计入本次增量.
+ * @param lingwen 投入的灵纹数量
+ */
+export function lingwenTozhanli (lingwen: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(lingwen,"灵纹");
+  let level = ZHENFA_START_LEVEL;
+  let left = material;
+  let count = 0;
+  while (level < ZHENFA_LEVEL_CAP) {
+    const cost = Math.max(1,Math.min(ZHENFA_LEVEL_CAP,culPercentToInt(
+      Math.min(ZHENFA_LEVEL_CAP,level * ZHENFA_COST_PER_LEVEL),
+      -RESEARCH_26_LINGWEN_REDUCE)));
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    const add = ZHENFA_ADD_BASE + ZHENFA_ADD_PER_LEVEL * level;
+    result.atk += add;
+    result.def += add;
+    result.hp += add;
+    result.ignoreDef += add;
+    level += 1;
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = level;
+  result.left = left;
+  result.maxLevel = ZHENFA_LEVEL_CAP;
+  result.used = material - left;
+  return result;
+}
+
+// ============================== 历史本纪 → 转职强化 ==============================
+/**
+ * 历史本纪投入转职强化(ZhuanZhiManager.cs:16-39,79-130)的完整模拟.
+ * 固定口径:研究已点满,不再扣 309,665 研究消耗；转职强化从 Lv.0 起.
+ * 每级消耗 10+10L 个历史本纪(源码 GetStrengthRemand 直接 new PropRecorder(9,num),无研究减免),
+ * 每级 HP/ATK/DEF/穿透 各 +(20+50L) 固定值,速度 +1(:21-33).
+ * @param history 投入的历史本纪数量
+ */
+export function lishibenjiTozhanli (history: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(history,"历史本纪");
+  let level = ZHUANZHI_START_LEVEL;
+  let left = material;
+  let count = 0;
+  while (level < ZHUANZHI_LEVEL_CAP) {
+    const cost = Math.max(1,Math.min(ZHUANZHI_LEVEL_CAP,
+      ZHUANZHI_COST_BASE + ZHUANZHI_COST_PER_LEVEL * level));
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    const add = ZHUANZHI_ADD_BASE + ZHUANZHI_ADD_PER_LEVEL * level;
+    result.atk += add;
+    result.def += add;
+    result.hp += add;
+    result.ignoreDef += add;
+    result.speed += ZHUANZHI_SPEED_PER_LEVEL;
+    level += 1;
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = level;
+  result.left = left;
+  result.maxLevel = ZHUANZHI_LEVEL_CAP;
+  result.used = material - left;
+  return result;
+}
+
+// #endregion
+// #region 单级对比与兑换
 // 通用函数:给定「每材料数量 quantity」(默认 1,即每一个),返回各材料消耗的钱币(含 30% 研究减免,保留小数点,不取整).
 // 直接基于已写死的 MATERIAL_COST_PER_UNIT(单价 × 0.7) 推算,无需 COIN_RATE 中间量.
 export function materialCost (quantity = 1): Record<string,number> {
@@ -875,6 +447,49 @@ export function materialCost (quantity = 1): Record<string,number> {
   for (const [name,unitCost] of Object.entries(MATERIAL_COST_PER_UNIT)) {
     result[name] = unitCost * quantity;
   }
+  return result;
+}
+
+// ============================== 破境石 → 英灵等级上限 ==============================
+/**
+ * 破境石投入英灵等级上限突破(Character_YingLing.cs:294-309,352-367)的完整模拟.
+ * 固定口径:Max_Level=500,Star=0,单个英灵；每次消耗 round(⌊Max_Level/100⌋×10 × (100-研究34 30)/100),
+ * 每次 Max_Level += 500 并触发一次 GetLevelUpStarEffect(Star 不自增,故每次效果相同):
+ * HP/ATK/DEF/穿透 各 +min(⌊Star/5⌋+1,20)×5 = 5% 真百分比(value:true → PercentAddition),
+ * 速度 +1 固定值,LevelUpStartEffect[Star/5]=暴击 +1 固定值(Character_YingLing.cs:51-61).
+ * 破境无硬上限,maxLevel 记本次达到的最终等级上限.
+ * @param pojing 投入的破境石数量
+ */
+export function pojingshiTozhanli (pojing: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(pojing,"破境石");
+  const starStep = Math.min(POJING_STAR_PCT_CAP,
+    Math.trunc(POJING_START_STAR / POJING_STAR_DIVISOR) + 1);
+  const starPercent = starStep * POJING_STAR_PCT_PER_STEP * POJING_YINGLING_COUNT;
+  let maxLevel = POJING_START_MAX_LEVEL;
+  let left = material;
+  let count = 0;
+  for (;;) {
+    const cost = culPercentToInt(Math.trunc(maxLevel / 100) * POJING_COST_PER_100_LEVEL,
+      -RESEARCH_34_POJING_REDUCE);
+    if (cost <= 0 || left < cost) {
+      break;
+    }
+    left -= cost;
+    maxLevel += POJING_MAX_LEVEL_STEP;
+    result.atkPercent += starPercent;
+    result.baoJi += POJING_YINGLING_COUNT;
+    result.defPercent += starPercent;
+    result.hpPercent += starPercent;
+    result.ignoreDefPercent += starPercent;
+    result.speed += POJING_YINGLING_COUNT;
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = maxLevel;
+  result.left = left;
+  result.maxLevel = maxLevel;
+  result.used = material - left;
   return result;
 }
 
@@ -920,6 +535,43 @@ export function research (): ResearchReduce {
   };
 }
 
+// ============================== 三味真火 → 神兵火炼 ==============================
+/**
+ * 三味真火投入神兵火炼(8 条 Fire_Lian=命中 轨)的完整模拟,统一返回 18 项固定值 + 百分比字段 + 过程量.
+ * 源码 ShenBingRecorder.GetStrengthRemand(:28-36):每级消耗 min(1000000,(Cur_Lv+1)×10000);
+ * LevelUp(:93-100) 每级把 Fire_Lian 属性 +1,GetEffectToAdd(:110-123) 会置 Bool_Value=true,
+ * 但命中在 property.json 里 percent=1,BattleData_Recorder.ChangeValue(:37-49) 实为 Base_Value += 1 固定值.
+ * 初始:8 条轨各 Lv.0,神兵已解封(MaxLv=100),无研究减免；按「等级最低的轨优先」平均分配材料.
+ * @param sanwei 投入的三味真火数量
+ */
+export function sanweizhenhuoTozhanli (sanwei: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(sanwei,"三味真火");
+  const levels = Array.from({length: SHEN_BING_FIRE_HIT_TRACKS},() => 0);
+  let left = material;
+  let count = 0;
+  for (;;) {
+    const target = lowestUpgradableTrack(levels);
+    if (target < 0) {
+      break;
+    }
+    const cost = shenBingCost(levels[target] ?? 0);
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    levels[target] = (levels[target] ?? 0) + 1;
+    result.mingZhong += 1;
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = Math.min(...levels);
+  result.left = left;
+  result.maxLevel = SHEN_BING_MAX_LV;
+  result.used = material - left;
+  return result;
+}
+
 // ============================== 6. 圣兽(地图材料,2 维) ==============================
 // ShengShou_Record.cs:49-57 GetStrengthRemand(消耗=min(50000,10+10L)) / :18-21 GetNextAddition(每级两基础各+20+50L)
 // 升级一次消耗(地图材料) = min(50000, 10 + 10*L) ← 这就是"升级一次要多少资源"
@@ -937,6 +589,132 @@ export function shengShou (level: number): SystemGain {
     system:    "圣兽",
     totalGain: atk * 2
   };
+}
+
+// ============================== 神通卷轴 → 30 个神通 ==============================
+/**
+ * 神通卷轴投入 30 个神通(config/shentong.json + ShenTong.cs:48-55,95-137)的完整模拟.
+ * 固定口径:各神通 Lv.0,按 id 顺序逐个点满(低品阶先满即满足 CheckForeRemand 的前置),研究35 满 -20%.
+ * 每级消耗 round(品阶基数 20/50/150/500/1000/1500 × 0.8)(RemandProp :111-137);
+ * LearnShenTong(Character_YingLing.cs:462-466) 每级给 effectRecoders.Params_2 固定值到 Params_1 属性,
+ * effectName=1 的 EntryEffect 类不进面板属性,进 GetZhanLi 的 Level×PinZhi 战力乘区(:401-411).
+ * @param scrolls 投入的神通卷轴数量
+ */
+export function shentongjuanzhouTozhanli (scrolls: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(scrolls,"神通卷轴");
+  let left = material;
+  let count = 0;
+  let fullNodes = 0;
+  for (const [,pinzhi,maxLevel,effectName,params1,params2] of SHEN_TONG_NODES) {
+    const cost = culPercentToInt(SHEN_TONG_COST_BY_PINZHI[pinzhi] ?? 0,
+      -RESEARCH_35_SHENTONG_REDUCE);
+    if (cost <= 0) {
+      break;
+    }
+    let level = 0;
+    while (level < maxLevel && left >= cost) {
+      left -= cost;
+      level += 1;
+      count += 1;
+      if (effectName === SHEN_TONG_PROPERTY_EFFECT) {
+        const key = PROPERTY_TO_KEY[params1];
+        if (key !== undefined) {
+          result[key] += params2;
+        }
+      } else if (effectName === SHEN_TONG_ENTRY_EFFECT) {
+        result.zhanliPercent += pinzhi;
+      }
+    }
+    if (level === maxLevel) {
+      fullNodes += 1;
+    } else {
+      break; // 前置神通未满,更高品阶不能学(CheckForeRemand :95-109)
+    }
+  }
+  result.count = count;
+  result.finalLevel = fullNodes;
+  result.left = left;
+  result.maxLevel = SHEN_TONG_NODES.length;
+  result.used = material - left;
+  return result;
+}
+
+/**
+ * compare.ts — 同类对比(库函数版,不读取存档)
+ * 每个养成系统的「等级 → 提升属性」公式都[直接写在对应函数体内](含中文注释 + 反编译源码出处),
+ * 不再调用 game-formulas.ts 的黑盒函数,方便一眼看懂"升级一次要多少资源,加多少属性".
+ * 传入"当前等级 level",返回对象描述的是"从 level 升到 level+1 这一级"的消耗与提升.
+ * 例外:hantieTozhanli() 描述的是「投入寒铁 + 五彩神石 + 翅膀等级」后的完整制造模拟,不是单级对比,详见该函数注释.
+ * 最后 materialCost() 给出「每一个材料消耗多少钱币」的兑换表(资源转换表与数值全部集中在 data.ts,本文件只 import data.ts).
+ */
+// #region 挂机掉落模拟(对外)
+/**
+ * 模拟主动刷怪:按时间算出怒气/普攻两边各能清多少波,并分别给数学期望掉落.
+ * 一次执行 = 清一波 5 只怪；次数 = floor(小时×3600/周期),最后一次不足周期直接丢弃.
+ * @param useRage true 为怒气(1.1 秒/波),false 为普通攻击(0.85 秒/波)
+ * @param hours 限定时间,单位小时,必传
+ * @param map 地图 1-5,默认 5 通天塔
+ * @param wingLevel 翅膀 1(Wing_CB_1)等级,默认 0；只影响元宝
+ * @param wanHunFanLevel 万魂帆 Entry 等级,默认 0；每级给御力掉落 +10%
+ * @returns 两份并列结果；主模式由 useRage 标记,两边掉落都完整计算
+ */
+export function simulateFarm (
+  useRage: boolean,
+  hours: number,
+  map: MapID = 5,
+  wingLevel = 0,
+  wanHunFanLevel = 0
+): FarmResult {
+  const safeHours = assertHours(hours);
+  const mapConfig = getMapConfig(map);
+  const safeWingLevel = assertWholeAtLeast(wingLevel,0,"翅膀等级");
+  const safeWanHunFanLevel = assertWholeAtLeast(wanHunFanLevel,0,"万魂帆等级");
+  return {
+    主模式:  useRage ? "怒气" : "普通攻击",
+    怒气:   simulateMode(safeHours,RAGE_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel),
+    普通攻击: simulateMode(safeHours,NORMAL_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel)
+  };
+}
+
+/**
+ * 模拟扫荡:严格按 MapRecorder.AddTimer/CulSaoDangShouYi,每满 48 秒给 1 份喽啰原始掉落.
+ * 扫荡不吃幸运,不吃 39-42 掉率研究,不吃 56-63 额外掉落；只吃研究 43,VIP 扫荡速度与阵型战力.
+ * @param hours 限定时间,单位小时,必传
+ * @param round 层数(CurRound),默认 1；影响御力波次系数与已触发的扫荡加成
+ * @param power 扫荡阵容战力,默认 0；按 MapRecorder.GetZhanLiAddition 折算速度
+ * @param map 地图 1-5,默认 5 通天塔
+ */
+export function simulateSweep (
+  hours: number,
+  round = 1,
+  power = 0,
+  map: MapID = 5
+): SweepResult {
+  const safeHours = assertHours(hours);
+  const safeRound = assertWholeAtLeast(round,1,"层数");
+  const mapConfig = getMapConfig(map);
+  const safePower = Number.isFinite(power) ? Math.max(0,power) : 0;
+  const sweepAddition = getSweepAdditionPercent(mapConfig,safeRound);
+  const speed = (getZhanLiAddition(safePower) + sweepAddition + 100) / 100
+    * (100 + RESEARCH.saoDangShouYi) / 100
+    * (100 + VIP_SAO_DANG_SPEED) / 100;
+  const totalTimer = safeHours * SECONDS_PER_HOUR * speed;
+
+  // 源码 while (SaoDang_Timer > 48):正好 48 的整数倍会少结算一次
+  const ticks = totalTimer > 0
+    ? Math.max(0,Math.ceil(totalTimer / SAO_DANG_REMAIN_TIMER) - 1)
+    : 0;
+  const drops: Record<string,number> = {};
+  if (ticks <= 0) {
+    return {所得: drops,扫荡次数: 0};
+  }
+  const yuLiPerTick = getYuLiDrop(1,safeRound,mapConfig.baseRound,0,false);
+  for (const [propID,nums,percent] of mapConfig.louLouDrops) {
+    addDrop(drops,propID,nums * getTrueDrop(percent,0) / 1000 * ticks);
+  }
+  addDrop(drops,4,yuLiPerTick * ticks);
+  return {所得: drops,扫荡次数: ticks};
 }
 
 // ============================== 7. 图鉴(图鉴道具,4 维) ==============================
@@ -960,6 +738,81 @@ export function tuJian (level: number): SystemGain {
   };
 }
 
+// ============================== 忘情水 → 神兵水炼 ==============================
+/**
+ * 忘情水投入神兵水炼(2 条 Water_Lian=伤害加成 + 6 条 =暴伤)的完整模拟.
+ * 消耗与火炼同源 ShenBingRecorder.cs:28-36;每升一级对应属性 +1 固定值(理由同火炼:percent=1 走 Base_Value).
+ * 按 DESIGN.md 口径忘情水不用于突破重随；这里 8 条轨各从 Lv.0 起,按「等级最低的轨优先」平均分配.
+ * @param water 投入的忘情水数量
+ */
+export function wangqingshuiTozhanli (water: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(water,"忘情水");
+  const trackCount = SHEN_BING_WATER_DAMAGE_TRACKS + SHEN_BING_WATER_CRIT_TRACKS;
+  const levels = Array.from({length: trackCount},() => 0);
+  let left = material;
+  let count = 0;
+  for (;;) {
+    const target = lowestUpgradableTrack(levels);
+    if (target < 0) {
+      break;
+    }
+    const cost = shenBingCost(levels[target] ?? 0);
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    levels[target] = (levels[target] ?? 0) + 1;
+    if (target < SHEN_BING_WATER_DAMAGE_TRACKS) {
+      result.damageAddition += 1;
+    } else {
+      result.baoJiDamage += 1;
+    }
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = Math.min(...levels);
+  result.left = left;
+  result.maxLevel = SHEN_BING_MAX_LV;
+  result.used = material - left;
+  return result;
+}
+
+// ============================== 五彩神石 → 器鼎等级 ==============================
+/**
+ * 五彩神石投入器鼎(NPC_EquipManager.GetLevelUpRemandProp :250-256)的完整模拟.
+ * 每级消耗 10×(⌊(L-1)/5⌋+1) 颗,研究20 满 -50% 后 Cul_Percent_ToInt 取整,下限 1;初始器鼎 Lv.1700.
+ * 器鼎等级经 GetEqui_PropertyAddition(PropHelper.cs:424-438) 进装备主属性倍率,
+ * 故按 hantieTozhanli 同一套主属性公式(固定炼器 Lv.1,品质 15,10 槽)折算攻/防/血三维增量.
+ * @param wucai 投入的五彩神石数量
+ */
+export function wucaishenshiTozhanli (wucai: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(wucai,"五彩神石");
+  const single = (qiding: number): number => (EQUIP_BASE + EQUIP_PER_LEVEL * LIANQI_START_LEVEL
+    + EQUIP_PINZHI_PER_LEVEL * EQUIP_PINZHI * LIANQI_START_LEVEL)
+    * (EQUIP_PINZHI_FACTOR * EQUIP_PINZHI + 1) * EQUIP_RANDOM_AVG
+    * (PERCENT_BASE + RESEARCH_18_EQUIP_ADD + qiding + LIANQI_START_LEVEL) / PERCENT_BASE;
+  let level = QIDING_START_LEVEL;
+  let left = material;
+  let count = 0;
+  while (level < QIDING_LEVEL_CAP && left >= qiluCost(level)) {
+    left -= qiluCost(level);
+    level += 1;
+    count += 1;
+  }
+  const gain = (single(level) - single(QIDING_START_LEVEL)) * EQUIP_SLOT_COUNT;
+  result.atk = gain;
+  result.count = count;
+  result.def = gain;
+  result.finalLevel = level;
+  result.hp = gain;
+  result.left = left;
+  result.maxLevel = QIDING_LEVEL_CAP;
+  result.used = material - left;
+  return result;
+}
+
 // ============================== 1. 御灵师(御力,4 维) ==============================
 // GameRecorder.cs:659-669 CulLevel_Up_Remand(消耗) / :697-703 ShowAddition(每级四维各+L*250)
 // 升级一次消耗(御力) = 100*tens*(tens+1) + 20*(tens+1)*(L%10),tens = ⌊L/10⌋
@@ -978,6 +831,46 @@ export function yuLing (level: number): SystemGain {
     system:    "御灵师",
     totalGain: atk * 4
   };
+}
+
+// ============================== 御灵宝典 → 御灵师等级 ==============================
+/**
+ * 御灵宝典投入御灵师(GameRecorder.cs:632-669,697-711 / PropEffect_GetYuLingShiEXP.cs:23-32)的完整模拟.
+ * 固定口径:御灵师 Lv.1 / 经验 0；每本 100 御力经研究48 满 +100% 变 200 御力(ChanYuLi :645).
+ * 升级门槛 CulLevel_Up_Remand = 100×⌊L/10⌋×(⌊L/10⌋+1) + 20×(⌊L/10⌋+1)×(L%10),源码无研究减免;
+ * 每级 HP/ATK/DEF/穿透 各 +L×250 固定值(:700-703).
+ * 每 10 级一次突破需 500 个 prop81(视为已有,不扣本方法材料),突破不消耗经验(PinJing :680-687),
+ * 突破属性按 DESIGN.md 属另一套金色品质选择,本方法只统计等级带来的四维增量.
+ * @param books 投入的御灵宝典本数
+ */
+export function yulingbaodianTozhanli (books: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(books,"御灵宝典");
+  const expPerBook = BOOK_YULI_BASE * (PERCENT_BASE + RESEARCH_48_BOOK_EXP_ADD) / PERCENT_BASE;
+  let exp = YULINGSHI_START_EXP + material * expPerBook;
+  let level = YULINGSHI_START_LEVEL;
+  let count = 0;
+  while (level < YULING_LEVEL_CAP) {
+    const tens = Math.trunc(level / 10);
+    const need = 100 * tens * (tens + 1) + 20 * (tens + 1) * (level % 10);
+    if (exp < need) {
+      break;
+    }
+    exp -= need;
+    const add = level * 250;
+    result.atk += add;
+    result.def += add;
+    result.hp += add;
+    result.ignoreDef += add;
+    level += 1;
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = level;
+  result.left = 0; // 御灵宝典一次全部投入,经验留在等级内
+  result.maxLevel = YULING_LEVEL_CAP;
+  result.used = material;
+  return result;
 }
 
 // ============================== 5. 阵法(灵纹,4 维) ==============================
@@ -1038,6 +931,280 @@ export function zhizaoLevelUp (exp: number): number {
     level += 1;
   }
   return level;
+}
+
+// #endregion
+// #region 内部辅助
+function addDrop (drops: Record<string,number>,propID: number,amount: number): void {
+  if (!(amount > 0)) {
+    return;
+  }
+  const name = PROP_NAMES[propID];
+  if (name === undefined) {
+    throw new Error(`未知道具 ID：${propID}`);
+  }
+  drops[name] = (drops[name] ?? 0) + amount;
+}
+function addMonsterDrops (
+  drops: Record<string,number>,
+  mapConfig: MapConfig,
+  pinZhi: number,
+  round: number,
+  extraCount: number,
+  wingYuanBao: number,
+  wanHunFanLevel: number,
+  dropAdditionPercent: number
+): void {
+  const addition = getDropAddition(pinZhi,dropAdditionPercent);
+  for (const [propID,nums,percent] of getDropTable(mapConfig,pinZhi)) {
+    addDrop(drops,propID,(nums + extraCount) * getTrueDrop(percent,addition) / 1000);
+  }
+  addResearchDrops(drops,mapConfig,pinZhi,addition);
+  addDrop(drops,4,getYuLiDrop(pinZhi,round,mapConfig.baseRound,wanHunFanLevel,true));
+  addDrop(drops,95,wingYuanBao);
+}
+
+// MapRecorder.KeJiDrop :242-318；87 御灵师经验按品质给 1/2/3,其余为必掉期望
+function addResearchDrops (
+  drops: Record<string,number>,
+  mapConfig: MapConfig,
+  pinZhi: number,
+  addition: number
+): void {
+  addDrop(drops,87,pinZhi);
+  addDrop(drops,80,2 * getOkToDropChance(RESEARCH.extalMoney * 2,addition));
+  addDrop(drops,9,getOkToDropChance(RESEARCH.extalLiShiBenJi,addition));
+  addDrop(drops,1,getOkToDropChance(RESEARCH.extalHanTie,addition));
+  addDrop(drops,7,getOkToDropChance(RESEARCH.extalZhenWen,addition));
+  addDrop(drops,18,getOkToDropChance(RESEARCH.extalRandomJinNang,addition));
+  addDrop(drops,84,getOkToDropChance(RESEARCH.extalYuLingBaoDian,addition));
+  addDrop(drops,86,getOkToDropChance(RESEARCH.extalLianQiBaoDian,addition));
+  addDrop(drops,900 + getEnemyID(mapConfig,pinZhi),getOkToDropChance(RESEARCH.extalGuaiWuTuJian,addition));
+}
+function assertHours (hours: number): number {
+  if (!Number.isFinite(hours) || hours < 0) {
+    throw new Error(`小时必须是非负有限数，收到 ${String(hours)}`);
+  }
+  return hours;
+}
+function assertMaterial (amount: number,name: string): number {
+  return assertWholeAtLeast(amount,0,`${name}数量`);
+}
+function assertWholeAtLeast (value: number,min: number,label: string): number {
+  if (!Number.isInteger(value) || value < min) {
+    throw new Error(`${label}必须是 ≥${min} 的整数，收到 ${String(value)}`);
+  }
+  return value;
+}
+
+// ToolClass.Cul_Percent_ToInt :107-117(正数四舍五入远离零);percentage 传负值即减免
+function culPercentToInt (baseValue: number,percentage: number): number {
+  return Math.round(baseValue * (100 + percentage) / 100);
+}
+
+// 9 个新增 tozhanli 方法的全 0 返回骨架(字段与 data.ts 的 EMPTY_* 一一对应)
+function emptyToZhanli (): ToZhanliResult {
+  return {
+    ...EMPTY_PROPERTIES,
+    ...EMPTY_PERCENT_PROPERTIES,
+    count:          0,
+    finalLevel:     0,
+    left:           0,
+    maxLevel:       0,
+    specialPercent: 0,
+    used:           0,
+    zhanliPercent:  0
+  };
+}
+
+// MapRecorder.GetDrop_Addition :341-363；LUCKY 已含研究 14
+function getDropAddition (pinZhi: number,extraPercent: number): number {
+  const qualityMark = pinZhi === 1
+    ? RESEARCH.louLouDrop
+    : pinZhi === 2
+      ? RESEARCH.jingYingDrop
+      : RESEARCH.bossDrop;
+  return LUCKY + RESEARCH.allEnemyDrop + qualityMark + extraPercent;
+}
+function getDropTable (mapConfig: MapConfig,pinZhi: number): readonly DropRow[] {
+  if (pinZhi === 1) {
+    return mapConfig.louLouDrops;
+  }
+  if (pinZhi === 2) {
+    return mapConfig.jingYingDrops;
+  }
+  return mapConfig.bossDrops;
+}
+function getEnemyID (mapConfig: MapConfig,pinZhi: number): number {
+  if (pinZhi === 3) {
+    return mapConfig.bossID;
+  }
+  if (pinZhi === 2) {
+    return mapConfig.jingYingID;
+  }
+  return mapConfig.louLouID;
+}
+
+// 每只怪的额外数量 num(MapRecorder.cs:218-230):
+// VIP_PercentAddCount 是 Random.Range(1,101) < 8 → 7%；CurRound/10000 是整数除法
+function getExpectedExtraCount (round: number): number {
+  const vipChance = Math.max(0,VIP_PERCENT_ADD_COUNT - 1) / 100;
+  const roundTier = Math.trunc(round / 10000);
+  const roundChance = roundTier >= 2 ? (roundTier - 1) / 100 : 0;
+  return vipChance + roundChance;
+}
+
+// 翅膀 1 = Wing_CB_1(Wing_Config_Data 的 TargetMark 68),等级直接写入印记
+// MapRecorder.KeJiDrop :281-316 的 switch,按期望折算
+function getExpectedWingYuanBao (wingLevel: number): number {
+  if (wingLevel <= 0) {
+    return 0;
+  }
+  if (wingLevel <= 10) {
+    return Math.min(1,wingLevel * 10 / 100);
+  }
+  const base = Math.trunc((wingLevel - 10) / 25) + 1;
+  const remainder = (wingLevel - 10) % 25;
+  return base + Math.min(1,remainder * 4 / 100);
+}
+function getMapConfig (map: number): MapConfig {
+  assertWholeAtLeast(map,1,"地图");
+  const config = MAPS[map];
+  if (config === undefined) {
+    throw new Error(`地图只能是 1-5，收到 ${String(map)}`);
+  }
+  return config;
+}
+
+// MapRecorder.OKToDrop :320-324；Random.Range(1,101) <= num,概率 = clamp(num,0,100)/100
+function getOkToDropChance (value: number,addition: number): number {
+  const threshold = Math.trunc(value * (100 + addition) / 100);
+  return Math.min(100,Math.max(0,threshold)) / 100;
+}
+function getSweepAdditionPercent (mapConfig: MapConfig,round: number): number {
+  let value = 0;
+  for (const [effectRound,effectType,effectValue] of mapConfig.effects) {
+    if (effectType === MAP_EFFECT.saoDangShouYi && effectRound <= round) {
+      value += effectValue;
+    }
+  }
+  return value;
+}
+
+// Drop_Recorder.GetTrueDrop :37-45
+function getTrueDrop (percent: number,addition: number): number {
+  return Math.min(1000,roundHalfToEven(percent * (100 + addition) / 100));
+}
+
+// MapRecorder.GetYuLiDrop :326-339；御力基数 150×(1+品质×0.5),再乘波次系数
+function getYuLiDrop (
+  pinZhi: number,
+  round: number,
+  baseRound: number,
+  wanHunFanLevel: number,
+  withAddition: boolean
+): number {
+  let value = Math.trunc(150 * (1 + pinZhi * 0.5));
+  value *= Math.trunc((round + baseRound + 1000) / 1000);
+  if (withAddition) {
+    value = culPercentToInt(value,RESEARCH.addDropYuLi);
+    value = culPercentToInt(value,VIP_YU_LI_DROP);
+    value = culPercentToInt(value,wanHunFanLevel * 10);
+  }
+  return value;
+}
+
+// MapRecorder.GetZhanLiAddition :120-146；战力 0 → 0
+function getZhanLiAddition (power: number): number {
+  if (!Number.isFinite(power) || power <= 0) {
+    return 0;
+  }
+  const powerTen = 100_000_000_000;
+  if (power <= powerTen) {
+    return Math.trunc(power * 100 / powerTen);
+  }
+  const powerEleven = 1_000_000_000_000;
+  if (power <= powerEleven) {
+    return 100 + Math.trunc((power - powerTen) * 100 / (powerEleven - powerTen));
+  }
+  const exponent = Math.floor(Math.log10(power / powerEleven));
+  const lower = powerEleven * 10 ** exponent;
+  const upper = lower * 10;
+  return 200 + exponent * 100 + Math.trunc((power - lower) * 100 / (upper - lower));
+}
+function simulateMode (
+  hours: number,
+  cycleSeconds: number,
+  mapConfig: MapConfig,
+  wingLevel: number,
+  wanHunFanLevel: number
+): FarmModeResult {
+  const executions = Math.floor(hours * SECONDS_PER_HOUR / cycleSeconds);
+  const drops: Record<string,number> = {};
+  if (executions <= 0) {
+    return {所得: drops,执行次数: 0};
+  }
+  const wingYuanBao = getExpectedWingYuanBao(wingLevel);
+  let dropAdditionPercent = 0;
+  for (let index = 0; index < executions; index += 1) {
+    const round = START_ROUND + index;
+    const extraCount = getExpectedExtraCount(round);
+    const wave = WAVE_COMPOSITION[round % 5];
+    if (wave != null) {
+      for (const pinZhi of wave) {
+        addMonsterDrops(drops,mapConfig,pinZhi,round,extraCount,wingYuanBao,wanHunFanLevel,dropAdditionPercent);
+      }
+    }
+
+    // AddRound 在本波清完后触发；GetProp 给道具,DropPercent 从下一波开始生效
+    for (const [effectRound,effectType,value,value1] of mapConfig.effects) {
+      if (effectRound !== round) {
+        continue;
+      }
+      if (effectType === MAP_EFFECT.getProp) {
+        addDrop(drops,value,value1);
+      }
+      if (effectType === MAP_EFFECT.dropPercent) {
+        dropAdditionPercent += value;
+      }
+    }
+  }
+  return {所得: drops,执行次数: executions};
+}
+
+// 18 项里走「真百分比」的 5 项;其余 13 项按源码是固定值
+const isCiTiaoPercentKey = (key: keyof AllProperties): key is CiTiaoPercentKey => key === "atk" || key === "def" || key === "hp" || key === "speed" || key === "ignoreDef";
+
+// 在神兵多轨平均分配里,挑当前等级最低且未达 MaxLv 的一条轨;全满返回 -1
+function lowestUpgradableTrack (levels: number[]): number {
+  let target = -1;
+  for (let index = 0; index < levels.length; index += 1) {
+    const level = levels[index] ?? 0;
+    if (level < SHEN_BING_MAX_LV && (target < 0 || level < (levels[target] ?? 0))) {
+      target = index;
+    }
+  }
+  return target;
+}
+
+// 器鼎单级消耗(NPC_EquipManager.cs:250-256),与 hantieTozhanli ① 完全同一口径
+function qiluCost (level: number): number {
+  return Math.max(1,Math.round(QILU_COST_BASE * (Math.trunc((level - 1) / QILU_TIER_SIZE) + 1)
+    * (PERCENT_BASE - RESEARCH_20_WUCAI_REDUCE) / PERCENT_BASE));
+}
+
+// Mathf.RoundToInt(Drop_Recorder.cs:39)在正数区间是四舍六入五取偶
+function roundHalfToEven (value: number): number {
+  const lower = Math.floor(value);
+  if (value - lower === 0.5) {
+    return lower % 2 === 0 ? lower : lower + 1;
+  }
+  return Math.round(value);
+}
+
+// 神兵单级消耗(ShenBingRecorder.cs:28-36)
+function shenBingCost (level: number): number {
+  return Math.min(SHEN_BING_COST_CAP,(level + 1) * SHEN_BING_COST_PER_LEVEL);
 }
 
 // 一个槽从 startLevel 起,用 stones 颗强化石逐级模拟升级,返回累计每维加成 / 最终等级 / 剩余石头
@@ -1101,3 +1268,5 @@ function strengthProps (add: number): AllProperties {
     xiXie:          0
   };
 }
+
+// #endregion
