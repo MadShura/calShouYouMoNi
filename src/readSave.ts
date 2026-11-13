@@ -77,8 +77,11 @@ export interface EquipSlot {
 // Game_RecordData.Save
 export interface GameRecord {
   CurYuLingShiLv?:          number;
+  Cur_JiangChiIndex?:      number;
+  ChouJiangCount?:          number;
   Mark_Manger?:             {markRecorders?: MarkRecorder[]};
   propRecordersList?:       PropCount[];
+  ShiLian_Manger?:          {Cur_CengShu?: number; Cur_PiLao?: number};
   YuLingExp?:               number;
   zhenYingZhenDou_Manager?: CampData;
 }

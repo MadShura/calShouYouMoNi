@@ -26,7 +26,9 @@
     "up:tsConfig": "axl tsconfig-exclude",
     "compare":"pnpm exec tsx src/scripts/compare.ts",
     "yuanbao": "pnpm exec tsx src/scripts/camp-yuanbao.ts",
-    "yuling": "pnpm exec tsx src/scripts/yulingshi-level.ts"
+    "yuling": "pnpm exec tsx src/scripts/yulingshi-level.ts",
+    "zhizao": "pnpm exec tsx src/scripts/zhizao.ts",
+    "lianqi": "pnpm exec tsx src/scripts/lianqi.ts"
   },
   "dependencies": {
     "axl-utils": "workspace:*"

@@ -91,6 +91,7 @@ function pinZhiDistribution (qiluLevelValue: number): number[] {
   const percent = new Array<number>(table.length).fill(0);
   for (let index = table.length - 1; index >= 0; index -= 1) {
     const entry = table[index];
+    if (!entry) {continue;}
     const used = percent.reduce((sum,value) => sum + value,0);
     if (used >= 1000) {break;}
     if (entry.initialLevel < qiluLevelValue) {
@@ -105,7 +106,7 @@ function expectedQuality (qiluLevelValue: number): number {
   const dist = pinZhiDistribution(qiluLevelValue);
   let pinzhi = 0;
   for (let i = 0; i < dist.length; i += 1) {
-    pinzhi += (dist[i] / 1000) * EQUIP_PERCENT_TABLE[i].pinzhi;
+    pinzhi += ((dist[i] ?? 0) / 1000) * (EQUIP_PERCENT_TABLE[i]?.pinzhi ?? 0);
   }
   return pinzhi;
 }
@@ -142,11 +143,11 @@ export function makeEquip (
 }
 
 // 通用函数:给定「每材料数量 quantity」(默认 1,即每一个),返回各材料消耗的钱币(含 30% 研究减免,保留小数点,不取整).
+// 直接基于已写死的 MATERIAL_COST_PER_UNIT(单价 × 0.7) 推算,无需 COIN_RATE 中间量.
 export function materialCost (quantity = 1): Record<string,number> {
-  const factor = (100 - SHOP_REDUCE_PCT) / 100;           // 0.7
   const result: Record<string,number> = {钱币: quantity};  // 钱币本身:1 钱币 = 1 钱币
-  for (const [name,valueCost] of Object.entries(COIN_RATE)) {
-    result[name] = valueCost * factor * quantity;
+  for (const [name,unitCost] of Object.entries(MATERIAL_COST_PER_UNIT)) {
+    result[name] = unitCost * quantity;
   }
   return result;
 }
