@@ -144,6 +144,47 @@ export function makeEquip (
   };
 }
 
+/**
+ * 由累计炼器经验反推制造(炼器)等级.
+ * 口径:每级门槛 = PropHelper.GetLianQiLevelUpExp(反编译 :467-476),与 NPC_EquipManager.AddLianQiExp(:155-166)
+ * 的 while 升级循环、yingling-output.ts:796-801 一致:从 Lv.1 起,经验够当前级门槛就扣掉门槛并升 1 级.
+ * @param exp 累计获得的炼器经验(从 Lv.1 起算的总经验,已含研究16/翅膀加成后的实际入账值)
+ * @returns 该经验能达到的制造等级(经验不足升 1 级时返回 1)
+ */
+export function zhizaoLevelUp (exp: number): number {
+  // 每级门槛分段公式的全部固定值(GetLianQiLevelUpExp :467-476)
+  const LV_10_PER       = 20;   // L≤10: L × 20
+  const LV_20_BASE      = 200;  // 10<L<20: 200 + 50 × (L−10)
+  const LV_20_PER       = 50;
+  const LV_30_BASE      = 700;  // 20≤L<30: 700 + 100 × (L−20)
+  const LV_30_PER       = 100;
+  const LV_40_BASE      = 1700; // 30≤L<40: 1700 + 200 × (L−30)
+  const LV_40_PER       = 200;
+  const LV_40_PLUS_BASE = 3700; // L≥40: 3700 + 300 × (L−40)
+  const LV_40_PLUS_PER  = 300;
+  // 分段边界等级
+  const LV_10 = 10;
+  const LV_20 = 20;
+  const LV_30 = 30;
+  const LV_40 = 40;
+
+  const needExp = (level: number): number => {
+    if (level <= LV_10) {return level * LV_10_PER;}
+    if (level < LV_20) {return LV_20_BASE + LV_20_PER * (level - LV_10);}
+    if (level < LV_30) {return LV_30_BASE + LV_30_PER * (level - LV_20);}
+    if (level >= LV_40) {return LV_40_PLUS_BASE + LV_40_PLUS_PER * (level - LV_40);}
+    return LV_40_BASE + LV_40_PER * (level - LV_30);
+  };
+
+  let level = 1;     // 初始等级(NPC_EquipManager 构造函数 LianQiLevel = 1)
+  let remain = exp;  // 尚未消耗的累计经验
+  while (remain >= needExp(level)) {
+    remain -= needExp(level);
+    level += 1;
+  }
+  return level;
+}
+
 // 通用函数:给定「每材料数量 quantity」(默认 1,即每一个),返回各材料消耗的钱币(含 30% 研究减免,保留小数点,不取整).
 // 直接基于已写死的 MATERIAL_COST_PER_UNIT(单价 × 0.7) 推算,无需 COIN_RATE 中间量.
 export function materialCost (quantity = 1): Record<string,number> {
