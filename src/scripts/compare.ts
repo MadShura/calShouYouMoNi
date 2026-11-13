@@ -61,10 +61,11 @@ export interface ResearchReduce {
 
 // ============================== 3. 制作装备 / 炼器(寒铁,仅攻击 1 维) ==============================
 // PropHelper.cs:487-505 GetRemandMat(消耗=炼器等级,封顶 200 万,下限 1)
-// :388-405 GenerateEquip 单件装备主攻击 = (30 + 25*L + 6*品质*L) × (0.4*品质+1) × 期望(1.05) × (1+装备属性%/100)
+// :388-405 GenerateEquip 单件装备主攻击 = (30 + 25*L + 6*品质*L) × (0.4*品质+1) × 随机期望(1.05 = Random.Range(1,1.1) 均值) × (1+装备属性%/100)
 // 品质(期望) 来自 五彩神石→器鼎等级→品质概率表(内联 EQUIP_PERCENT_TABLE,EquipLevel_PercentTable.GeneratePercent,千分制);
-// 装备制造属性% = 研究18(精益求精 +1%/级) + 研究22?器鼎等级 + 研究23?炼器等级(GetEqui_PropertyAddition).
-// 翅膀:本代码库仅"王者之翼"每级 +5%(原用于阵营元宝收益),此处按 +5%/级 乘到单件主属性(若装备有别的翅膀系数请告知).
+// 装备制造属性% = 研究18(精益求精 +1%/级) + 研究22?器鼎等级 + 研究23?炼器等级(GetEqui_PropertyAddition,PropHelper.cs:424-438).
+// 器鼎>1000 仍影响装备:研究22 把 QiLu_Level 直接加进装备属性%,该乘区无上限,随器鼎等级线性放大(品质表 initialLevel 封顶 700 已饱和,但属性%继续涨).
+// 翅膀(真):NPC_EquipManager.FinishLianQi(:119-126) 印记 Wing_CB_2(Mark 76),每次制造完成给人物 HP/ATK/DEF/无视防御 各 +(75 + 25×等级) flat.
 
 // 器鼎等级 → 新装备品质概率表(千分制),内联自 config/equip-percent.json(EquipLevel_PercentTable.GeneratePercent)
 const EQUIP_PERCENT_TABLE: {pinzhi: number; initialLevel: number; percentLevelAdd: number}[] = [
@@ -85,7 +86,29 @@ const EQUIP_PERCENT_TABLE: {pinzhi: number; initialLevel: number; percentLevelAd
   {pinzhi: 15, initialLevel: 700, percentLevelAdd: 1}
 ];
 
-// 器鼎等级 → 各品质概率(千分制);从最高品质往下填,满 1000 即止
+// ---- 制作装备 / 品质 常量(数值均来自反编译源码,集中列出便于核对) ----
+const PER_MILLE            = 1000;  // 品质概率表为「千分制」(满 PER_MILLE = 100%)
+const QIDING_MAX_QUALITY   = 1700;  // 器鼎等级达到此值 → 品质表 100% 最高品质(15)(核验:1000→30%、1600→90%、1700→100%)
+const RESEARCH18_MAX_LEVEL = 50;    // 研究18「精益求精」满级 = 50 级,装备属性 +1%/级
+const PERCENT_BASE         = 100;   // 百分比基数(装备属性% 转乘区用)
+
+// ---- 单件装备主攻击公式常量(PropHelper.GenerateEquip,反编译 :388-405) ----
+// 单件主攻击 = (BASE + PER_LIANQI*炼器等级 + QUALITY_LV*品质*炼器等级)
+//              × (QUALITY_FACTOR*品质 + 1) × 随机期望 × (1 + 装备属性%/100)
+const EQUIP_ATK_BASE       = 30;    // 基础固定值 30
+const EQUIP_ATK_PER_LIANQI = 25;    // 每级炼器 +25
+const EQUIP_ATK_QUALITY_LV = 6;     // 品质×炼器等级 ×6
+const EQUIP_QUALITY_FACTOR = 0.4;   // 品质系数:(0.4×品质 + 1)
+const EQUIP_RANDOM_MIN     = 1.0;   // GenerateEquip 随机乘区 Random.Range(1f, 1.1f) 下限
+const EQUIP_RANDOM_MAX     = 1.1;   // 上限(不含)
+const EQUIP_RANDOM_AVG     = (EQUIP_RANDOM_MIN + EQUIP_RANDOM_MAX) / 2; // 随机期望 = 1.05(均值)
+// 翅膀(Wing_CB_2, Mark 76):NPC_EquipManager.FinishLianQi(:119-126) 每次制造给人物固定值(非百分比)
+const WING_CB2_BASE        = 75;    // 翅膀固定值基数
+const WING_CB2_PER_LEVEL   = 25;    // 翅膀每级 +25(到 HP/ATK/DEF/无视防御 各)
+// 升级消耗(PropHelper.GetRemandMat,反编译 :487-505:消耗 = 炼器等级,封顶 200 万,下限 1)
+const MAKE_EQUIP_COST_CAP = 2_000_000; // 升一次炼器消耗寒铁封顶
+
+// 器鼎等级 → 各品质概率(千分制);从最高品质往下填,满 PER_MILLE 即止
 function pinZhiDistribution (qiluLevelValue: number): number[] {
   const table = EQUIP_PERCENT_TABLE;
   const percent = new Array<number>(table.length).fill(0);
@@ -93,9 +116,9 @@ function pinZhiDistribution (qiluLevelValue: number): number[] {
     const entry = table[index];
     if (!entry) {continue;}
     const used = percent.reduce((sum,value) => sum + value,0);
-    if (used >= 1000) {break;}
+    if (used >= PER_MILLE) {break;}
     if (entry.initialLevel < qiluLevelValue) {
-      percent[index] = Math.min((qiluLevelValue - entry.initialLevel) * entry.percentLevelAdd, 1000 - used);
+      percent[index] = Math.min((qiluLevelValue - entry.initialLevel) * entry.percentLevelAdd, PER_MILLE - used);
     }
   }
   return percent;
@@ -106,39 +129,46 @@ function expectedQuality (qiluLevelValue: number): number {
   const dist = pinZhiDistribution(qiluLevelValue);
   let pinzhi = 0;
   for (let i = 0; i < dist.length; i += 1) {
-    pinzhi += ((dist[i] ?? 0) / 1000) * (EQUIP_PERCENT_TABLE[i]?.pinzhi ?? 0);
+    pinzhi += ((dist[i] ?? 0) / PER_MILLE) * (EQUIP_PERCENT_TABLE[i]?.pinzhi ?? 0);
   }
   return pinzhi;
 }
 
-// 制作装备=生成一件装备,计算该装备的主攻击数值.
-// 器鼎等级(qiluLevel)决定品质期望,研究22 再把器鼎等级计入装备属性;翅膀(wingLevel)按王者之翼 +5%/级 乘入.
+// 制作装备=生成一件装备,计算该装备的主攻击数值(含每次制造的翅膀固定加成).
+// 器鼎(qiding)决定品质期望(≥1700 即 100% 最高品质);研究22 把器鼎等级计进装备属性%(线性无上限→过1000仍持续加成);
+// 翅膀(wingCb2Level)=印记 Wing_CB_2 等级,每次制造给人物固定 +(WING_CB2_BASE + WING_CB2_PER_LEVEL×等级) 到 HP/ATK/DEF/无视防御(各).
 export function makeEquip (
-  lianqiLevel: number,  // 炼器等级(= 升一次炼器要多少寒铁)
-  qiluLevel = 1,        // 器鼎等级(决定新装备品质期望;研究22 计入装备属性)
-  wingLevel = 0,        // 翅膀等级(王者之翼每级 +5%)
-  research18 = 50,      // 精益求精:装备属性 +1%/级(默认点满 50)
-  research22 = true,    // 循序渐进:器鼎等级计入装备属性
-  research23 = true,    // 水涨船高:炼器等级计入装备属性
-  wingActive = true     // 翅膀是否生效
+  lianqiLevel: number,            // 炼器等级(= 升一次炼器要多少寒铁)
+  qiding = QIDING_MAX_QUALITY,    // 器鼎等级(决定新装备品质期望;研究22 把器鼎等级计进装备属性,无上限)
+  wingCb2Level = 0,               // 印记 Wing_CB_2(Mark 76)等级:每次制造给人物固定 +(75 + 25×等级) 到 HP/ATK/DEF/无视防御
+  research18 = RESEARCH18_MAX_LEVEL, // 精益求精:装备属性 +1%/级(默认点满 50)
+  research22 = true,             // 循序渐进:器鼎等级计入装备属性
+  research23 = true              // 水涨船高:炼器等级计入装备属性
 ): SystemGain {
-  const quality = expectedQuality(qiluLevel);                         // 器鼎→品质期望
-  const equipPropPct = research18                                     // 研究18
-    + (research22 ? qiluLevel : 0)                                   // 研究22:器鼎等级计入
-    + (research23 ? lianqiLevel : 0);                                // 研究23:炼器等级计入
-  const wingMul = wingActive ? (100 + wingLevel * 5) / 100 : 1;       // 王者之翼 +5%/级
-  const atk = (30 + 25 * lianqiLevel + 6 * quality * lianqiLevel)    // 单件主攻击(含 1.05 随机期望)
-    * (0.4 * quality + 1) * 1.05 * (1 + equipPropPct / 100) * wingMul;
-  const costPerLevelUp = Math.max(1,Math.min(2_000_000,lianqiLevel));  // 升一次炼器要多少寒铁 = 炼器等级
+  const quality = expectedQuality(qiding);                            // 器鼎→品质期望(≥1700 = 100% 最高品质)
+  const equipPropPct = research18                                     // 研究18:装备属性 +1%/级
+    + (research22 ? qiding : 0)                                       // 研究22:器鼎等级计入(线性无上限,过1000仍持续放大装备主属性)
+    + (research23 ? lianqiLevel : 0);                                 // 研究23:炼器等级计入
+  // 单件主攻击(含随机期望 EQUIP_RANDOM_AVG):见上方常量注释中的公式
+  const atk = (EQUIP_ATK_BASE
+    + EQUIP_ATK_PER_LIANQI * lianqiLevel
+    + EQUIP_ATK_QUALITY_LV * quality * lianqiLevel)
+    * (EQUIP_QUALITY_FACTOR * quality + 1)
+    * EQUIP_RANDOM_AVG
+    * (1 + equipPropPct / PERCENT_BASE);
+  // 翅膀(Wing_CB_2):FinishLianQi 每次制造完成,人物 HP/ATK/DEF/无视防御 各 +(基数 + 每级×等级) flat
+  const wingFlatAtk = wingCb2Level > 0 ? WING_CB2_BASE + WING_CB2_PER_LEVEL * wingCb2Level : 0;
+  const totalAtk = atk + wingFlatAtk;
+  const costPerLevelUp = Math.max(1, Math.min(MAKE_EQUIP_COST_CAP, lianqiLevel)); // 升一次炼器要多少寒铁 = 炼器等级(封顶 200 万)
   return {
     costPerLevelUp,
     dims:             1,
-    atk,
-    peratk: atk / costPerLevelUp,
+    atk:              totalAtk,
+    peratk:           totalAtk / costPerLevelUp,
     level:            lianqiLevel,
     resource:         "寒铁",
     system:           "制作装备",
-    totalGain:        atk
+    totalGain:        totalAtk
   };
 }
 
