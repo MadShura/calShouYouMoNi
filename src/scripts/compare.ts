@@ -3,6 +3,7 @@
  * 每个养成系统的「等级 → 提升属性」公式都[直接写在对应函数体内](含中文注释 + 反编译源码出处),
  * 不再调用 game-formulas.ts 的黑盒函数,方便一眼看懂"升级一次要多少资源,加多少属性".
  * 传入"当前等级 level",返回对象描述的是"从 level 升到 level+1 这一级"的消耗与提升.
+ * 例外:makeEquip() 描述的是"造出 1 件装备"这一次操作(寒铁消耗按当前炼器等级计),不是"升一级",详见该函数 return 处注释.
  * 最后 materialCost() 给出「每一个材料消耗多少钱币」的兑换表(资源转换表与数值全部写在本文件内,不 import 其他文件).
  */
 // ============================== 2. 装备强化(强化石,3 维) ==============================
@@ -135,16 +136,24 @@ export function makeEquip (
   // 翅膀(Wing_CB_2):FinishLianQi 每次制造完成,人物 HP/ATK/DEF/无视防御 各 +(基数 + 每级×等级) flat
   const wingFlatAtk = wingCb2Level > 0 ? WING_CB2_BASE + WING_CB2_PER_LEVEL * wingCb2Level : 0;
   const totalAtk = atk + wingFlatAtk;
-  const costPerLevelUp = Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,lianqiLevel)); // 升一次炼器要多少寒铁 = 炼器等级(封顶 200 万)
+  const costPerLevelUp = Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,lianqiLevel)); // 造 1 件装备要多少寒铁 = 当前炼器等级(封顶 200 万,下限 1)
+
+  // 返回统一的 SystemGain(字段定义见文件头的 SystemGain 接口),目的是把「制作装备」和其它养成系统放进同一张表比性价比.
+  // 本函数描述[造出 1 件装备]这一次操作(NPC_EquipManager.cs):
+  //   扣寒铁 GetLianQiRemandProp()=PropHelper.GetRemandMat(炼器等级) → 制造进度满 → FinishLianQi 生成 1 件装备
+  //   + 加炼器经验 CulExp_Single=2+炼器等级 + 翅膀固定属性;
+  //   炼器等级靠经验累加升级(AddLianQiExp),升等级本身不额外花寒铁.
+  // 因此 atk 与 costPerLevelUp 是同一次操作的[收益]与[消耗],peratk 就是真实的"每 1 寒铁换到多少攻击".
+  // 注意:字段名 costPerLevelUp 沿用了其它系统的[升一级消耗],在这里实际是[造一件消耗],不要按字面理解.
   return {
-    atk:       totalAtk,
-    costPerLevelUp,
-    dims:      1,
-    level:     lianqiLevel,
-    peratk:    totalAtk / costPerLevelUp,
-    resource:  "寒铁",
-    system:    "制作装备",
-    totalGain: totalAtk
+    atk:       totalAtk,                   // 造 1 件装备人物实际拿到的攻击 = 装备主攻击 + 翅膀每造一件给的固定攻击
+    costPerLevelUp,                        // 造 1 件装备消耗的寒铁 = 当前炼器等级(GetRemandMat,封顶 200 万,下限 1;未叠加 Reduce_HanTie 研究减免)
+    dims:      1,                          // 受益维数:本对比表只统计「攻击」1 维(翅膀给的 HP/防御/无视防御不计入)
+    level:     lianqiLevel,               // 当前炼器等级:决定寒铁消耗,装备主攻击公式,装备属性%(研究23),每次制造给的经验
+    peratk:    totalAtk / costPerLevelUp, // 资源效率 = atk ÷ 寒铁,即"每 1 寒铁换到多少攻击",用于跨系统横向比大小
+    resource:  "寒铁",                    // 消耗资源名:造装备消耗寒铁(GetRemandMat)
+    system:    "制作装备",                // 系统名(对比表分组标签)
+    totalGain: totalAtk                   // 全维合计提升 = atk × dims;因 dims=1,数值上等于 atk
   };
 }
 
