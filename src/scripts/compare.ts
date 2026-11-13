@@ -3,7 +3,7 @@
  * 每个养成系统的「等级 → 提升属性」公式都[直接写在对应函数体内](含中文注释 + 反编译源码出处),
  * 不再调用 game-formulas.ts 的黑盒函数,方便一眼看懂"升级一次要多少资源,加多少属性".
  * 传入"当前等级 level",返回对象描述的是"从 level 升到 level+1 这一级"的消耗与提升.
- * 例外:makeEquip() 描述的是"造出 1 件装备"这一次操作(寒铁消耗按当前炼器等级计),不是"升一级",详见该函数 return 处注释.
+ * 例外:hantieTozhanli() 描述的是「投入寒铁 + 五彩神石 + 翅膀等级」后的完整制造模拟,不是单级对比,详见该函数注释.
  * 最后 materialCost() 给出「每一个材料消耗多少钱币」的兑换表(资源转换表与数值全部写在本文件内,不 import 其他文件).
  */
 // ============================== 2. 装备强化(强化石,3 维) ==============================
@@ -21,13 +21,6 @@ export interface SystemGain {
   costPerLevelUp: number; // [升级一次所需资源]从 level 升到 level+1 要花多少资源
   dims:           number; // 受益维数
   level:          number; // 当前等级(描述从该等级升到下一级的消耗/提升)
-
-  // [仅 makeEquip 有]每造出 1 件装备额外获得的内容;其它养成系统没有这一项,故声明为可选
-  per?: {
-    atk:       number; // 翅膀(Wing_CB_2)每造一件给的固定攻击(炼器等级 >999 才计入)
-    ignoreDef: number; // 翅膀每造一件给的无视防御,源码中与 atk 数值相同
-    zhizaoExp: number; // 每造一件装备获得的炼器经验(已含研究16/翅膀加成)
-  };
   peratk:    number; // 资源效率:每 1 单位资源换到每维多少属性 = atk / costPerLevelUp
   resource:  string; // 消耗的资源名
   system:    string; // 系统名
@@ -70,43 +63,207 @@ export interface ResearchReduce {
 // ---- 制作装备 / 品质 常量(数值均来自反编译源码,集中列出便于核对) ----
 const MAKE_EQUIP_COST_CAP = 200_0000; // 升一次炼器消耗寒铁封顶
 
-// 制作装备=生成一件装备,计算该装备的主攻击数值(含每次制造的翅膀固定加成).
-export function makeEquip (
-  lianqiLevel: number,            // 炼器等级(= 升一次炼器要多少寒铁)
-  qidingLevel = 1700,    // 器鼎等级(决定新装备品质期望;研究22 把器鼎等级计进装备属性,无上限) 默认1700级器鼎
-  lianqiwingLevel = 0               // 印记 Wing_CB_2(Mark 76)等级:每次制造给人物固定 +(75 + 25×等级) 到 HP/ATK/DEF/无视防御
-): SystemGain {
+// ============================== 寒铁 → 战力(完整制造模拟,18 属性全量) ==============================
+// 固定口径:研究全部点满(config/keji.json)、初始炼器 Lv.1/经验 0、器鼎 Lv.1700、品质 15、10 槽各 1 件.
+// 计算顺序:① 五彩神石把器鼎从 1700 继续往上顶 → 最终器鼎等级;
+//          ② 寒铁按源码逐级模拟制造 → 最终炼器等级 + 制造次数;
+//          ③ 10 件装备主属性按最终等级算;④ 翅膀加成按制造次数累计.
+// 本文件零 import;所有数值只取反编译源码与 config 导出,出处逐条标注.
 
-  // 单件主攻击(含随机期望 EQUIP_RANDOM_AVG):见上方常量注释中的公式
-  const atk = (30 // 基础固定值 30
-    + 25 * lianqiLevel // 每级炼器 +25
-    + 6 * 15 * lianqiLevel)  // 品质×炼器等级 ×6 品质最高是 15
-    * (0.4 * 15 + 1)  // 品质系数:(0.4×品质 + 1) 品质最高是 15
-    * 1.05  // 随机期望 1 - 1.1 也就是 1.05
-    * (1 + (50     // 研究18:装备属性 +1%/级 默认 50
-      + qidingLevel  // 研究22:器鼎等级计入(线性无上限,过1000仍持续放大装备主属性)
-      + lianqiLevel) / 100); // 研究23:炼器等级计入
-  const wingFlatAtk = 75    // 翅膀固定值基数
-    + 25  // 翅膀每级 +25(到 HP/ATK/DEF/无视防御 各) 固定值
-    * lianqiwingLevel;    // 翅膀每级
-  const totalAtk = atk + wingFlatAtk;
-  const costPerLevelUp = Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,lianqiLevel)); // 造 1 件装备要多少寒铁 = 当前炼器等级(封顶 200 万,下限 1)
-  const zhizaoExp = (2 // 固定值
-    + lianqiLevel) // 炼器等级
-    * (100 // 固定值
-      + 30000) / 100; // 固定值
-  const ignoreDef = wingFlatAtk; // 一样的
+// ---- 研究全满(固定值:config/keji.json 的 maxLevel × perLevel = 50) ----
+const RESEARCH_15_HANTIE_REDUCE = 50; // id15 节衣缩食:寒铁消耗 -1%/级×50(keji.json:183-193)
+const RESEARCH_16_EXP_ADD       = 50; // id16 日积月累:炼器经验 +1%/级×50(keji.json:195-205)
+const RESEARCH_18_EQUIP_ADD     = 50; // id18 精益求精:装备属性 +1%/级×50(keji.json:219-229)
+const RESEARCH_20_WUCAI_REDUCE  = 50; // id20 省吃俭用:五彩神石 -1%/级×50(keji.json)
+// 研究22/23 是印记开关(>0 即生效):GetEqui_PropertyAddition 把 QiLu_Level / LianQiLevel 计进装备属性%(PropHelper.cs:424-438)
+
+// ---- 固定口径 ----
+const LIANQI_START_LEVEL = 1;      // NPC_EquipManager.cs:36-41 构造函数 LianQiLevel = 1
+const LIANQI_START_EXP   = 0;      // 同上,初始 LianQiExp = 0
+const QIDING_START_LEVEL = 1700;   // 器鼎默认等级(品质概率表到此级 100% 品质 15)
+const EQUIP_PINZHI       = 15;     // 固定最高品质(config/equip-percent.json 最高档 pinzhi 15)
+const EQUIP_SLOT_COUNT   = 10;     // EquipType.cs:6-18 共 10 个槽位
+const PERCENT_BASE       = 100;    // 百分比基数
+
+// ---- 装备主属性公式固定值(PropHelper.cs:395-405 GenerateEquip) ----
+const EQUIP_BASE             = 30;   // (30 + 25×L + 6×品质×L) 基础值
+const EQUIP_PER_LEVEL        = 25;   // 每级炼器 +25
+const EQUIP_PINZHI_PER_LEVEL = 6;    // 品质×炼器等级 ×6
+const EQUIP_PINZHI_FACTOR    = 0.4;  // 品质系数 (0.4×品质 + 1)
+const EQUIP_RANDOM_MIN       = 1;    // Random.Range(1f, 1.1f) 下限
+const EQUIP_RANDOM_MAX       = 1.1;  // 上限(不含)
+const EQUIP_RANDOM_AVG       = (EQUIP_RANDOM_MIN + EQUIP_RANDOM_MAX) / 2; // 随机期望 1.05
+
+// ---- 经验 / 翅膀 / 器鼎公式固定值 ----
+const CRAFT_EXP_BASE      = 2;   // PropHelper.cs:478-485 CulExp_Single = 2 + 炼器等级
+const WING_FLAT_BASE      = 75;  // NPC_EquipManager.cs:119-126 翅膀固定值基数
+const WING_FLAT_PER_LEVEL = 25;  // 同上,翅膀每级 +25
+const WING_EXP_PER_LEVEL  = 3;   // :145-149 翅膀每级给经验倍率 +3%(整行覆盖研究16)
+const QILU_COST_BASE      = 10;  // lianqi.ts:72-76 / yingling-output.ts:2157 器鼎每档消耗基数
+const QILU_TIER_SIZE      = 5;   // 每 5 级一档
+
+// 属性全集:PropertyTypeEnum.cs:6-26 的 18 个枚举值,按枚举顺序排列,一个都不省略.
+// 低级(基础)RandomBaseProperty = 攻击/防御/生命/无视防御(Character_NPC.cs:52-58);
+// 高级 RandomMaxProperty = 命中/闪避/暴击/抗暴/暴伤/连击/反击/伤害加成/伤害减免(Character_NPC.cs:60-71).
+export interface AllProperties {
+  atk:            number; // 0  ATK 攻击[低级]
+  def:            number; // 1  DEF 防御[低级]
+  hp:             number; // 2  HP 生命[低级]
+  speed:          number; // 3  Speed 速度
+  mingZhong:      number; // 4  MingZhong 命中[高级]
+  shanBi:         number; // 5  ShanBi 闪避[高级]
+  baoJi:          number; // 6  BaoJi 暴击[高级]
+  baoJiResist:    number; // 7  BaoJi_Resist 抗暴[高级]
+  baoJiDamage:    number; // 8  BaoJi_Damage 暴伤[高级]
+  lianJi:         number; // 9  LianJi 连击[高级]
+  fanJi:          number; // 10 FanJi 反击[高级]
+  recovery:       number; // 11 Recovery 恢复
+  xiXie:          number; // 12 XiXie 吸血
+  damageAddition: number; // 13 DamageAddition 伤害加成[高级]
+  damageReduce:   number; // 14 DamageReduce 伤害减免[高级]
+  ignoreDef:      number; // 15 Igonore_DEF 无视防御/穿透[低级]
+  returnDamage:   number; // 16 RetrunDamage 反弹伤害
+  lucky:          number; // 17 Lucky 幸运
+}
+
+export interface HantieToZhanliResult {
+  equipSum:          AllProperties; // 最后获得的 10 件装备的所有属性和(10 槽各 1 件,按最终炼器等级)
+  wingSum:           AllProperties; // 翅膀附加的所有加成属性(按制造次数累计)
+  total:             AllProperties; // 上面两块逐属性相加
+  craftCount:        number;        // 制造次数
+  finalLianqiLevel:  number;        // 最终炼器等级
+  finalLianqiExp:    number;        // 最终等级内剩余经验
+  finalQidingLevel:  number;        // 最终器鼎等级
+  hantieUsed:        number;        // 消耗寒铁
+  hantieLeft:        number;        // 剩余寒铁
+  wucaiUsed:         number;        // 消耗五彩神石
+  wucaiLeft:         number;        // 剩余五彩神石
+}
+
+/**
+ * 投入寒铁(配合五彩神石、翅膀等级)后的完整制造模拟,返回 10 件装备与翅膀的全部 18 项属性.
+ * 词条(高级/低级特殊属性)按用户要求暂不计算,相关属性一律为 0,但字段全部保留.
+ * @param hantie 投入的寒铁数量
+ * @param wingLevel 翅膀 Wing_CB_2 印记等级(0 = 没翅膀)
+ * @param wucaiStones 投入的五彩神石数量(把器鼎从 Lv.1700 继续升级;默认 0 即保持 1700)
+ */
+export function hantieTozhanli (
+  hantie: number,
+  wingLevel: number,
+  wucaiStones = 0
+): HantieToZhanliResult {
+  // ① 器鼎:从 Lv.1700 起用五彩神石逐级往上顶(lianqi.ts:72-76,研究20 满 -50%)
+  const qiluCost = (level: number): number => Math.max(
+    1,
+    Math.round(QILU_COST_BASE * (Math.trunc((level - 1) / QILU_TIER_SIZE) + 1)
+      * (PERCENT_BASE - RESEARCH_20_WUCAI_REDUCE) / PERCENT_BASE)
+  );
+  let qidingLevel = QIDING_START_LEVEL;
+  let wucaiLeft = wucaiStones;
+  while (wucaiLeft >= qiluCost(qidingLevel)) {
+    wucaiLeft -= qiluCost(qidingLevel);
+    qidingLevel += 1;
+  }
+
+  // ② 寒铁单次消耗(PropHelper.cs:487-505 GetRemandMat):先 200 万封顶 → 研究15 满 -50% 四舍五入 → 下限 1 → 再 200 万封顶
+  // Cul_Percent_ToInt 用 MidpointRounding.AwayFromZero(ToolClass.cs:107-117),对正数等价于 Math.round
+  const hantieCost = (level: number): number => {
+    const capped = Math.min(MAKE_EQUIP_COST_CAP,level);
+    const discounted = Math.round(capped * (PERCENT_BASE - RESEARCH_15_HANTIE_REDUCE) / PERCENT_BASE);
+    return Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,discounted));
+  };
+
+  // 每级升级门槛(PropHelper.cs:467-476 GetLianQiLevelUpExp)
+  const LV_10 = 10; const LV_20 = 20; const LV_30 = 30; const LV_40 = 40;
+  const LV_10_PER = 20; const LV_20_BASE = 200; const LV_20_PER = 50;
+  const LV_30_BASE = 700; const LV_30_PER = 100;
+  const LV_40_BASE = 1700; const LV_40_PER = 200;
+  const LV_40_PLUS_BASE = 3700; const LV_40_PLUS_PER = 300;
+  const needExp = (level: number): number => {
+    if (level <= LV_10) {return level * LV_10_PER;}
+    if (level < LV_20) {return LV_20_BASE + LV_20_PER * (level - LV_10);}
+    if (level < LV_30) {return LV_30_BASE + LV_30_PER * (level - LV_20);}
+    if (level >= LV_40) {return LV_40_PLUS_BASE + LV_40_PLUS_PER * (level - LV_40);}
+    return LV_40_BASE + LV_40_PER * (level - LV_30);
+  };
+
+  // ③ 经验倍率:翅膀 >0 时整行覆盖研究16(NPC_EquipManager.cs:141-149),不是叠加
+  const expScale = wingLevel > 0
+    ? (PERCENT_BASE + WING_EXP_PER_LEVEL * wingLevel) / PERCENT_BASE
+    : (PERCENT_BASE + RESEARCH_16_EXP_ADD) / PERCENT_BASE;
+
+  // ④ 逐级模拟制造:每次按当时的炼器等级扣寒铁、结算经验、连升等级
+  let lianqiLevel = LIANQI_START_LEVEL;
+  let lianqiExp = LIANQI_START_EXP;
+  let hantieLeft = hantie;
+  let craftCount = 0;
+  while (hantieLeft >= hantieCost(lianqiLevel)) {
+    hantieLeft -= hantieCost(lianqiLevel);
+    craftCount += 1;
+    lianqiExp += (CRAFT_EXP_BASE + lianqiLevel) * expScale;
+    while (lianqiExp >= needExp(lianqiLevel)) {
+      lianqiExp -= needExp(lianqiLevel);
+      lianqiLevel += 1;
+    }
+  }
+
+  // ⑤ 单件装备主属性(品质固定 15);源码 :399-401 把 HP/DEF 覆盖成与 ATK 相同的 value,故三条数值相同
+  const additionPct = RESEARCH_18_EQUIP_ADD + qidingLevel + lianqiLevel; // GetEqui_PropertyAddition(研究18 + 器鼎 + 炼器)
+  const equipPropMul = (additionPct + PERCENT_BASE) / PERCENT_BASE;       // :395 num
+  const singleValue = (EQUIP_BASE + EQUIP_PER_LEVEL * lianqiLevel
+    + EQUIP_PINZHI_PER_LEVEL * EQUIP_PINZHI * lianqiLevel)
+    * (EQUIP_PINZHI_FACTOR * EQUIP_PINZHI + 1) * EQUIP_RANDOM_AVG * equipPropMul;
+  const slotTotal = singleValue * EQUIP_SLOT_COUNT; // 10 槽各 1 件
+
+  // ⑥ 翅膀:每造 1 件给 HP/ATK/DEF/无视防御 各 +(75 + 25×等级),按制造次数累计(源码 if num>0 才生效)
+  const wingFlat = wingLevel > 0 ? craftCount * (WING_FLAT_BASE + WING_FLAT_PER_LEVEL * wingLevel) : 0;
+
+  // 18 项属性全部列出,一个都不去除;词条暂不算的项置 0
+  const equipSum: AllProperties = {
+    atk: slotTotal, def: slotTotal, hp: slotTotal,
+    speed: 0, mingZhong: 0, shanBi: 0, baoJi: 0, baoJiResist: 0,
+    baoJiDamage: 0, lianJi: 0, fanJi: 0, recovery: 0, xiXie: 0,
+    damageAddition: 0, damageReduce: 0, ignoreDef: 0, returnDamage: 0, lucky: 0
+  };
+  const wingSum: AllProperties = {
+    atk: wingFlat, def: wingFlat, hp: wingFlat, ignoreDef: wingFlat,
+    speed: 0, mingZhong: 0, shanBi: 0, baoJi: 0, baoJiResist: 0,
+    baoJiDamage: 0, lianJi: 0, fanJi: 0, recovery: 0, xiXie: 0,
+    damageAddition: 0, damageReduce: 0, returnDamage: 0, lucky: 0
+  };
+  const total: AllProperties = {
+    atk:            equipSum.atk + wingSum.atk,
+    def:            equipSum.def + wingSum.def,
+    hp:             equipSum.hp + wingSum.hp,
+    speed:          equipSum.speed + wingSum.speed,
+    mingZhong:      equipSum.mingZhong + wingSum.mingZhong,
+    shanBi:         equipSum.shanBi + wingSum.shanBi,
+    baoJi:          equipSum.baoJi + wingSum.baoJi,
+    baoJiResist:    equipSum.baoJiResist + wingSum.baoJiResist,
+    baoJiDamage:    equipSum.baoJiDamage + wingSum.baoJiDamage,
+    lianJi:         equipSum.lianJi + wingSum.lianJi,
+    fanJi:          equipSum.fanJi + wingSum.fanJi,
+    recovery:       equipSum.recovery + wingSum.recovery,
+    xiXie:          equipSum.xiXie + wingSum.xiXie,
+    damageAddition: equipSum.damageAddition + wingSum.damageAddition,
+    damageReduce:   equipSum.damageReduce + wingSum.damageReduce,
+    ignoreDef:      equipSum.ignoreDef + wingSum.ignoreDef,
+    returnDamage:   equipSum.returnDamage + wingSum.returnDamage,
+    lucky:          equipSum.lucky + wingSum.lucky
+  };
+
   return {
-    atk,                   // 造 1 件装备人物实际拿到的攻击 = 装备主攻击 + 翅膀每造一件给的固定攻击
-    dims:      1,                          // 受益维数:本对比表只统计「攻击」1 维(翅膀给的 HP/防御/无视防御不计入)
-    level:     lianqiLevel,               // 当前炼器等级:决定寒铁消耗,装备主攻击公式,装备属性%(研究23),每次制造给的经验
-    per:       {atk: lianqiLevel > 999 ? wingFlatAtk : 0,ignoreDef,zhizaoExp},       // 每次制造获得
-    peratk:    totalAtk / costPerLevelUp, // 资源效率 = atk ÷ 寒铁,即"每 1 寒铁换到多少攻击",用于跨系统横向比大小
-    resource:  "寒铁",                    // 消耗资源名:造装备消耗寒铁(GetRemandMat)
-    system:    "制作装备",                // 系统名(对比表分组标签)
-    totalGain: totalAtk,              // 全维合计提升 = atk × dims;因 dims=1,数值上等于 atk
-    zhizaoExp:
-      costPerLevelUp                        // 造 1 件装备消耗的寒铁 = 当前炼器等级(GetRemandMat,封顶 200 万,下限 1;未叠加 Reduce_HanTie 研究减免)
+    equipSum,
+    wingSum,
+    total,
+    craftCount,
+    finalLianqiLevel: lianqiLevel,
+    finalLianqiExp:   lianqiExp,
+    finalQidingLevel: qidingLevel,
+    hantieUsed:       hantie - hantieLeft,
+    hantieLeft,
+    wucaiUsed:        wucaiStones - wucaiLeft,
+    wucaiLeft
   };
 }
 
@@ -254,21 +411,3 @@ export function zhizaoLevelUp (exp: number): number {
   return level;
 }
 
-// ============================== 9. 转职强化(历史本纪,4 维) ==============================
-// ZhuanZhiManager.cs:35-39 GetStrengthRemand(消耗=10+10L) / :16-19 GetNextAddition(每级四维各+20+50L)
-// 升级一次消耗(历史本纪) = 10 + 10*L
-// 升级一次每维提升 = 20 + 50*L
-export function zhuanZhi (level: number): SystemGain {
-  const costPerLevelUp = 10 + 10 * level; // 升级一次要多少历史本纪
-  const atk = 20 + 50 * level;     // 每维提升 = 20+50L
-  return {
-    atk,
-    costPerLevelUp,
-    dims:      4,
-    level,
-    peratk:    atk / costPerLevelUp,
-    resource:  "历史本纪",
-    system:    "转职强化",
-    totalGain: atk * 4
-  };
-}
