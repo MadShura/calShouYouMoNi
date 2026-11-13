@@ -25,6 +25,12 @@ export interface SystemGain {
   resource:       string; // 消耗的资源名
   system:         string; // 系统名
   totalGain:      number; // [升级一次全维合计提升]= atk × dims
+  // [仅 makeEquip 有]每造出 1 件装备额外获得的内容;其它养成系统没有这一项,故声明为可选
+  per?: {
+    atk:       number; // 翅膀(Wing_CB_2)每造一件给的固定攻击(炼器等级 >999 才计入)
+    ignoreDef: number; // 翅膀每造一件给的无视防御,源码中与 atk 数值相同
+    zhizaoExp: number; // 每造一件装备获得的炼器经验(已含研究16/翅膀加成)
+  };
 }
 
 // 每一个材料 消耗多少钱币(含 30% 研究减免,保留小数点,不取整)—— 直接写死在此处,
