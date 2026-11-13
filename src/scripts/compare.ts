@@ -7,8 +7,8 @@
  * 最后 materialCost() 给出「每一个材料消耗多少钱币」的兑换表(资源转换表与数值全部写在本文件内,不 import 其他文件).
  */
 // ============================== 2. 装备强化(强化石,3 维) ==============================
-// Equip_Using.cs:40-71 GetStrengthRemand(消耗=3+2L, L≥1000000 时 ×5)
-// :19-22 GetNextAddition(每级三维各+10+10L, L≥1000000 时 ×5)
+// Equip_Using.cs:40-54 GetStrengthRemand(消耗=3+2L,先按研究25 减免取整,再在 L≥1000000 时 ×5)
+// :19-22 GetNextAddition(每级三维各+10+10L);×5 分支在 Strength(:28-37)与 ComputeStrengthAddByLevel(:86-98),不在 GetNextAddition
 // 平均强化:角色 10 个装备槽都强化到同等级的合计(yingling-output.ts:2196 注释"10 槽平均强化").
 export interface EquipStrengthenResult {
   average: SystemGain; // 平均强化:全部 slots 槽都升级一级的合计(= 单件 × 槽数)
@@ -71,10 +71,12 @@ const MAKE_EQUIP_COST_CAP = 200_0000; // 升一次炼器消耗寒铁封顶
 // 本文件零 import;所有数值只取反编译源码与 config 导出,出处逐条标注.
 
 // ---- 研究全满(固定值:config/keji.json 的 maxLevel × perLevel = 50) ----
-const RESEARCH_15_HANTIE_REDUCE = 50; // id15 节衣缩食:寒铁消耗 -1%/级×50(keji.json:183-193)
-const RESEARCH_16_EXP_ADD       = 50; // id16 日积月累:炼器经验 +1%/级×50(keji.json:195-205)
-const RESEARCH_18_EQUIP_ADD     = 50; // id18 精益求精:装备属性 +1%/级×50(keji.json:219-229)
-const RESEARCH_20_WUCAI_REDUCE  = 50; // id20 省吃俭用:五彩神石 -1%/级×50(keji.json)
+const RESEARCH_15_HANTIE_REDUCE   = 50; // id15 节衣缩食:寒铁消耗 -1%/级×50(keji.json:183-193)
+const RESEARCH_16_EXP_ADD         = 50; // id16 日积月累:炼器经验 +1%/级×50(keji.json:195-205)
+const RESEARCH_18_EQUIP_ADD       = 50; // id18 精益求精:装备属性 +1%/级×50(keji.json:219-229)
+const RESEARCH_20_WUCAI_REDUCE    = 50; // id20 省吃俭用:五彩神石 -1%/级×50(keji.json)
+const RESEARCH_24_RONGLIAN_ADD    = 50; // id24 聚沙成塔:熔炼强化石产出 +1%/级×50(keji.json:291-301)
+const RESEARCH_25_STRENGTH_REDUCE = 50; // id25 精打细算:强化石消耗 -1%/级×50(keji.json:302-312)
 // 研究22/23 是印记开关(>0 即生效):GetEqui_PropertyAddition 把 QiLu_Level / LianQiLevel 计进装备属性%(PropHelper.cs:424-438)
 
 // ---- 固定口径 ----
@@ -101,6 +103,21 @@ const WING_FLAT_PER_LEVEL = 25;  // 同上,翅膀每级 +25
 const WING_EXP_PER_LEVEL  = 3;   // :145-149 翅膀每级给经验倍率 +3%(整行覆盖研究16)
 const QILU_COST_BASE      = 10;  // lianqi.ts:72-76 / yingling-output.ts:2157 器鼎每档消耗基数
 const QILU_TIER_SIZE      = 5;   // 每 5 级一档
+
+// ---- 分解(熔炼)→ 强化石固定值(GameRecorder.cs:386-407 GetRongLianEnding / PropHelper.cs:324-335 RongLianEuip) ----
+const RONGLIAN_LEVEL_DIVISOR = 5;   // 每件贡献 ⌊装备等级/5⌋ + 品质(装备等级 = 制造当时的炼器等级);强化石 PropID=5(config/names.json:7)
+// 整批求和后一次性乘 (100+研究24)/100,只取整一次(Cul_Percent_ToInt,ToolClass.cs:113-117,正数等价于 Math.round)
+
+// ---- 强化提升 / 消耗固定值(Equip_Using.cs:19-22,28-37,40-54,62-98,100-122,125-163) ----
+const STRENGTH_COST_BASE       = 3;    // 每级消耗 3 + 2L 颗强化石
+const STRENGTH_COST_PER_LEVEL  = 2;
+const STRENGTH_ADD_BASE        = 10;   // 每级 HP/ATK/DEF 各 +(10 + 10L) 固定值(L 从 0 起算)
+const STRENGTH_ADD_PER_LEVEL   = 10;
+const STRENGTH_HIGH_THRESHOLD  = 100_0000; // L≥100 万时该级消耗与提升各 ×5
+const STRENGTH_HIGH_MULTIPLIER = 5;
+const STRENGTH_COST_CAP        = 2147483646; // 消耗上限(Equip_Using.cs:107,123)
+const STRENGTH_COST_MIN        = 1;          // 批量路径下限 1(:79-82)
+// 强化只加 HP/ATK/DEF 三条固定值,无穿透/速度/百分比(:159-161)
 
 // 属性全集:PropertyTypeEnum.cs:6-26 的 18 个枚举值,按枚举顺序排列,一个都不省略.
 // 低级(基础)RandomBaseProperty = 攻击/防御/生命/无视防御(Character_NPC.cs:52-58);
@@ -138,6 +155,8 @@ export interface HantieToZhanliResult {
   hantieLeft:        number;        // 剩余寒铁
   wucaiUsed:         number;        // 消耗五彩神石
   wucaiLeft:         number;        // 剩余五彩神石
+  ronglianStones:    number;        // 制造数 − 10 件(留身上)熔炼出的强化石总数
+  ronglianCount:     number;        // 被熔炼的装备件数
 }
 
 /**
@@ -193,19 +212,32 @@ export function hantieTozhanli (
     : (PERCENT_BASE + RESEARCH_16_EXP_ADD) / PERCENT_BASE;
 
   // ④ 逐级模拟制造:每次按当时的炼器等级扣寒铁、结算经验、连升等级
+  // 同时记录每件装备的等级(源码 GenrateRandomEquip 在 AddLianQiExp 之前,故装备等级 = 升级前的炼器等级)
+  // 滑动窗口保留最后造的 10 件留身上;更早的每件计入熔炼:⌊等级/5⌋ + 品质(GameRecorder.cs:394)
   let lianqiLevel = LIANQI_START_LEVEL;
   let lianqiExp = LIANQI_START_EXP;
   let hantieLeft = hantie;
   let craftCount = 0;
+  let ronglianSum = 0;    // 可熔炼装备的 ⌊等级/5⌋+品质 逐件累计
+  let ronglianCount = 0;  // 被熔炼件数
+  const wornLevels: number[] = []; // 最后造的 10 件(留身上,不熔炼)
   while (hantieLeft >= hantieCost(lianqiLevel)) {
     hantieLeft -= hantieCost(lianqiLevel);
     craftCount += 1;
+    wornLevels.push(lianqiLevel);
+    if (wornLevels.length > EQUIP_SLOT_COUNT) {
+      const older = wornLevels.shift() ?? 0;
+      ronglianSum += Math.trunc(older / RONGLIAN_LEVEL_DIVISOR) + EQUIP_PINZHI;
+      ronglianCount += 1;
+    }
     lianqiExp += (CRAFT_EXP_BASE + lianqiLevel) * expScale;
     while (lianqiExp >= needExp(lianqiLevel)) {
       lianqiExp -= needExp(lianqiLevel);
       lianqiLevel += 1;
     }
   }
+  // 整批求和后一次性乘 (100+研究24)/100,只取整一次(GetRongLianEnding :401-402)
+  const ronglianStones = Math.round(ronglianSum * (PERCENT_BASE + RESEARCH_24_RONGLIAN_ADD) / PERCENT_BASE);
 
   // ⑤ 单件装备主属性(品质固定 15);源码 :399-401 把 HP/DEF 覆盖成与 ATK 相同的 value,故三条数值相同
   const additionPct = RESEARCH_18_EQUIP_ADD + qidingLevel + lianqiLevel; // GetEqui_PropertyAddition(研究18 + 器鼎 + 炼器)
@@ -263,8 +295,86 @@ export function hantieTozhanli (
     hantieUsed:       hantie - hantieLeft,
     hantieLeft,
     wucaiUsed:        wucaiStones - wucaiLeft,
-    wucaiLeft
+    wucaiLeft,
+    ronglianStones,
+    ronglianCount
   };
+}
+
+// ============================== 强化石 → 战力(18 属性全量) ==============================
+// 源码 Equip_Using.cs:62-84 ComputeStrengthCostByLevel / :86-98 ComputeStrengthAddByLevel / :100-122 CulMaxStrengthTimes
+// 每级消耗:⌊(3+2L) × (100−研究25)/100⌋(四舍五入) → L≥100万 再 ×5 → 上下限;每级提升:10+10L,L≥100万 ×5
+
+// 单个槽在 level 级时的强化石消耗
+function strengthCost (level: number): number {
+  const base = STRENGTH_COST_BASE + STRENGTH_COST_PER_LEVEL * level;
+  let cost = Math.round(Math.min(STRENGTH_COST_CAP,base)
+    * (PERCENT_BASE - RESEARCH_25_STRENGTH_REDUCE) / PERCENT_BASE);
+  if (level >= STRENGTH_HIGH_THRESHOLD) {
+    cost *= STRENGTH_HIGH_MULTIPLIER;
+  }
+  return Math.max(STRENGTH_COST_MIN,Math.min(STRENGTH_COST_CAP,cost));
+}
+
+// 单个槽从 level 升一级,HP/ATK/DEF 每条固定值的增量
+function strengthAdd (level: number): number {
+  const add = STRENGTH_ADD_BASE + STRENGTH_ADD_PER_LEVEL * level;
+  return level >= STRENGTH_HIGH_THRESHOLD ? add * STRENGTH_HIGH_MULTIPLIER : add;
+}
+
+// 一个槽从 startLevel 起,用 stones 颗强化石逐级模拟升级,返回累计每维加成 / 最终等级 / 剩余石头
+function simulateStrengthSlot (
+  stones: number,
+  startLevel = 0
+): {add: number; level: number; left: number} {
+  let left = stones;
+  let level = startLevel;
+  let add = 0;
+  while (level < STRENGTH_COST_CAP) {
+    const cost = strengthCost(level);
+    if (left < cost) {break;}
+    left -= cost;
+    add += strengthAdd(level);
+    level += 1;
+  }
+  return {add,level,left};
+}
+
+// 把「每维累计固定值」铺成 18 项属性:只有 HP/ATK/DEF 三条有值,其余 15 项为 0(一个都不省略)
+function strengthProps (add: number): AllProperties {
+  return {
+    atk: add, def: add, hp: add,
+    speed: 0, mingZhong: 0, shanBi: 0, baoJi: 0, baoJiResist: 0,
+    baoJiDamage: 0, lianJi: 0, fanJi: 0, recovery: 0, xiXie: 0,
+    damageAddition: 0, damageReduce: 0, ignoreDef: 0, returnDamage: 0, lucky: 0
+  };
+}
+
+/**
+ * 强化一个装备:全部强化石投入单个槽,从 Lv.0 起逐级模拟扣石头,直到不够升下一级.
+ * 源码 CulMaxStrengthTimes(Equip_Using.cs:100-122) + StrengthBatch(:125-163).
+ * @param stones 投入的强化石数量
+ * @returns 18 项属性(HP/ATK/DEF 各为累计固定值,其余 15 项为 0)
+ */
+export function qianghuazhiTozhanli1 (stones: number): AllProperties {
+  return strengthProps(simulateStrengthSlot(stones).add);
+}
+
+/**
+ * 平均强化(模拟源码自动强化多次按下后的平均结果):石头平分 10 份,每槽各自逐级升;
+ * 未均分的零头集中给其中一个槽,从该槽当前等级继续升到耗尽.
+ * 源码 AutoStrength(NPC_EquipManager.cs:275-289)每次挑 CurStrength 最低的槽批量升,多次按下等价于 10 槽趋于同级.
+ * @param stones 投入的强化石数量
+ * @returns 18 项属性(HP/ATK/DEF 各为 10 槽累计固定值,其余 15 项为 0)
+ */
+export function qianghuazhiTozhanli2 (stones: number): AllProperties {
+  const perSlot = Math.floor(stones / EQUIP_SLOT_COUNT);   // 每槽平分到的石头
+  const slot = simulateStrengthSlot(perSlot);              // 10 槽同级,只需算一次
+  const zeroHead = stones - perSlot * EQUIP_SLOT_COUNT     // 未均分完的零头
+    + slot.left * EQUIP_SLOT_COUNT;                       // 各槽升不动后剩下的石头
+  // 零头集中给一个槽,从它当前等级继续升到耗尽
+  const extra = simulateStrengthSlot(zeroHead,slot.level);
+  return strengthProps(slot.add * EQUIP_SLOT_COUNT + extra.add);
 }
 
 // 通用函数:给定「每材料数量 quantity」(默认 1,即每一个),返回各材料消耗的钱币(含 30% 研究减免,保留小数点,不取整).
