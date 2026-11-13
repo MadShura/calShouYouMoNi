@@ -1,5 +1,5 @@
 /**
- * coin-to-zhanli.ts — 固定钱币 → 11 种材料 → 12 个 tozhanli 方法的完整对比(只导出一个方法)
+ * coin-to-zhanli.ts — 固定钱币 → 11 种材料 → 12 个 tozhanli 方法的完整对比(导出全量对比 compareByCoin 与精简打印辅助方法 printKeyProps)
  * 钱币换算按源码 PropHelper.GetPropValue(:29-38) 的「整批一次取整」:
  * round(单价 × 数量) ≤ 钱币 的最大整数数量；单价直接取 data.ts 的 MATERIAL_COST_PER_UNIT
  * (表内数值已是 ValueCost × (100−研究44 商店折扣)/100,不再二次打折).
@@ -148,6 +148,20 @@ export function compareByCoin (money = 1_0000_0000) {
   }));
 }
 
-// 直接执行本文件时按攻击降序输出 12 条完整结果.
-// 用 JSON.stringify 展开,避免 console.log 的深层嵌套被 [Object] 省略而看不到全部字段.
-console.log(JSON.stringify(compareByCoin(),null,2));
+// 精简打印只保留这 9 项属性;后 5 项带 % 后缀,是 config/property.json 里 percent=1 的百分比显示属性.
+const KEY_PROPS = ["伤害加成%","命中%","幸运%","攻击","暴击%","暴击伤害%","穿透","速度","闪避%"] as const;
+
+/**
+ * 辅助方法:按攻击降序打印 12 条精简结果,每条一行中文文本,只列 KEY_PROPS 的 9 项属性(值为 0 也显示).
+ * compareByCoin 仍返回全量结果;直接执行本文件时只调用本方法,以大幅减少输出内容.
+ * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
+ */
+export function printKeyProps (money = 1_0000_0000): void {
+  for (const row of compareByCoin(money)) {
+    const props = KEY_PROPS.map(key => `${key}=${row.结果[key] ?? "0"}`).join(" ");
+    console.log(`${row.材料} ${row.方法} ${props}`);
+  }
+}
+
+// 直接执行本文件时只打印精简结果:12 行,每行一条中文文本.
+printKeyProps();

@@ -188,7 +188,7 @@ export const RAGE_SECONDS = 1.1;
 export const NORMAL_SECONDS = 0.85;
 
 // 幸运 = 基础 50000 + 研究 14 洪福齐天满级 10(keji.json id14:perLevel 1 × maxLevel 10)
-export const BASE_LUCKY = 50_000;
+export const BASE_LUCKY = 50000;
 export const VIP_LEVEL = 16;
 
 // VIPHelper.GetEffect:VIP_YuLiDrop = Lv×20,VIP_PercentAddCount = min(100, Lv/2),VIP_SaoDangSpeed = Lv×10
@@ -412,7 +412,7 @@ export const WING_FLAT_PER_LEVEL = 25;  // 同上,翅膀每级 +25
 export const WING_EXP_PER_LEVEL = 3;   // :145-149 翅膀每级给经验倍率 +3%(整行覆盖研究16)
 export const QILU_COST_BASE = 10;  // lianqi.ts:72-76 / yingling-output.ts:2157 器鼎每档消耗基数
 export const QILU_TIER_SIZE = 5;   // 每 5 级一档
-export const QIDING_LEVEL_CAP = 2147483645; // NPC_EquipManager.cs:155-166 等级上限
+export const QIDING_LEVEL_CAP = 21_4748_3645; // NPC_EquipManager.cs:155-166 等级上限
 
 // ---- 分解(熔炼)→ 强化石固定值(GameRecorder.cs:386-407 GetRongLianEnding / PropHelper.cs:324-335 RongLianEuip) ----
 export const RONGLIAN_LEVEL_DIVISOR = 5;   // 每件贡献 ⌊装备等级/5⌋ + 品质(装备等级 = 制造当时的炼器等级);强化石 PropID=5(config/names.json:7)
@@ -425,7 +425,7 @@ export const STRENGTH_ADD_BASE = 10;   // 每级 HP/ATK/DEF 各 +(10 + 10L) 固�
 export const STRENGTH_ADD_PER_LEVEL = 10;
 export const STRENGTH_HIGH_THRESHOLD = 100_0000; // L≥100 万时该级消耗与提升各 ×5
 export const STRENGTH_HIGH_MULTIPLIER = 5;
-export const STRENGTH_COST_CAP = 2147483646; // 消耗上限(Equip_Using.cs:107,123)
+export const STRENGTH_COST_CAP = 21_4748_3646; // 消耗上限(Equip_Using.cs:107,123)
 export const STRENGTH_COST_MIN = 1;          // 批量路径下限 1(:79-82)
 
 // 强化只加 HP/ATK/DEF 三条固定值,无穿透/速度/百分比(:159-161)
@@ -517,7 +517,7 @@ export const PROPERTY_TO_KEY: Record<number,keyof AllProperties> = {
 export const SHEN_BING_FIRE_HIT_TRACKS = 8;    // Fire_Lian=命中 的 8 件神兵(yingling-output.ts:49)
 export const SHEN_BING_WATER_DAMAGE_TRACKS = 2; // Water_Lian=伤害加成 2 件(:52)
 export const SHEN_BING_WATER_CRIT_TRACKS = 6;   // Water_Lian=暴伤 6 件(:53)
-export const SHEN_BING_COST_PER_LEVEL = 10_000;
+export const SHEN_BING_COST_PER_LEVEL = 10000;
 export const SHEN_BING_COST_CAP = 100_0000;
 export const SHEN_BING_MAX_LV = 100; // 神兵解封后 TuPo 一次 MaxLv+=100(ShenBingRecorder.cs:85-91)
 
@@ -529,7 +529,7 @@ export const ZHUANZHI_COST_PER_LEVEL = 10;
 export const ZHUANZHI_ADD_BASE = 20;
 export const ZHUANZHI_ADD_PER_LEVEL = 50;
 export const ZHUANZHI_SPEED_PER_LEVEL = 1;
-export const ZHUANZHI_LEVEL_CAP = 2147483646; // :57,91
+export const ZHUANZHI_LEVEL_CAP = 21_4748_3646; // :57,91
 
 // ---- 御灵宝典(84) → 御灵师:GameRecorder.cs:632-669,697-711 / PropEffect_GetYuLingShiEXP.cs:23-32 ----
 // ChanYuLi 把每本 Params_1=100 乘 (100+研究48)/100 = 200 御力；CulLevel_Up_Remand 源码无研究减免.
@@ -538,7 +538,7 @@ export const YULINGSHI_START_EXP = 0;
 export const BOOK_YULI_BASE = 100;
 export const RESEARCH_48_BOOK_EXP_ADD = 100;
 export const YULING_TUPO_COST = 500; // 每 10 级一次突破,每次 500 个 prop81(视为已有,不扣本方法材料)
-export const YULING_LEVEL_CAP = 2147483646;
+export const YULING_LEVEL_CAP = 21_4748_3646;
 
 // ---- 灵晶(8) → 解锁阵法 + 圣兽3(青龙):ZhenFaRecorder.cs:29-32 / ShengShou_Record.cs:33-57,65-95 ----
 // 源码 GetJieSuoRemand = 100 个/阵法,9 个阵法共 900；青龙 Property1/Property2 = 攻击/防御,
@@ -548,12 +548,12 @@ export const ZHENFA_UNLOCK_COUNT = 9;
 export const SHENG_SHOU_START_LEVEL = 0;
 export const SHENG_SHOU_COST_BASE = 10;
 export const SHENG_SHOU_COST_PER_LEVEL = 10;
-export const SHENG_SHOU_COST_CAP = 50_000;
+export const SHENG_SHOU_COST_CAP = 50000;
 export const SHENG_SHOU_ADD_BASE = 20;
 export const SHENG_SHOU_ADD_PER_LEVEL = 50;
 export const SHENG_SHOU_SPECIAL_CYCLE = 250;
-export const SHENG_SHOU_MAX_ROUND = 10_000; // 通天塔 1 万层(CheckMaxOK / CulMaxStrengthTimes 的 maxRound)
-export const SHENG_SHOU_LEVEL_CAP = 2147483646;
+export const SHENG_SHOU_MAX_ROUND = 10000; // 通天塔 1 万层(CheckMaxOK / CulMaxStrengthTimes 的 maxRound)
+export const SHENG_SHOU_LEVEL_CAP = 21_4748_3646;
 
 // ---- 灵纹(7) → 阵法:ZhenFaRecorder.cs:22-40,82-91,93-129 ----
 // 初始 Level=1,四维 Base_Value 各 500(属初始态,不计入增量)；研究 26 满 -50%.
@@ -563,7 +563,7 @@ export const ZHENFA_COST_PER_LEVEL = 20;
 export const RESEARCH_26_LINGWEN_REDUCE = 50;
 export const ZHENFA_ADD_BASE = 200;
 export const ZHENFA_ADD_PER_LEVEL = 35;
-export const ZHENFA_LEVEL_CAP = 2147483646;
+export const ZHENFA_LEVEL_CAP = 21_4748_3646;
 
 // ---- 破境石(3) → 英灵等级上限:Character_YingLing.cs:294-309,352-367 ----
 // Max_Level 初始 500,Star 初始 0；GetLevelUpStarEffect 的四维用 value:true → PercentAddition +5%,
