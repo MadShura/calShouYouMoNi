@@ -21,16 +21,17 @@ export interface SystemGain {
   costPerLevelUp: number; // [升级一次所需资源]从 level 升到 level+1 要花多少资源
   dims:           number; // 受益维数
   level:          number; // 当前等级(描述从该等级升到下一级的消耗/提升)
-  peratk:         number; // 资源效率:每 1 单位资源换到每维多少属性 = atk / costPerLevelUp
-  resource:       string; // 消耗的资源名
-  system:         string; // 系统名
-  totalGain:      number; // [升级一次全维合计提升]= atk × dims
+
   // [仅 makeEquip 有]每造出 1 件装备额外获得的内容;其它养成系统没有这一项,故声明为可选
   per?: {
     atk:       number; // 翅膀(Wing_CB_2)每造一件给的固定攻击(炼器等级 >999 才计入)
     ignoreDef: number; // 翅膀每造一件给的无视防御,源码中与 atk 数值相同
     zhizaoExp: number; // 每造一件装备获得的炼器经验(已含研究16/翅膀加成)
   };
+  peratk:    number; // 资源效率:每 1 单位资源换到每维多少属性 = atk / costPerLevelUp
+  resource:  string; // 消耗的资源名
+  system:    string; // 系统名
+  totalGain: number; // [升级一次全维合计提升]= atk × dims
 }
 
 // 每一个材料 消耗多少钱币(含 30% 研究减免,保留小数点,不取整)—— 直接写死在此处,
@@ -86,7 +87,7 @@ export function makeEquip (
       + qidingLevel  // 研究22:器鼎等级计入(线性无上限,过1000仍持续放大装备主属性)
       + lianqiLevel) / 100); // 研究23:炼器等级计入
   const wingFlatAtk = 75    // 翅膀固定值基数
-    + 20  // 翅膀每级 +25(到 HP/ATK/DEF/无视防御 各) 固定值
+    + 25  // 翅膀每级 +25(到 HP/ATK/DEF/无视防御 各) 固定值
     * lianqiwingLevel;    // 翅膀每级
   const totalAtk = atk + wingFlatAtk;
   const costPerLevelUp = Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,lianqiLevel)); // 造 1 件装备要多少寒铁 = 当前炼器等级(封顶 200 万,下限 1)
