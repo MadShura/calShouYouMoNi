@@ -1,14 +1,17 @@
 /**
  * coin-to-zhanli.ts — 固定钱币 → 11 种材料 → 12 个 tozhanli 方法的完整对比(只导出一个方法)
  * 钱币换算按源码 PropHelper.GetPropValue(:29-38) 的「整批一次取整」:
- *   round(单价 × 数量) ≤ 钱币 的最大整数数量；单价直接取 data.ts 的 MATERIAL_COST_PER_UNIT
- *   (表内数值已是 ValueCost × (100−研究44 商店折扣)/100,不再二次打折).
+ * round(单价 × 数量) ≤ 钱币 的最大整数数量；单价直接取 data.ts 的 MATERIAL_COST_PER_UNIT
+ * (表内数值已是 ValueCost × (100−研究44 商店折扣)/100,不再二次打折).
  * 12 条结果先按「攻击 atk」的数值降序排序,再按 DESIGN.md:89 的口径转成展示结果:
- *   数字用 readSave.ts 的 formatSuoXie(ToolClass.TranslateNumsToSuoXie:10 万以下整数,
- *   10 万起按 万/亿/兆/京… 每四位递进),字段名统一译成中文；
- *   所以 compareByCoin 返回的所有数值都是字符串(排序在格式化之前完成,不受影响).
+ * 数字用 readSave.ts 的 formatSuoXie(ToolClass.TranslateNumsToSuoXie:10 万以下整数,
+ * 10 万起按 万/亿/兆/京... 每四位递进),字段名统一译成中文；
+ * 所以 compareByCoin 返回的所有数值都是字符串(排序在格式化之前完成,不受影响).
+ * 百分比字段名按源码核查结果标注:config/property.json 里 percent=1 的 13 项属性
+ * (BattleData_Recorder.GetFinal 直接返回 True_Base_Value,GetZhanLi 把该值进乘区数组)数值即百分比点数,
+ * 字段名加 % 后缀但数值不改;PercentAddition 类字段已含「百分比」字样,保持不动.
  * 结果结构说明:9 个新增方法为 ToZhanliResult(18 项固定值 + 18 项百分比 + 过程量),
- *   寒铁为 HantieToZhanliResult,强化石两个方法为 AllProperties;缺失字段即源码不产出该属性.
+ * 寒铁为 HantieToZhanliResult,强化石两个方法为 AllProperties;缺失字段即源码不产出该属性.
  */
 import {
   hantieTozhanli,
@@ -27,26 +30,29 @@ import {
 import {MATERIAL_COST_PER_UNIT} from "./data.ts";
 import {formatSuoXie} from "./readSave.ts";
 
-// 英文字段名 → 中文:覆盖 3 种返回类型的全部数值字段(18 项固定值、18 项百分比、7 个过程量、
+// 英文字段名 → 中文:覆盖 3 种返回类型的全部数值字段(18 项固定值,18 项百分比,7 个过程量,
 // 寒铁特有的 10 个过程量);行级的 攻击/数量/方法/材料/结果 已是中文,不在表内.按字母序排列.
+// 13 项 percent=1 属性的数值是百分比点数(源码 GetFinal 不乘,GetZhanLi 进乘区数组),字段名加 % 后缀;
+// PercentAddition 类(xxxPercent)与 特殊百分比/战力百分比 本就是百分比且名字已标明,保持不动;
+// 5 项 percent=0 属性(攻/防/血/速/穿透)与全部计数/等级/材料过程量是固定值,不加 %.
 const FIELD_NAMES: Record<string,string> = {
   atk:                   "攻击",
   atkPercent:            "攻击百分比",
-  baoJi:                 "暴击",
-  baoJiDamage:           "暴击伤害",
+  baoJi:                 "暴击%",
+  baoJiDamage:           "暴击伤害%",
   baoJiDamagePercent:    "暴击伤害百分比",
   baoJiPercent:          "暴击百分比",
-  baoJiResist:           "抗暴",
+  baoJiResist:           "抗暴%",
   baoJiResistPercent:    "抗暴百分比",
   count:                 "次数",
   craftCount:            "制造次数",
-  damageAddition:        "伤害加成",
+  damageAddition:        "伤害加成%",
   damageAdditionPercent: "伤害加成百分比",
-  damageReduce:          "伤害减免",
+  damageReduce:          "伤害减免%",
   damageReducePercent:   "伤害减免百分比",
   def:                   "防御",
   defPercent:            "防御百分比",
-  fanJi:                 "反击",
+  fanJi:                 "反击%",
   fanJiPercent:          "反击百分比",
   finalLevel:            "最终等级",
   finalLianqiExp:        "最终炼器经验",
@@ -59,20 +65,20 @@ const FIELD_NAMES: Record<string,string> = {
   ignoreDef:             "穿透",
   ignoreDefPercent:      "穿透百分比",
   left:                  "剩余材料",
-  lianJi:                "连击",
+  lianJi:                "连击%",
   lianJiPercent:         "连击百分比",
-  lucky:                 "幸运",
+  lucky:                 "幸运%",
   luckyPercent:          "幸运百分比",
   maxLevel:              "等级上限",
-  mingZhong:             "命中",
+  mingZhong:             "命中%",
   mingZhongPercent:      "命中百分比",
-  recovery:              "恢复",
+  recovery:              "恢复%",
   recoveryPercent:       "恢复百分比",
-  returnDamage:          "反弹伤害",
+  returnDamage:          "反弹伤害%",
   returnDamagePercent:   "反弹伤害百分比",
   ronglianCount:         "熔炼件数",
   ronglianStones:        "熔炼强化石",
-  shanBi:                "闪避",
+  shanBi:                "闪避%",
   shanBiPercent:         "闪避百分比",
   specialPercent:        "特殊百分比",
   speed:                 "速度",
@@ -80,14 +86,13 @@ const FIELD_NAMES: Record<string,string> = {
   used:                  "消耗材料",
   wucaiLeft:             "剩余五彩神石",
   wucaiUsed:             "消耗五彩神石",
-  xiXie:                 "吸血",
+  xiXie:                 "吸血%",
   xiXiePercent:          "吸血百分比",
   zhanliPercent:         "战力百分比"
 };
 
 /**
- * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 12 个 tozhanli 方法,
- * 按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
+ * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 12 个 tozhanli 方法, 按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
  */
 export function compareByCoin (money = 1_0000_0000) {
