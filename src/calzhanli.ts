@@ -1,4 +1,207 @@
 /**
+ * compare2.ts — 挂机刷怪掉落期望模拟(零 import,数据全部内联)
+ * 口径来源(反编译):
+ * - 波次构成:MapRecorder.GetEnemyCount(MapRecorder.cs:159-186),按 CurRound % 5 给 5 个站位
+ * - 每只怪掉落:MapRecorder.GetDrop(MapRecorder.cs:208-240)；死亡时逐只结算(Battle_Character_Info.cs:281-285)
+ * - 幸运/掉率:Drop_Recorder.GetTrueDrop(Drop_Recorder.cs:37-45),概率 = min(1000, round(概率‰×(100+加成)/100))
+ * - 御力:MapRecorder.GetYuLiDrop(MapRecorder.cs:326-339)
+ * - 研究额外掉落:MapRecorder.KeJiDrop(MapRecorder.cs:242-318)
+ * - 扫荡:MapRecorder.AddTimer / CulSaoDangShouYi(MapRecorder.cs:66-97)
+ * - VIP:VIPHelper.GetEffect(VIPHelper.cs:15-34)
+ * - 万魂帆:Entry_WanHunFan(Entry_WanHunFan.cs:14)
+ * - 百分比取整:ToolClass.Cul_Percent_ToInt(ToolClass.cs:107-117)
+ * 已确认的初始数值:
+ * - CurRound 从 1 起,每清一波 +1
+ * - 一次执行 = 清一波 5 只；怒气 1.1 秒/波,普攻 0.85 秒/波(含完整周期,不再加 1 秒)
+ * - 研究 64 个节点全部满级
+ * - 幸运 = 50000 基础 + 研究 14 的 10 = 50010
+ * - VIP 16；翅膀等级,万魂帆等级为参数,默认 0
+ * - 5 图 × 3 品质的真实掉落表全部内联；幸运 50010 时所有条目都封顶 1000‰,必掉
+ */
+// #region 初始数值(逐项确认)
+export type MapID = 1 | 2 | 3 | 4 | 5;
+
+// 一波 5 只怪,清完一波 CurRound + 1(MapRecorder.AddRound :414-433)
+const START_ROUND = 1;
+const SECONDS_PER_HOUR = 3600;
+const RAGE_SECONDS = 1.1;
+const NORMAL_SECONDS = 0.85;
+
+// 幸运 = 基础 50000 + 研究 14 洪福齐天满级 10(keji.json id14:perLevel 1 × maxLevel 10)
+const BASE_LUCKY = 50_000;
+const VIP_LEVEL = 16;
+
+// VIPHelper.GetEffect:VIP_YuLiDrop = Lv×20,VIP_PercentAddCount = min(100, Lv/2),VIP_SaoDangSpeed = Lv×10
+const VIP_YU_LI_DROP = VIP_LEVEL * 20;
+const VIP_PERCENT_ADD_COUNT = Math.min(100,Math.trunc(VIP_LEVEL / 2));
+const VIP_SAO_DANG_SPEED = VIP_LEVEL * 10;
+
+// 研究 64 节点全满；这里只列会影响掉落的节点,数值 = keji.json 的 perLevel × maxLevel
+const RESEARCH = {
+  addDropYuLi:        100, // 31 满载而归:御力掉落 +1%/级 × 100
+  allEnemyDrop:       100, // 39 遍地开花:全部敌人掉率 +1%/级 × 100
+  bossDrop:           50,  // 40 鹤立鸡群:BOSS 掉率 +1%/级 × 50
+  extalGuaiWuTuJian:  5,   // 62 枭蛇鬼怪:1 × 5
+  extalHanTie:        10,  // 58 天降陨铁:perLevel 2 × 5
+  extalLianQiBaoDian: 5,   // 63 积厚成器:1 × 5
+  extalLiShiBenJi:    10,  // 57 偶有所得:perLevel 2 × 5
+  extalMoney:         10,  // 56 意外收获:perLevel 2 × 5,源码再 ×2
+  extalRandomJinNang: 5,   // 60 念兹在兹:1 × 5
+  extalYuLingBaoDian: 5,   // 61 灵心慧性:1 × 5
+  extalZhenWen:       10,  // 59 严阵以待:perLevel 2 × 5
+  jingYingDrop:       50,  // 41 独树一帜:精英掉率 +1%/级 × 50
+  louLouDrop:         50,  // 42 硕果累累:喽啰掉率 +1%/级 × 50
+  lucky:              10,  // 14 洪福齐天:1 × 10
+  saoDangShouYi:      50  // 43 事半功倍:扫荡收益 +1%/级 × 50
+} as const;
+const LUCKY = BASE_LUCKY + RESEARCH.lucky;
+const SAO_DANG_REMAIN_TIMER = 48; // MapRecorder.cs:33
+
+// MapEffectEnum(MapEffectEnum.cs:6-14)
+const MAP_EFFECT = {
+  dropPercent:   3,
+  finishGame:    5,
+  getProp:       4,
+  saoDangShouYi: 2,
+  saoDangUnLoad: 1,
+  unloadMap:     0
+} as const;
+
+// CurRound % 5 → 5 个站位的品质(1 喽啰 / 2 精英 / 3 BOSS),MapRecorder.cs:159-186
+const WAVE_COMPOSITION: Record<number,readonly number[]> = {
+  0: [1,1,2,3,2], // 2 喽啰 + 2 精英 + 1 BOSS
+  1: [1,1,1,1,1], // 5 喽啰
+  2: [1,1,1,2,1], // 4 喽啰 + 1 精英
+  3: [1,1,2,2,1], // 3 喽啰 + 2 精英
+  4: [1,1,2,2,2] // 2 喽啰 + 3 精英
+};
+
+// #endregion
+// #region 地图与掉落表(MapSettingData_Config,sharedassets0.assets 导出)
+type DropRow = readonly [propID: number,nums: number,percent: number];
+interface MapConfig {
+  baseRound:     number;
+  bossDrops:     readonly DropRow[];
+  bossID:        number;
+  effects:       readonly MapEffectRow[];
+  jingYingDrops: readonly DropRow[];
+  jingYingID:    number;
+  louLouDrops:   readonly DropRow[];
+  louLouID:      number;
+}
+
+// [触发波次, 效果类型, 参数1, 参数2]
+type MapEffectRow = readonly [round: number,effect: number,value: number,value1: number];
+const PROP_NAMES: Record<number,string> = {
+  1:   "寒铁",
+  10:  "抽奖卷",
+  100: "檀木令",
+  11:  "寒铁宝箱",
+  12:  "强化宝箱",
+  13:  "神石宝箱",
+  14:  "神通宝箱",
+  15:  "研究宝箱",
+  16:  "灵纹宝箱",
+  18:  "残念锦囊",
+  19:  "自选残念锦囊",
+  2:   "五彩神石",
+  20:  "御力宝箱Lv1",
+  21:  "御力宝箱Lv2",
+  22:  "御力宝箱Lv3",
+  3:   "破境石",
+  30:  "宝石匣Lv1",
+  4:   "御力",
+  40:  "自选宝石匣Lv1",
+  41:  "自选宝石匣Lv2",
+  5:   "强化石",
+  50:  "灵宝匣Lv1",
+  6:   "神通卷轴",
+  60:  "自选灵宝匣Lv1",
+  61:  "自选灵宝匣Lv2",
+  7:   "灵纹",
+  70:  "套娃宝箱Lv1",
+  8:   "灵晶",
+  80:  "钱币",
+  84:  "御灵宝典",
+  85:  "三味真火",
+  86:  "炼器宝典",
+  87:  "御灵师经验",
+  89:  "挑战令",
+  9:   "历史本纪",
+  90:  "悬赏令",
+  901: "图鉴-掘金鼠",
+  902: "图鉴-金山甲",
+  903: "图鉴-山精",
+  904: "图鉴-熔岩影卫",
+  905: "图鉴-熔骨祭司",
+  906: "图鉴-熔渊神尸",
+  907: "图鉴-螃将军",
+  908: "图鉴-鳄统领",
+  909: "图鉴-沧溟蛟君",
+  91:  "世界令",
+  910: "图鉴-桃园众",
+  911: "图鉴-桃花小妖",
+  912: "图鉴-桃仙翁",
+  913: "图鉴-天兵",
+  914: "图鉴-雷鼓吏",
+  915: "图鉴-镇狱明王",
+  92:  "神速符",
+  95:  "元宝"
+};
+const MAPS: Record<number,MapConfig> = {
+  1: {
+    baseRound:     0,
+    bossDrops:     [[1,10,64],[2,3,5],[5,3,5],[3,3,5],[40,2,5],[11,1,8],[12,1,8],[13,1,8],[85,1,7],[10,5,5],[86,1,4]],
+    bossID:        3,
+    effects:       [[50,1,1,0],[100,0,2,0],[200,4,11,10],[400,4,13,10],[600,4,12,10],[1000,3,30,0],[1250,2,30,0],[1500,4,30,10],[1750,4,40,10],[2000,4,80,1000]],
+    jingYingDrops: [[1,3,1000],[1,5,32],[2,2,25],[5,2,25],[3,2,25],[40,1,2],[11,1,5],[12,1,5],[13,1,5],[10,3,5],[85,1,3]],
+    jingYingID:    2,
+    louLouDrops:   [[1,1,1000],[1,3,32],[2,1,15],[5,1,15],[3,1,15],[30,1,3],[11,1,3],[12,1,3],[13,1,3],[10,1,3],[85,1,2]],
+    louLouID:      1
+  },
+  2: {
+    baseRound:     100,
+    bossDrops:     [[6,5,1000],[6,10,30],[18,3,14],[19,3,9],[19,4,5],[14,1,12],[100,1,12],[50,1,12],[60,1,12],[61,1,6],[10,5,8]],
+    bossID:        6,
+    effects:       [[50,1,1,0],[100,0,3,0],[200,4,14,10],[400,4,18,100],[600,4,19,30],[1000,3,30,0],[1250,2,30,0],[1500,4,50,20],[1750,4,60,10],[2000,4,80,2000]],
+    jingYingDrops: [[6,3,1000],[6,5,30],[18,2,9],[19,2,6],[19,3,3],[14,1,5],[100,1,5],[50,1,5],[60,1,5],[61,1,3],[10,3,5]],
+    jingYingID:    5,
+    louLouDrops:   [[6,1,1000],[6,3,22],[18,1,6],[19,1,4],[19,2,2],[14,1,3],[100,1,3],[50,1,3],[60,1,3],[61,1,2],[10,1,3]],
+    louLouID:      4
+  },
+  3: {
+    baseRound:     200,
+    bossDrops:     [[7,5,1000],[7,7,42],[7,10,15],[8,3,15],[8,4,8],[8,5,5],[16,1,8],[20,1,14],[21,1,12],[22,1,7],[10,5,12]],
+    bossID:        9,
+    effects:       [[50,1,1,0],[100,0,4,0],[200,4,16,10],[400,4,8,100],[600,4,10,25],[1000,3,30,0],[1250,2,30,0],[1500,4,8,300],[1750,4,10,50],[2000,4,80,3000]],
+    jingYingDrops: [[7,3,1000],[7,5,27],[7,7,9],[8,2,9],[8,3,4],[8,4,3],[16,1,5],[20,1,8],[21,1,6],[22,1,4],[10,3,5]],
+    jingYingID:    8,
+    louLouDrops:   [[7,1,1000],[7,3,18],[7,5,6],[8,1,6],[8,2,3],[8,3,2],[16,1,3],[20,1,5],[21,1,4],[22,1,2],[10,1,3]],
+    louLouID:      7
+  },
+  4: {
+    baseRound:     300,
+    bossDrops:     [[9,3,1000],[9,4,34],[9,5,14],[15,1,8],[70,1,8],[20,1,15],[21,1,8],[22,1,5],[10,5,8],[92,3,5]],
+    bossID:        12,
+    effects:       [[50,1,1,0],[100,4,15,10],[200,4,15,20],[600,3,30,10],[800,2,30,10],[1000,0,5,0],[1250,4,10,30],[1500,4,15,30],[1750,4,70,10],[2000,4,80,4000]],
+    jingYingDrops: [[9,2,1000],[9,3,21],[9,4,9],[15,1,5],[70,1,5],[20,1,9],[21,1,6],[22,1,3],[10,3,5],[92,2,3]],
+    jingYingID:    11,
+    louLouDrops:   [[9,1,1000],[9,2,14],[9,3,6],[15,1,3],[70,1,3],[20,1,6],[21,1,4],[22,1,2],[10,1,3],[92,1,2]],
+    louLouID:      10
+  },
+  5: {
+    baseRound:     1500,
+    bossDrops:     [[80,5,1000],[80,10,27],[19,3,5],[41,1,8],[61,1,8],[70,1,8],[89,1,6],[90,1,6],[91,1,6],[10,5,8],[84,1,3]],
+    bossID:        15,
+    effects:       [[1000,1,1,0],[2000,5,400,1000],[3000,5,600,1000],[4000,5,800,1000],[5000,5,1000,1000],[6000,5,1250,1000],[7000,5,1500,1000],[8000,5,1750,1000],[9000,5,2000,1000],[10000,5,2500,1000]],
+    jingYingDrops: [[80,3,1000],[80,5,18],[80,7,8],[19,2,3],[40,1,5],[60,1,5],[70,1,5],[89,1,4],[90,1,4],[91,1,4],[10,3,5]],
+    jingYingID:    14,
+    louLouDrops:   [[80,1,1000],[80,3,12],[80,5,5],[19,1,3],[40,1,3],[60,1,3],[70,1,3],[89,1,2],[90,1,2],[91,1,2],[10,1,3]],
+    louLouID:      13
+  }
+};
+
+/**
  * compare.ts — 同类对比(库函数版,不读取存档)
  * 每个养成系统的「等级 → 提升属性」公式都[直接写在对应函数体内](含中文注释 + 反编译源码出处),
  * 不再调用 game-formulas.ts 的黑盒函数,方便一眼看懂"升级一次要多少资源,加多少属性".
@@ -15,6 +218,22 @@ export interface EquipStrengthenResult {
   single:  SystemGain; // 强化单件:单槽装备升级一级的属性增量
 }
 
+// #endregion
+// #region 对外方法
+export interface FarmModeResult {
+  所得:   Record<string,number>;
+  执行次数: number;
+}
+export interface FarmResult {
+  主模式:  "怒气" | "普通攻击";
+  怒气:   FarmModeResult;
+  普通攻击: FarmModeResult;
+}
+export interface SweepResult {
+  所得:   Record<string,number>;
+  扫荡次数: number;
+}
+
 // 某养成系统"再升一级(L→L+1)"的统一结果.
 export interface SystemGain {
   atk:            number; // [升级一次每维提升]升这一级,每一维属性增加多少
@@ -25,6 +244,303 @@ export interface SystemGain {
   resource:       string; // 消耗的资源名
   system:         string; // 系统名
   totalGain:      number; // [升级一次全维合计提升]= atk × dims
+}
+
+/**
+ * 模拟主动刷怪:按时间算出怒气/普攻两边各能清多少波,并分别给数学期望掉落.
+ * 一次执行 = 清一波 5 只怪；次数 = floor(小时×3600/周期),最后一次不足周期直接丢弃.
+ * @param useRage true 为怒气(1.1 秒/波),false 为普通攻击(0.85 秒/波)
+ * @param hours 限定时间,单位小时,必传
+ * @param map 地图 1-5,默认 5 通天塔
+ * @param wingLevel 翅膀 1(Wing_CB_1)等级,默认 0；只影响元宝
+ * @param wanHunFanLevel 万魂帆 Entry 等级,默认 0；每级给御力掉落 +10%
+ * @returns 两份并列结果；主模式由 useRage 标记,两边掉落都完整计算
+ */
+export function simulateFarm (
+  useRage: boolean,
+  hours: number,
+  map: MapID = 5,
+  wingLevel = 0,
+  wanHunFanLevel = 0
+): FarmResult {
+  const safeHours = assertHours(hours);
+  const mapConfig = getMapConfig(map);
+  const safeWingLevel = assertWholeAtLeast(wingLevel,0,"翅膀等级");
+  const safeWanHunFanLevel = assertWholeAtLeast(wanHunFanLevel,0,"万魂帆等级");
+  return {
+    主模式:  useRage ? "怒气" : "普通攻击",
+    怒气:   simulateMode(safeHours,RAGE_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel),
+    普通攻击: simulateMode(safeHours,NORMAL_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel)
+  };
+}
+
+/**
+ * 模拟扫荡:严格按 MapRecorder.AddTimer/CulSaoDangShouYi,每满 48 秒给 1 份喽啰原始掉落.
+ * 扫荡不吃幸运,不吃 39-42 掉率研究,不吃 56-63 额外掉落；只吃研究 43,VIP 扫荡速度与阵型战力.
+ * @param hours 限定时间,单位小时,必传
+ * @param round 层数(CurRound),默认 1；影响御力波次系数与已触发的扫荡加成
+ * @param power 扫荡阵容战力,默认 0；按 MapRecorder.GetZhanLiAddition 折算速度
+ * @param map 地图 1-5,默认 5 通天塔
+ */
+export function simulateSweep (
+  hours: number,
+  round = 1,
+  power = 0,
+  map: MapID = 5
+): SweepResult {
+  const safeHours = assertHours(hours);
+  const safeRound = assertWholeAtLeast(round,1,"层数");
+  const mapConfig = getMapConfig(map);
+  const safePower = Number.isFinite(power) ? Math.max(0,power) : 0;
+  const sweepAddition = getSweepAdditionPercent(mapConfig,safeRound);
+  const speed = (getZhanLiAddition(safePower) + sweepAddition + 100) / 100
+    * (100 + RESEARCH.saoDangShouYi) / 100
+    * (100 + VIP_SAO_DANG_SPEED) / 100;
+  const totalTimer = safeHours * SECONDS_PER_HOUR * speed;
+
+  // 源码 while (SaoDang_Timer > 48):正好 48 的整数倍会少结算一次
+  const ticks = totalTimer > 0
+    ? Math.max(0,Math.ceil(totalTimer / SAO_DANG_REMAIN_TIMER) - 1)
+    : 0;
+  const drops: Record<string,number> = {};
+  if (ticks <= 0) {
+    return {所得: drops,扫荡次数: 0};
+  }
+  const yuLiPerTick = getYuLiDrop(1,safeRound,mapConfig.baseRound,0,false);
+  for (const [propID,nums,percent] of mapConfig.louLouDrops) {
+    addDrop(drops,propID,nums * getTrueDrop(percent,0) / 1000 * ticks);
+  }
+  addDrop(drops,4,yuLiPerTick * ticks);
+  return {所得: drops,扫荡次数: ticks};
+}
+function addDrop (drops: Record<string,number>,propID: number,amount: number): void {
+  if (!(amount > 0)) {
+    return;
+  }
+  const name = PROP_NAMES[propID];
+  if (name === undefined) {
+    throw new Error(`未知道具 ID：${propID}`);
+  }
+  drops[name] = (drops[name] ?? 0) + amount;
+}
+function addMonsterDrops (
+  drops: Record<string,number>,
+  mapConfig: MapConfig,
+  pinZhi: number,
+  round: number,
+  extraCount: number,
+  wingYuanBao: number,
+  wanHunFanLevel: number,
+  dropAdditionPercent: number
+): void {
+  const addition = getDropAddition(pinZhi,dropAdditionPercent);
+  for (const [propID,nums,percent] of getDropTable(mapConfig,pinZhi)) {
+    addDrop(drops,propID,(nums + extraCount) * getTrueDrop(percent,addition) / 1000);
+  }
+  addResearchDrops(drops,mapConfig,pinZhi,addition);
+  addDrop(drops,4,getYuLiDrop(pinZhi,round,mapConfig.baseRound,wanHunFanLevel,true));
+  addDrop(drops,95,wingYuanBao);
+}
+
+// MapRecorder.KeJiDrop :242-318；87 御灵师经验按品质给 1/2/3,其余为必掉期望
+function addResearchDrops (
+  drops: Record<string,number>,
+  mapConfig: MapConfig,
+  pinZhi: number,
+  addition: number
+): void {
+  addDrop(drops,87,pinZhi);
+  addDrop(drops,80,2 * getOkToDropChance(RESEARCH.extalMoney * 2,addition));
+  addDrop(drops,9,getOkToDropChance(RESEARCH.extalLiShiBenJi,addition));
+  addDrop(drops,1,getOkToDropChance(RESEARCH.extalHanTie,addition));
+  addDrop(drops,7,getOkToDropChance(RESEARCH.extalZhenWen,addition));
+  addDrop(drops,18,getOkToDropChance(RESEARCH.extalRandomJinNang,addition));
+  addDrop(drops,84,getOkToDropChance(RESEARCH.extalYuLingBaoDian,addition));
+  addDrop(drops,86,getOkToDropChance(RESEARCH.extalLianQiBaoDian,addition));
+  addDrop(drops,900 + getEnemyID(mapConfig,pinZhi),getOkToDropChance(RESEARCH.extalGuaiWuTuJian,addition));
+}
+function assertHours (hours: number): number {
+  if (!Number.isFinite(hours) || hours < 0) {
+    throw new Error(`小时必须是非负有限数，收到 ${String(hours)}`);
+  }
+  return hours;
+}
+function assertWholeAtLeast (value: number,min: number,label: string): number {
+  if (!Number.isInteger(value) || value < min) {
+    throw new Error(`${label}必须是 ≥${min} 的整数，收到 ${String(value)}`);
+  }
+  return value;
+}
+
+// ToolClass.Cul_Percent_ToInt :107-117(正数四舍五入远离零)
+function culPercentToInt (baseValue: number,percentage: number): number {
+  return Math.round(baseValue * (100 + percentage) / 100);
+}
+
+// MapRecorder.GetDrop_Addition :341-363；LUCKY 已含研究 14
+function getDropAddition (pinZhi: number,extraPercent: number): number {
+  const qualityMark = pinZhi === 1
+    ? RESEARCH.louLouDrop
+    : pinZhi === 2
+      ? RESEARCH.jingYingDrop
+      : RESEARCH.bossDrop;
+  return LUCKY + RESEARCH.allEnemyDrop + qualityMark + extraPercent;
+}
+function getDropTable (mapConfig: MapConfig,pinZhi: number): readonly DropRow[] {
+  if (pinZhi === 1) {
+    return mapConfig.louLouDrops;
+  }
+  if (pinZhi === 2) {
+    return mapConfig.jingYingDrops;
+  }
+  return mapConfig.bossDrops;
+}
+function getEnemyID (mapConfig: MapConfig,pinZhi: number): number {
+  if (pinZhi === 3) {
+    return mapConfig.bossID;
+  }
+  if (pinZhi === 2) {
+    return mapConfig.jingYingID;
+  }
+  return mapConfig.louLouID;
+}
+
+// 每只怪的额外数量 num(MapRecorder.cs:218-230):
+// VIP_PercentAddCount 是 Random.Range(1,101) < 8 → 7%；CurRound/10000 是整数除法
+function getExpectedExtraCount (round: number): number {
+  const vipChance = Math.max(0,VIP_PERCENT_ADD_COUNT - 1) / 100;
+  const roundTier = Math.trunc(round / 10000);
+  const roundChance = roundTier >= 2 ? (roundTier - 1) / 100 : 0;
+  return vipChance + roundChance;
+}
+
+// 翅膀 1 = Wing_CB_1(Wing_Config_Data 的 TargetMark 68),等级直接写入印记
+// MapRecorder.KeJiDrop :281-316 的 switch,按期望折算
+function getExpectedWingYuanBao (wingLevel: number): number {
+  if (wingLevel <= 0) {
+    return 0;
+  }
+  if (wingLevel <= 10) {
+    return Math.min(1,wingLevel * 10 / 100);
+  }
+  const base = Math.trunc((wingLevel - 10) / 25) + 1;
+  const remainder = (wingLevel - 10) % 25;
+  return base + Math.min(1,remainder * 4 / 100);
+}
+function getMapConfig (map: number): MapConfig {
+  assertWholeAtLeast(map,1,"地图");
+  const config = MAPS[map];
+  if (config === undefined) {
+    throw new Error(`地图只能是 1-5，收到 ${String(map)}`);
+  }
+  return config;
+}
+
+// MapRecorder.OKToDrop :320-324；Random.Range(1,101) <= num,概率 = clamp(num,0,100)/100
+function getOkToDropChance (value: number,addition: number): number {
+  const threshold = Math.trunc(value * (100 + addition) / 100);
+  return Math.min(100,Math.max(0,threshold)) / 100;
+}
+function getSweepAdditionPercent (mapConfig: MapConfig,round: number): number {
+  let value = 0;
+  for (const [effectRound,effectType,effectValue] of mapConfig.effects) {
+    if (effectType === MAP_EFFECT.saoDangShouYi && effectRound <= round) {
+      value += effectValue;
+    }
+  }
+  return value;
+}
+
+// Drop_Recorder.GetTrueDrop :37-45
+function getTrueDrop (percent: number,addition: number): number {
+  return Math.min(1000,roundHalfToEven(percent * (100 + addition) / 100));
+}
+
+// MapRecorder.GetYuLiDrop :326-339；御力基数 150×(1+品质×0.5),再乘波次系数
+function getYuLiDrop (
+  pinZhi: number,
+  round: number,
+  baseRound: number,
+  wanHunFanLevel: number,
+  withAddition: boolean
+): number {
+  let value = Math.trunc(150 * (1 + pinZhi * 0.5));
+  value *= Math.trunc((round + baseRound + 1000) / 1000);
+  if (withAddition) {
+    value = culPercentToInt(value,RESEARCH.addDropYuLi);
+    value = culPercentToInt(value,VIP_YU_LI_DROP);
+    value = culPercentToInt(value,wanHunFanLevel * 10);
+  }
+  return value;
+}
+
+// MapRecorder.GetZhanLiAddition :120-146；战力 0 → 0
+function getZhanLiAddition (power: number): number {
+  if (!Number.isFinite(power) || power <= 0) {
+    return 0;
+  }
+  const powerTen = 100_000_000_000;
+  if (power <= powerTen) {
+    return Math.trunc(power * 100 / powerTen);
+  }
+  const powerEleven = 1_000_000_000_000;
+  if (power <= powerEleven) {
+    return 100 + Math.trunc((power - powerTen) * 100 / (powerEleven - powerTen));
+  }
+  const exponent = Math.floor(Math.log10(power / powerEleven));
+  const lower = powerEleven * 10 ** exponent;
+  const upper = lower * 10;
+  return 200 + exponent * 100 + Math.trunc((power - lower) * 100 / (upper - lower));
+}
+
+// #endregion
+// #endregion
+// #region 源码公式
+// Mathf.RoundToInt(Drop_Recorder.cs:39)在正数区间是四舍六入五取偶
+function roundHalfToEven (value: number): number {
+  const lower = Math.floor(value);
+  if (value - lower === 0.5) {
+    return lower % 2 === 0 ? lower : lower + 1;
+  }
+  return Math.round(value);
+}
+function simulateMode (
+  hours: number,
+  cycleSeconds: number,
+  mapConfig: MapConfig,
+  wingLevel: number,
+  wanHunFanLevel: number
+): FarmModeResult {
+  const executions = Math.floor(hours * SECONDS_PER_HOUR / cycleSeconds);
+  const drops: Record<string,number> = {};
+  if (executions <= 0) {
+    return {所得: drops,执行次数: 0};
+  }
+  const wingYuanBao = getExpectedWingYuanBao(wingLevel);
+  let dropAdditionPercent = 0;
+  for (let index = 0; index < executions; index += 1) {
+    const round = START_ROUND + index;
+    const extraCount = getExpectedExtraCount(round);
+    if (WAVE_COMPOSITION[round % 5] != null) {
+      for (const pinZhi of WAVE_COMPOSITION[round % 5]) {
+        addMonsterDrops(drops,mapConfig,pinZhi,round,extraCount,wingYuanBao,wanHunFanLevel,dropAdditionPercent);
+      }
+    }
+
+    // AddRound 在本波清完后触发；GetProp 给道具,DropPercent 从下一波开始生效
+    for (const [effectRound,effectType,value,value1] of mapConfig.effects) {
+      if (effectRound !== round) {
+        continue;
+      }
+      if (effectType === MAP_EFFECT.getProp) {
+        addDrop(drops,value,value1);
+      }
+      if (effectType === MAP_EFFECT.dropPercent) {
+        dropAdditionPercent += value;
+      }
+    }
+  }
+  return {所得: drops,执行次数: executions};
 }
 
 // 每一个材料 消耗多少钱币(含 30% 研究减免,保留小数点,不取整)—— 直接写死在此处,
