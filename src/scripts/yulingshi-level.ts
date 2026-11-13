@@ -1,4 +1,4 @@
-import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./save-data.ts";
+import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 
 /**
  * 御灵师升级计算器 公式全部来自反编译代码:

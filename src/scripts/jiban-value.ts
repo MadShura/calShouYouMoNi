@@ -1,8 +1,8 @@
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
-import {argFlag,argNumber,argString,loadSave,parseArgs,resolveSaveDir} from "./save-data.ts";
-import type {BattleDataRecorder} from "./save-data.ts";
+import {argFlag,argNumber,argString,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import type {BattleDataRecorder} from "../readSave.ts";
 
 /**
  * 配队输出排名(羁绊 + 15 级御灵装备 + 绝对伤害)

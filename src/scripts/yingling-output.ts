@@ -1,9 +1,9 @@
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
-import {argNumber,argString,parseArgs} from "./save-data.ts";
+import {argNumber,argString,parseArgs} from "../readSave.ts";
 import {hitRate,TOWER_ENEMY_10000,TRIAL_ENEMY_100,ZHONG_JU} from "./enemy-stats.ts";
-import type {CliArgs} from "./save-data.ts";
+import type {CliArgs} from "../readSave.ts";
 import {culDamagePercent,sceneDamage} from "./game-formulas.ts";
 
 /**

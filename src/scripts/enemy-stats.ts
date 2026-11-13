@@ -1,7 +1,7 @@
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
-import {argString,formatSuoXie,parseArgs} from "./save-data.ts";
+import {argString,formatSuoXie,parseArgs} from "../readSave.ts";
 
 /**
  * 三个场景的敌人属性(全部来自反编译).

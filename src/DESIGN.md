@@ -8,7 +8,7 @@
 
 - `decompile.ps1`：调用 ilspycmd 把 `Assembly-CSharp.dll` 反编译到 `src//反编译`（不入库）
 - `extract-config.py`：用 UnityPy 解析 `sharedassets0.assets` 中的 ScriptableObject，导出 `config/*.json`
-- `save-data.ts`：只读解析 `Save_N` 下的存档 JSON，提供类型与读取函数
+- `readSave.ts`：只读解析 `Save_N` 下的存档 JSON，提供类型与读取函数
 - `power-value.ts`：按反编译公式计算每种材料在“卖冥商换元宝买药”和“直接强化”之间的输出收益
 - `camp-yuanbao.ts`：`pnpm yuanbao` 调用，第一个位置参数是本轮每分钟积分增加值（默认 71，即 13 块地总分；`--auto` 改为按当前归属己方的地块求和），剩余加分次数按存档 `JifenCulTime` 相位计算；常驻输出买贡献/买名次的最佳投入元宝数（不赚时给 0），`--invest` 另给逐档扫描表
 - `yulingshi-level.ts`：`pnpm yuling [目标等级]` 调用，按 `CulLevel_Up_Remand` 逐级累加到目标等级，扣现有经验后换算御灵宝典本数（每本经验含 AddYuLingShi_EXP 研究加成）与购买所需钱币（单价含 Store_Sell_Price 研究折扣），并列出突破次数与突破丹消耗

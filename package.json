@@ -1,5 +1,5 @@
 {
-  "name": "forPlayGameWeb",
+  "name": "calShouYouMoNi",
   "version": "1.0.27",
   "description": "",
   "keywords": [],
@@ -24,6 +24,7 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:all": "pnpm test",
     "up:tsConfig": "axl tsconfig-exclude",
+    "compare":"pnpm exec tsx src/scripts/compare.ts",
     "yuanbao": "pnpm exec tsx src/scripts/camp-yuanbao.ts",
     "yuling": "pnpm exec tsx src/scripts/yulingshi-level.ts"
   },

@@ -1,8 +1,8 @@
 import {readFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
-import {argFlag,argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./save-data.ts";
-import type {BattleDataRecorder,SaveBundle} from "./save-data.ts";
+import {argFlag,argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import type {BattleDataRecorder,SaveBundle} from "../readSave.ts";
 
 /**
  * 物资性价比:卖冥商换元宝买属性药 VS 直接用来强化 统一口径是「期望伤害变化率」,公式来自反编译代码:

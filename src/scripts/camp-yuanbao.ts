@@ -1,32 +1,8 @@
 import {readFileSync} from "node:fs";
 import {join} from "node:path";
-import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./save-data.ts";
-import type {CampData,CampPlayerRecord,SaveBundle} from "./save-data.ts";
+import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import type {CampData,CampPlayerRecord,SaveBundle} from "../readSave.ts";
 
-/**
- * 阵营元宝计算器 公式全部来自反编译代码:
- * - 结算:YingLing.KeJinSystem/ZhenYingZhenDou_Manager.cs 第 181-222 行 JieSuan()
- * - 积分:AddJiFen() 每次触发按归属己方的地块加分(第 335-348 行)
- * - 加分节奏:AddTimer 第 244-249 行 JifenCulTime > 60 才加分,加完清零(不是减 60),所以第一次加分
- * 还差 60 - JifenCulTime 秒,此后每 60 秒一次;第 242 行 OpenGameTime > 28800 那一次直接进结算,
- * 不再走 AddJiFen,最后一个不完整分钟不计分
- * - 地块分值:DiKuaiSettingData.GetFenShu()(1→2,2→5,3→9,4→15)
- * - 名次:GetPaiMing() 按贡献降序,GetPlayerPaiMing() 取玩家位置
- * - 分润:GetPlayerJiFenPercent() = 我的贡献 / 己方总贡献
- * - 轮数倍率:(10 + min(Round,20)) / 10
- * - 王者之翼:Mark_Enum.Wing_CB_3(枚举序号 70)每级 +5%
- * - 元宝投入:UIBlockZhenYingBuChongLingLi.cs 第 105-120 行,1 元宝 = 1 贡献 + 10 灵力,
- * 单次上限 (600000 - 己方灵力) / 10 且不大于持有元宝
- * - 用法:pnpm yuanbao [每分钟积分增加值],第一个位置参数默认按当前归属己方地块求和
- * (AddJiFen 只加己方地块,全图 13 块地总分 71 仅作基准显示)
- */
-const CONFIG_DIR = join(import.meta.dirname,"..","config");
-const LINGLI_MAX = 60_0000;
-const MY_CHA_ID = 1;
-const ROUND_SECONDS = 28800;
-const TICK_SECONDS = 60;
-const WING_MARK = 70;
-const YUANBAO_PROP = 95;
 interface DiKuaiTile {
   col:      number;
   index:    number;
@@ -65,6 +41,36 @@ interface Settlement {
   yuanbao:     number;
 }
 
+/**
+ * 阵营元宝计算器 公式全部来自反编译代码:
+ * - 结算:YingLing.KeJinSystem/ZhenYingZhenDou_Manager.cs 第 181-222 行 JieSuan()
+ * - 积分:AddJiFen() 每次触发按归属己方的地块加分(第 335-348 行)
+ * - 加分节奏:AddTimer 第 244-249 行 JifenCulTime > 60 才加分,加完清零(不是减 60),所以第一次加分
+ * 还差 60 - JifenCulTime 秒,此后每 60 秒一次;第 242 行 OpenGameTime > 28800 那一次直接进结算,
+ * 不再走 AddJiFen,最后一个不完整分钟不计分
+ * - 地块分值:DiKuaiSettingData.GetFenShu()(1→2,2→5,3→9,4→15)
+ * - 名次:GetPaiMing() 按贡献降序,GetPlayerPaiMing() 取玩家位置
+ * - 分润:GetPlayerJiFenPercent() = 我的贡献 / 己方总贡献
+ * - 轮数倍率:(10 + min(Round,20)) / 10
+ * - 王者之翼:Mark_Enum.Wing_CB_3(枚举序号 70)每级 +5%
+ * - 元宝投入:UIBlockZhenYingBuChongLingLi.cs 第 105-120 行,1 元宝 = 1 贡献 + 10 灵力,
+ * 单次上限 (600000 - 己方灵力) / 10 且不大于持有元宝
+ * - 用法:pnpm yuanbao [每分钟积分增加值],第一个位置参数默认按当前归属己方地块求和
+ * (AddJiFen 只加己方地块,全图 13 块地总分 71 仅作基准显示)
+ */
+const CONFIG_DIR = join(import.meta.dirname,"..","config");
+const LINGLI_MAX = 60_0000;
+const MY_CHA_ID = 1; // 几号存档
+const ROUND_SECONDS = 8 * 60 * 60; // 8小时 = 28800秒
+const TICK_SECONDS = 60.1; // 60秒结算一次积分
+const WING_MARK = 70; // 王者之翼
+const args = parseArgs(process.argv.slice(2));
+const dir = resolveSaveDir(args);
+const save = loadSave(dir);
+const wingLevel = getMarkCount(save.game,WING_MARK); // 王者之翼等级
+const wingLevelAddon = (100 + wingLevel * 5) / 100;
+const YUANBAO_PROP = 95;
+
 // GetPlayerJiFenPercent():<0 → 0.01,>1 → 0.99
 function clampShare (value: number): number {
   if (value < 0) {
@@ -92,7 +98,7 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
   const cap = Math.max(0,Math.min(yuanbao,Math.floor((LINGLI_MAX - lingLi) / 10)));
 
   // 结算总额的所有倍率:轮数 × 王者之翼,边际/保本/最优点都要带上
-  const mul = (10 + Math.min(round,20)) / 10 * (wingLevel > 0 ? (100 + wingLevel * 5) / 100 : 1);
+  const mul = (10 + Math.min(round,20)) / 10 * wingLevelAddon;
   const spare = base.total - base.gongXun;
 
   // 边际 = (积分/2)·(总贡献-我的贡献)/(总贡献+X)²·倍率,X=0 时最大,大于 1 才值得投入
@@ -194,7 +200,7 @@ function main (): void {
     throw new Error("存档里没有 zhenYingZhenDou_Manager，可能还没解锁阵营");
   }
   const tiles = loadConfig<DiKuaiTile[]>("dikuai");
-  const allRate = tiles.reduce((sum,tile) => sum + tileScore(tile.level),0);
+  const allRate = 71; // 全部占领 加的积分
   const mySide = camp.PlayZhenYing;
   const sideTiles = (camp.diKuaiData_Recorders ?? []).filter(
     tile => tile.ZhenYingBelong === mySide
@@ -234,12 +240,11 @@ function main (): void {
   }
   members.sort((left,right) => right.GongXun - left.GongXun);
   const round = camp.Round;
-  const wingLevel = getMarkCount(save.game,WING_MARK);
   const result = settle(projectedScore,members,0,round,wingLevel);
   const lines: string[] = [];
   lines.push("=== 阵营元宝计算 ===",camp.HasOpen
-      ? `本轮状态：进行中，已运行 ${(camp.OpenGameTime / 60).toFixed(1)} 分钟，剩余 ${remainMinutes.toFixed(1)} 分钟`
-      : "本轮状态：未开启（不点选阵营不会开始，也不会有积分）");
+    ? `本轮状态：进行中，已运行 ${(camp.OpenGameTime / 60).toFixed(1)} 分钟，剩余 ${remainMinutes.toFixed(1)} 分钟`
+    : "本轮状态：未开启（不点选阵营不会开始，也不会有积分）");
   const rateNote = rateArg !== undefined && !argFlag(args,"auto")
     ? `手工指定；当前归属己方 ${sideTiles.length} 块地实际 ${autoRate}，全图基准 ${allRate}`
     : `默认按当前归属己方的 ${sideTiles.length} 块地求和，全图基准 ${allRate}`;
@@ -247,7 +252,7 @@ function main (): void {
     `积分速率：${usedRate} 分/分钟（${rateNote}）`,
     `当前我方积分：${formatSuoXie(currentScore)}`,
     `剩余加分次数：${ticks} 次（距下一次加分 ${(TICK_SECONDS - jifenCulTime).toFixed(1)} 秒，此后每 ${TICK_SECONDS} 秒一次）`,
-   `预计结算积分：${formatSuoXie(currentScore)} + ${ticks} × ${usedRate} = ${formatSuoXie(projectedScore)}`,"","--- 我方贡献排名 ---");
+    `预计结算积分：${formatSuoXie(currentScore)} + ${ticks} × ${usedRate} = ${formatSuoXie(projectedScore)}`,"","--- 我方贡献排名 ---");
   for (const [index,record] of members.entries()) {
     const mark = record.Cha_ID === MY_CHA_ID ? " ← 我" : "";
     const percent = result.total === 0 ? 0 : record.GongXun / result.total * 100;
@@ -255,7 +260,7 @@ function main (): void {
       `${String(index + 1).padStart(2," ")}. 角色${String(record.Cha_ID).padStart(2," ")}  贡献 ${formatSuoXie(record.GongXun).padStart(12," ")}  ${percent.toFixed(2)}%${mark}`
     );
   }
-  lines.push("","--- 结算明细 ---",`我的排名：第 ${result.rank} 名 / 共 ${members.length} 人，贡献 ${formatSuoXie(result.gongXun)}，占己方 ${(result.share * 100).toFixed(2)}%`,`名次奖励：${formatSuoXie(projectedScore)} × ${percentForRank(result.rank)}% = ${formatSuoXie(result.rankReward)}`,`50% 分润：${formatSuoXie(Math.floor(projectedScore / 2))} × ${(result.share * 100).toFixed(2)}% = ${formatSuoXie(result.shareReward)}`,`基础收益：${formatSuoXie(result.rankReward + result.shareReward)}`,`轮数倍率：(10 + ${Math.min(round,20)}) / 10 = ×${((10 + Math.min(round,20)) / 10).toFixed(1)}（Round=${round}，封顶 20）`,`王者之翼：${wingLevel > 0 ? `等级 ${wingLevel} → ×${((100 + wingLevel * 5) / 100).toFixed(2)}` : "未解锁 → ×1.00"}`,`预计元宝：${formatSuoXie(result.yuanbao)}`,"","--- 名次对照（同一积分与贡献占比）---");
+  lines.push("","--- 结算明细 ---",`我的排名：第 ${result.rank} 名 / 共 ${members.length} 人，贡献 ${formatSuoXie(result.gongXun)}，占己方 ${(result.share * 100).toFixed(2)}%`,`名次奖励：${formatSuoXie(projectedScore)} × ${percentForRank(result.rank)}% = ${formatSuoXie(result.rankReward)}`,`50% 分润：${formatSuoXie(Math.floor(projectedScore / 2))} × ${(result.share * 100).toFixed(2)}% = ${formatSuoXie(result.shareReward)}`,`基础收益：${formatSuoXie(result.rankReward + result.shareReward)}`,`轮数倍率：(10 + ${Math.min(round,20)}) / 10 = ×${((10 + Math.min(round,20)) / 10).toFixed(1)}（Round=${round}，封顶 20）`,`王者之翼：${wingLevel > 0 ? `等级 ${wingLevel} → ×${wingLevelAddon.toFixed(2)}` : "未解锁 → ×1.00"}`,`预计元宝：${formatSuoXie(result.yuanbao)}`,"","--- 名次对照（同一积分与贡献占比）---");
   for (const rank of [1,2,3,4]) {
     const label = rank === 4 ? "第 4 名及以后" : `第 ${rank} 名`;
     lines.push(`${label}：${formatSuoXie(settle(projectedScore,members,0,round,wingLevel,rank).yuanbao)} 元宝`);
@@ -322,15 +327,6 @@ function settle (score: number,members: readonly CampPlayerRecord[],extraGongXun
     total,
     yuanbao:     Number(wingLevel > 0 ? scaled * BigInt(100 + wingLevel * 5) / 100n : scaled)
   };
-}
-function sideName (side: number): string {
-  if (side === 1) {
-    return "东方";
-  }
-  if (side === 2) {
-    return "西方";
-  }
-  return "未选择";
 }
 
 // DiKuaiSettingData.GetFenShu()

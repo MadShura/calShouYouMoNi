@@ -49,8 +49,8 @@ import {
 } from "./game-formulas.ts";
 import {trialEnemy,ZHONG_JU} from "./enemy-stats.ts";
 import type {EnemyStats} from "./enemy-stats.ts";
-import {argNumber,argString,parseArgs,resolveSaveDir} from "./save-data.ts";
-import type {CliArgs} from "./save-data.ts";
+import {argNumber,argString,parseArgs,resolveSaveDir} from "../readSave.ts";
+import type {CliArgs} from "../readSave.ts";
 import {buildResearchPlan} from "./research-plan.ts";
 import type {ResearchResult} from "./research-plan.ts";
 

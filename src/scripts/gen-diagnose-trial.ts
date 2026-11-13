@@ -16,8 +16,8 @@
  * 用法:pnpm exec tsx src/scripts/gen-diagnose-trial.ts [--resource=N] [--save=1]
  */
 import {join} from "node:path";
-import {argNumber,argString,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./save-data.ts";
-import type {GameRecord} from "./save-data.ts";
+import {argNumber,argString,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import type {GameRecord} from "../readSave.ts";
 import {trialEnemy} from "./enemy-stats.ts";
 import type {EnemyStats} from "./enemy-stats.ts";
 import {fmtShort,oneShotDamage,requiredAtk} from "./game-formulas.ts";
