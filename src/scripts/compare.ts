@@ -104,56 +104,43 @@ const MAKE_EQUIP_COST_CAP = 200_0000; // 升一次炼器消耗寒铁封顶
 
 // 制作装备=生成一件装备,计算该装备的主攻击数值(含每次制造的翅膀固定加成).
 // 器鼎(qidingLevel)决定品质期望(≥1700 即 100% 最高品质);研究22 把器鼎等级计进装备属性%(线性无上限→过1000仍持续加成);
-// 翅膀(wingCb2Level)=印记 Wing_CB_2 等级,每次制造给人物固定 +(WING_CB2_BASE + WING_CB2_PER_LEVEL×等级) 到 HP/ATK/DEF/无视防御(各).
+// 翅膀(lianqiwingLevel)=印记 Wing_CB_2 等级,每次制造给人物固定 +(WING_CB2_BASE + WING_CB2_PER_LEVEL×等级) 到 HP/ATK/DEF/无视防御(各).
 export function makeEquip (
   lianqiLevel: number,            // 炼器等级(= 升一次炼器要多少寒铁)
   qidingLevel = QIDING_MAX_QUALITY,    // 器鼎等级(决定新装备品质期望;研究22 把器鼎等级计进装备属性,无上限) 默认1700级器鼎
-  wingCb2Level = 0,               // 印记 Wing_CB_2(Mark 76)等级:每次制造给人物固定 +(75 + 25×等级) 到 HP/ATK/DEF/无视防御
-  research18 = RESEARCH18_MAX_LEVEL, // 精益求精:装备属性 +1%/级(默认点满 50)
-  research22 = true,             // 循序渐进:器鼎等级计入装备属性
-  research23 = true              // 水涨船高:炼器等级计入装备属性
+  lianqiwingLevel = 0               // 印记 Wing_CB_2(Mark 76)等级:每次制造给人物固定 +(75 + 25×等级) 到 HP/ATK/DEF/无视防御
 ): SystemGain {
-  const EQUIP_ATK_BASE = 30;    // 基础固定值 30
-  const EQUIP_ATK_PER_LIANQI = 25;    // 每级炼器 +25
-  const EQUIP_ATK_QUALITY_LV = 6;     // 品质×炼器等级 ×6
-  const EQUIP_QUALITY_FACTOR = 0.4;   // 品质系数:(0.4×品质 + 1)
-  const quality = expectedQuality(qidingLevel);                            // 器鼎→品质期望(≥1700 = 100% 最高品质)
-  const equipPropPct = research18                                     // 研究18:装备属性 +1%/级
-    + (research22 ? qidingLevel : 0)                                       // 研究22:器鼎等级计入(线性无上限,过1000仍持续放大装备主属性)
-    + (research23 ? lianqiLevel : 0);                                 // 研究23:炼器等级计入
-  const EQUIP_RANDOM_MIN = 1;   // GenerateEquip 随机乘区 Random.Range(1f, 1.1f) 下限
-  const EQUIP_RANDOM_MAX = 1.1;   // 上限(不含)
-  const EQUIP_RANDOM_AVG = (EQUIP_RANDOM_MIN + EQUIP_RANDOM_MAX) / 2; // 随机期望 = 1.05(均值)
 
   // 单件主攻击(含随机期望 EQUIP_RANDOM_AVG):见上方常量注释中的公式
-  const atk = (EQUIP_ATK_BASE
-    + EQUIP_ATK_PER_LIANQI * lianqiLevel
-    + EQUIP_ATK_QUALITY_LV * quality * lianqiLevel)
-    * (EQUIP_QUALITY_FACTOR * quality + 1)
-    * EQUIP_RANDOM_AVG
-    * (1 + equipPropPct / PERCENT_BASE);
-
-  // 翅膀(Wing_CB_2):FinishLianQi 每次制造完成,人物 HP/ATK/DEF/无视防御 各 +(基数 + 每级×等级) flat
-  const wingFlatAtk = wingCb2Level > 0 ? WING_CB2_BASE + WING_CB2_PER_LEVEL * wingCb2Level : 0;
+  const atk = (30 // 基础固定值 30
+    + 25 * lianqiLevel // 每级炼器 +25
+    + 6 * 15 * lianqiLevel)  // 品质×炼器等级 ×6 品质最高是 15
+    * (0.4 * 15 + 1)  // 品质系数:(0.4×品质 + 1) 品质最高是 15
+    * 1.05  // 随机期望 1 - 1.1 也就是 1.05
+    * (1 + (50     // 研究18:装备属性 +1%/级 默认 50
+      + qidingLevel  // 研究22:器鼎等级计入(线性无上限,过1000仍持续放大装备主属性)
+      + lianqiLevel) / 100); // 研究23:炼器等级计入
+  const wingFlatAtk = 75    // 翅膀固定值基数
+    + WING_CB2_PER_LEVEL  // 翅膀每级 +25(到 HP/ATK/DEF/无视防御 各)
+    * lianqiwingLevel;    // 翅膀每级
   const totalAtk = atk + wingFlatAtk;
   const costPerLevelUp = Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,lianqiLevel)); // 造 1 件装备要多少寒铁 = 当前炼器等级(封顶 200 万,下限 1)
-
-  // 返回统一的 SystemGain(字段定义见文件头的 SystemGain 接口),目的是把「制作装备」和其它养成系统放进同一张表比性价比.
-  // 本函数描述[造出 1 件装备]这一次操作(NPC_EquipManager.cs):
-  //   扣寒铁 GetLianQiRemandProp()=PropHelper.GetRemandMat(炼器等级) → 制造进度满 → FinishLianQi 生成 1 件装备
-  //   + 加炼器经验 CulExp_Single=2+炼器等级 + 翅膀固定属性;
-  //   炼器等级靠经验累加升级(AddLianQiExp),升等级本身不额外花寒铁.
-  // 因此 atk 与 costPerLevelUp 是同一次操作的[收益]与[消耗],peratk 就是真实的"每 1 寒铁换到多少攻击".
-  // 注意:字段名 costPerLevelUp 沿用了其它系统的[升一级消耗],在这里实际是[造一件消耗],不要按字面理解.
+  const zhizaoExp = (2 // 固定值
+    + lianqiLevel) // 炼器等级
+    * (100 // 固定值
+      + 30000) / 100; // 固定值
+  const ignoreDef = wingFlatAtk; // 一样的
   return {
-    atk:       totalAtk,                   // 造 1 件装备人物实际拿到的攻击 = 装备主攻击 + 翅膀每造一件给的固定攻击
-    costPerLevelUp,                        // 造 1 件装备消耗的寒铁 = 当前炼器等级(GetRemandMat,封顶 200 万,下限 1;未叠加 Reduce_HanTie 研究减免)
+    atk,                   // 造 1 件装备人物实际拿到的攻击 = 装备主攻击 + 翅膀每造一件给的固定攻击
     dims:      1,                          // 受益维数:本对比表只统计「攻击」1 维(翅膀给的 HP/防御/无视防御不计入)
     level:     lianqiLevel,               // 当前炼器等级:决定寒铁消耗,装备主攻击公式,装备属性%(研究23),每次制造给的经验
+    per:       {atk: lianqiLevel > 999 ? wingFlatAtk : 0,ignoreDef,zhizaoExp},       // 每次制造获得
     peratk:    totalAtk / costPerLevelUp, // 资源效率 = atk ÷ 寒铁,即"每 1 寒铁换到多少攻击",用于跨系统横向比大小
     resource:  "寒铁",                    // 消耗资源名:造装备消耗寒铁(GetRemandMat)
     system:    "制作装备",                // 系统名(对比表分组标签)
-    totalGain: totalAtk                   // 全维合计提升 = atk × dims;因 dims=1,数值上等于 atk
+    totalGain: totalAtk,              // 全维合计提升 = atk × dims;因 dims=1,数值上等于 atk
+    zhizaoExp:
+      costPerLevelUp                        // 造 1 件装备消耗的寒铁 = 当前炼器等级(GetRemandMat,封顶 200 万,下限 1;未叠加 Reduce_HanTie 研究减免)
   };
 }
 

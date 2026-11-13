@@ -5,7 +5,7 @@ import {argFlag,formatSuoXie,getPropNums,loadSave,parseArgs,resolveSaveDir} from
  * - 等级/经验:存档 Game_RecordData.Save → EquipManager.LianQiLevel / LianQiExp
  * - 每级经验:PropHelper.GetLianQiLevelUpExp(yingling-output.ts:1157 已对齐)
  * - 炼器宝典(Prop 86)每本经验 = 100 × (100 + 研究16等级)/100;
- *   研究16「日积月累」按项目分析口径点满=50 → 150 经验/本
+ * 研究16「日积月累」按项目分析口径点满=50 → 150 经验/本
  * - 注:炼器等级也吃寒铁打造给的经验,本脚本只换算「炼器宝典」这一来源(按用户需求)
  */
 const BOOK_PROP = 86;
@@ -27,7 +27,6 @@ function lianQiLevelUpExp (level: number): number {
   }
   return 1700 + 200 * (level - 30);
 }
-
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
   if (argFlag(args,"help")) {
@@ -63,6 +62,7 @@ function main (): void {
     console.log(`当前炼器 Lv.${curLevel} 已达到目标 Lv.${target}，够了`);
     return;
   }
+
   // 研究16(日积月累)按项目分析口径点满=50 → 每本 150 经验
   const expPerBook = 150;
   let totalExp = 0;
@@ -82,19 +82,18 @@ function main (): void {
     "=== 炼器（制作装备）升级计算 ===",
     `结论：还差 ${formatSuoXie(remainExp)} 经验 → 还需炼器宝典 ${formatSuoXie(needBooks)} 本（持有 ${formatSuoXie(haveBooks)} 本）`,
     `存档：${dir}`,
-    `当前：Lv.${curLevel}，经验 ${formatSuoXie(curExp)}；目标：Lv.${target}（需升 ${target - curLevel} 级）`, "",
+    `当前：Lv.${curLevel}，经验 ${formatSuoXie(curExp)}；目标：Lv.${target}（需升 ${target - curLevel} 级）`,"",
     "--- 经验 ---",
     `逐级合计：Lv.${curLevel} → Lv.${target} 共需 ${formatSuoXie(totalExp)} 经验`,
-    `扣除现有经验后还差：${formatSuoXie(totalExp)} − ${formatSuoXie(curExp)} = ${formatSuoXie(remainExp)}`, "",
+    `扣除现有经验后还差：${formatSuoXie(totalExp)} − ${formatSuoXie(curExp)} = ${formatSuoXie(remainExp)}`,"",
     "--- 炼器宝典（Prop 86）---",
     `每本经验：100 × (100 + 研究16满50)/100 = ${expPerBook}`,
     `需要本数：${formatSuoXie(books)} 本（剩余经验 ÷ 每本 ${expPerBook}，向上取整）`,
-    `已持有 ${formatSuoXie(haveBooks)} 本，还差 ${formatSuoXie(needBooks)} 本`, "",
+    `已持有 ${formatSuoXie(haveBooks)} 本，还差 ${formatSuoXie(needBooks)} 本`,"",
     "说明：炼器等级也吃寒铁打造给的经验，本脚本仅按炼器宝典来源换算。研究16 按项目分析口径点满（50 级）。"
   );
   console.log(lines.join("\n"));
 }
-
 try {
   main();
 } catch (error) {

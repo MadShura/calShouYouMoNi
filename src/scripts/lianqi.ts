@@ -8,24 +8,6 @@ import {argFlag,formatSuoXie,getPropNums,loadSave,parseArgs,resolveSaveDir} from
  */
 const STONE_PROP = 2;
 const DEFAULT_TARGET = 1000;
-
-// 升到 level+1 所需的五彩神石(含研究20 减免)
-function qiLuCost (level: number,reducePercent = 0): number {
-  return Math.max(
-    1,
-    Math.round(10 * (Math.trunc((level - 1) / 5) + 1) * (100 - reducePercent) / 100)
-  );
-}
-
-// 从 levelFrom 升到 levelTo(不含)共需五彩神石
-function qiLuTotalStone (levelFrom: number,levelTo: number,reducePercent = 0): number {
-  let total = 0;
-  for (let level = levelFrom; level < levelTo; level += 1) {
-    total += qiLuCost(level,reducePercent);
-  }
-  return total;
-}
-
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
   if (argFlag(args,"help")) {
@@ -60,6 +42,7 @@ function main (): void {
     console.log(`当前器鼎 Lv.${curLevel} 已达到目标 Lv.${target}，够了`);
     return;
   }
+
   // 研究20(省吃俭用)按项目分析口径点满=50
   const reducePercent = 50;
   const heldStones = getPropNums(game,STONE_PROP);
@@ -75,16 +58,32 @@ function main (): void {
     "=== 器鼎升级计算 ===",
     `结论：还差 ${formatSuoXie(needStones)} 个五彩神石（持有 ${formatSuoXie(heldStones)}）`,
     `存档：${dir}`,
-    `当前：器鼎 Lv.${curLevel}；目标：Lv.${target}（需升 ${target - curLevel} 级）`, "",
+    `当前：器鼎 Lv.${curLevel}；目标：Lv.${target}（需升 ${target - curLevel} 级）`,"",
     "--- 五彩神石 ---",
     `升到 Lv.${target} 共需 ${formatSuoXie(stoneForTarget)} 石（研究20 满 -50%）`,
     `已投入到当前等级的石头折合 ${formatSuoXie(stoneForCurrent)}，扣除后还需 ${formatSuoXie(stoneForTarget - stoneForCurrent)}`,
-    `持有 ${formatSuoXie(heldStones)}，最终还差 ${formatSuoXie(needStones)}`, "",
+    `持有 ${formatSuoXie(heldStones)}，最终还差 ${formatSuoXie(needStones)}`,"",
     "说明：器鼎每 5 级一档，升档消耗翻倍；研究20 按项目分析口径点满（50 级）。"
   );
   console.log(lines.join("\n"));
 }
 
+// 升到 level+1 所需的五彩神石(含研究20 减免)
+function qiLuCost (level: number,reducePercent = 0): number {
+  return Math.max(
+    1,
+    Math.round(10 * (Math.trunc((level - 1) / 5) + 1) * (100 - reducePercent) / 100)
+  );
+}
+
+// 从 levelFrom 升到 levelTo(不含)共需五彩神石
+function qiLuTotalStone (levelFrom: number,levelTo: number,reducePercent = 0): number {
+  let total = 0;
+  for (let level = levelFrom; level < levelTo; level += 1) {
+    total += qiLuCost(level,reducePercent);
+  }
+  return total;
+}
 try {
   main();
 } catch (error) {
