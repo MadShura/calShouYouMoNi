@@ -63,11 +63,12 @@ export interface ResearchReduce {
 // ---- 制作装备 / 品质 常量(数值均来自反编译源码,集中列出便于核对) ----
 const MAKE_EQUIP_COST_CAP = 200_0000; // 升一次炼器消耗寒铁封顶
 
-// ============================== 寒铁 → 战力(完整制造模拟,18 属性全量) ==============================
+// ============================== 寒铁 → 战力(完整制造模拟,18 属性全量 + 词条百分比) ==============================
 // 固定口径:研究全部点满(config/keji.json)、初始炼器 Lv.1/经验 0、器鼎 Lv.1700、品质 15、10 槽各 1 件.
 // 计算顺序:① 五彩神石把器鼎从 1700 继续往上顶 → 最终器鼎等级;
-//          ② 寒铁按源码逐级模拟制造 → 最终炼器等级 + 制造次数;
-//          ③ 10 件装备主属性按最终等级算;④ 翅膀加成按制造次数累计.
+//          ② 寒铁按源码逐级模拟制造 → 最终炼器等级 + 制造次数 + 熔炼强化石;
+//          ③ 10 件装备主属性按最终等级算;④ 翅膀加成按制造次数累计;
+//          ⑤ 每件装备固定带该槽全部 5 条词条(共 50 条):13 项固定值合并,5 项百分比单列.
 // 本文件零 import;所有数值只取反编译源码与 config 导出,出处逐条标注.
 
 // ---- 研究全满(固定值:config/keji.json 的 maxLevel × perLevel = 50) ----
@@ -143,25 +144,57 @@ export interface AllProperties {
   lucky:          number; // 17 Lucky 幸运
 }
 
-export interface HantieToZhanliResult {
-  equipSum:          AllProperties; // 最后获得的 10 件装备的所有属性和(10 槽各 1 件,按最终炼器等级)
-  wingSum:           AllProperties; // 翅膀附加的所有加成属性(按制造次数累计)
-  total:             AllProperties; // 上面两块逐属性相加
-  craftCount:        number;        // 制造次数
-  finalLianqiLevel:  number;        // 最终炼器等级
-  finalLianqiExp:    number;        // 最终等级内剩余经验
-  finalQidingLevel:  number;        // 最终器鼎等级
-  hantieUsed:        number;        // 消耗寒铁
-  hantieLeft:        number;        // 剩余寒铁
-  wucaiUsed:         number;        // 消耗五彩神石
-  wucaiLeft:         number;        // 剩余五彩神石
-  ronglianStones:    number;        // 制造数 − 10 件(留身上)熔炼出的强化石总数
-  ronglianCount:     number;        // 被熔炼的装备件数
+// 词条候选池:每槽固定 5 条(用户口径:每件装备默认都有该槽全部 5 条,不按品质/随机抽取).
+// 来自 MayEquipPropertyDic(PropHelper.cs:69-148),按 EquipType.cs 的 0~9 顺序排列.
+// 词条值固定 = 品质 15(PropHelper.cs:418 的 Params_2 = PinZhi, Bool_Value = true).
+const EQUIP_CI_TIAO_POOL: readonly (readonly (keyof AllProperties)[])[] = [
+  ['atk', 'baoJi', 'baoJiDamage', 'damageAddition', 'ignoreDef'],  // 0 Weapon 武器
+  ['def', 'hp', 'shanBi', 'baoJiResist', 'returnDamage'],          // 1 Cloth 衣服
+  ['def', 'hp', 'shanBi', 'damageReduce', 'lucky'],                // 2 Cape 披风
+  ['def', 'hp', 'mingZhong', 'baoJiResist', 'recovery'],           // 3 Belt 腰带
+  ['atk', 'def', 'baoJiDamage', 'lianJi', 'damageAddition'],       // 4 HuWan 护腕
+  ['atk', 'def', 'hp', 'mingZhong', 'fanJi'],                      // 5 XiangLian 项链
+  ['atk', 'def', 'hp', 'mingZhong', 'lucky'],                      // 6 GuaZhui 挂坠
+  ['atk', 'hp', 'xiXie', 'ignoreDef', 'lucky'],                    // 7 JieZhi 戒指
+  ['atk', 'def', 'hp', 'speed', 'ignoreDef'],                      // 8 XieZi 鞋子
+  ['atk', 'def', 'hp', 'baoJi', 'damageReduce']                    // 9 HuFu 护符
+];
+
+// 18 项里走「真百分比」的 5 项(property.json 中 percent=0):
+// ChangeValue 走 PercentAddition += 15(BattleData_Recorder.cs:50-59),GetFinal 再乘 (100+百分比)/100(:34).
+// 其余 13 项在 property.json 里 percent=1,ChangeValue 直接 Base_Value += 15(:39-49),GetFinal 不乘百分比(:25-33),
+// 即它们虽然 UI 显示 "15%",源码实际是每条 +15 固定值.
+const CI_TIAO_PERCENT_KEYS = ['atk', 'def', 'hp', 'speed', 'ignoreDef'] as const;
+type CiTiaoPercentKey = typeof CI_TIAO_PERCENT_KEYS[number];
+const isCiTiaoPercentKey = (key: keyof AllProperties): key is CiTiaoPercentKey =>
+  key === 'atk' || key === 'def' || key === 'hp' || key === 'speed' || key === 'ignoreDef';
+
+// 单层返回:18 项固定值(与 AllProperties 同名同序)+ 5 项词条百分比 + 过程量,全部平铺,不嵌套.
+// 固定值只加固定值(装备主属性 + 翅膀 + 高级词条),百分比只放百分比,两者不互相换算.
+export interface HantieToZhanliResult extends AllProperties {
+  atkPercent:       number; // 攻击词条百分比合计:7 槽 × 15 = 105(源码 PercentAddition,不是固定值)
+  defPercent:       number; // 防御词条百分比合计:8 槽 × 15 = 120
+  hpPercent:        number; // 生命词条百分比合计:8 槽 × 15 = 120
+  speedPercent:     number; // 速度词条百分比合计:1 槽 × 15 = 15
+  ignoreDefPercent: number; // 穿透词条百分比合计:3 槽 × 15 = 45
+  craftCount:        number; // 制造次数
+  finalLianqiLevel:  number; // 最终炼器等级
+  finalLianqiExp:    number; // 最终等级内剩余经验
+  finalQidingLevel:  number; // 最终器鼎等级
+  hantieUsed:        number; // 消耗寒铁
+  hantieLeft:        number; // 剩余寒铁
+  wucaiUsed:         number; // 消耗五彩神石
+  wucaiLeft:         number; // 剩余五彩神石
+  ronglianStones:    number; // 制造数 − 10 件(留身上)熔炼出的强化石总数
+  ronglianCount:     number; // 被熔炼的装备件数
 }
 
 /**
- * 投入寒铁(配合五彩神石、翅膀等级)后的完整制造模拟,返回 10 件装备与翅膀的全部 18 项属性.
- * 词条(高级/低级特殊属性)按用户要求暂不计算,相关属性一律为 0,但字段全部保留.
+ * 投入寒铁(配合五彩神石、翅膀等级)后的完整制造模拟,单层返回 18 项固定值 + 5 项词条百分比.
+ * 词条口径:每件装备固定带该槽全部 5 条(共 50 条),词条值 = 品质 15.
+ *   - 攻/防/血/速/穿透 这 5 项在源码里走 PercentAddition(真百分比),单独放在 atkPercent 等字段,不乘进固定值;
+ *   - 其余 13 项在源码里走 Base_Value += 15(固定值,UI 显示的 "%" 只是文案),直接加到同名属性.
+ * 固定值 = 装备主属性(10 槽各 1 件) + 翅膀固定值(按制造次数累计) + 高级词条固定值.
  * @param hantie 投入的寒铁数量
  * @param wingLevel 翅膀 Wing_CB_2 印记等级(0 = 没翅膀)
  * @param wucaiStones 投入的五彩神石数量(把器鼎从 Lv.1700 继续升级;默认 0 即保持 1700)
@@ -250,44 +283,51 @@ export function hantieTozhanli (
   // ⑥ 翅膀:每造 1 件给 HP/ATK/DEF/无视防御 各 +(75 + 25×等级),按制造次数累计(源码 if num>0 才生效)
   const wingFlat = wingLevel > 0 ? craftCount * (WING_FLAT_BASE + WING_FLAT_PER_LEVEL * wingLevel) : 0;
 
-  // 18 项属性全部列出,一个都不去除;词条暂不算的项置 0
-  const equipSum: AllProperties = {
-    atk: slotTotal, def: slotTotal, hp: slotTotal,
-    speed: 0, mingZhong: 0, shanBi: 0, baoJi: 0, baoJiResist: 0,
+  // ⑦ 词条:每件装备固定带该槽全部 5 条(用户口径),词条值 = 品质 15;10 槽各 1 件 → 共 50 条.
+  // 固定值类 13 项直接累加到同名属性;百分比类 5 项单独累加到 xxxPercent,不与固定值相加.
+  const ciTiaoFixed: AllProperties = {
+    atk: 0, def: 0, hp: 0, speed: 0, mingZhong: 0, shanBi: 0, baoJi: 0, baoJiResist: 0,
     baoJiDamage: 0, lianJi: 0, fanJi: 0, recovery: 0, xiXie: 0,
     damageAddition: 0, damageReduce: 0, ignoreDef: 0, returnDamage: 0, lucky: 0
   };
-  const wingSum: AllProperties = {
-    atk: wingFlat, def: wingFlat, hp: wingFlat, ignoreDef: wingFlat,
-    speed: 0, mingZhong: 0, shanBi: 0, baoJi: 0, baoJiResist: 0,
-    baoJiDamage: 0, lianJi: 0, fanJi: 0, recovery: 0, xiXie: 0,
-    damageAddition: 0, damageReduce: 0, returnDamage: 0, lucky: 0
+  const ciTiaoPercent: Record<CiTiaoPercentKey, number> = {
+    atk: 0, def: 0, hp: 0, speed: 0, ignoreDef: 0
   };
-  const total: AllProperties = {
-    atk:            equipSum.atk + wingSum.atk,
-    def:            equipSum.def + wingSum.def,
-    hp:             equipSum.hp + wingSum.hp,
-    speed:          equipSum.speed + wingSum.speed,
-    mingZhong:      equipSum.mingZhong + wingSum.mingZhong,
-    shanBi:         equipSum.shanBi + wingSum.shanBi,
-    baoJi:          equipSum.baoJi + wingSum.baoJi,
-    baoJiResist:    equipSum.baoJiResist + wingSum.baoJiResist,
-    baoJiDamage:    equipSum.baoJiDamage + wingSum.baoJiDamage,
-    lianJi:         equipSum.lianJi + wingSum.lianJi,
-    fanJi:          equipSum.fanJi + wingSum.fanJi,
-    recovery:       equipSum.recovery + wingSum.recovery,
-    xiXie:          equipSum.xiXie + wingSum.xiXie,
-    damageAddition: equipSum.damageAddition + wingSum.damageAddition,
-    damageReduce:   equipSum.damageReduce + wingSum.damageReduce,
-    ignoreDef:      equipSum.ignoreDef + wingSum.ignoreDef,
-    returnDamage:   equipSum.returnDamage + wingSum.returnDamage,
-    lucky:          equipSum.lucky + wingSum.lucky
-  };
+  for (const pool of EQUIP_CI_TIAO_POOL) {
+    for (const key of pool) {
+      if (isCiTiaoPercentKey(key)) {
+        ciTiaoPercent[key] += EQUIP_PINZHI;
+      } else {
+        ciTiaoFixed[key] += EQUIP_PINZHI;
+      }
+    }
+  }
 
+  // ⑧ 单层返回:18 项固定值 = 装备主属性 + 翅膀固定值 + 高级词条固定值(攻/防/血/穿透词条是百分比,不进固定值)
   return {
-    equipSum,
-    wingSum,
-    total,
+    atk:            slotTotal + wingFlat,
+    def:            slotTotal + wingFlat,
+    hp:             slotTotal + wingFlat,
+    speed:          0,
+    mingZhong:      ciTiaoFixed.mingZhong,
+    shanBi:         ciTiaoFixed.shanBi,
+    baoJi:          ciTiaoFixed.baoJi,
+    baoJiResist:    ciTiaoFixed.baoJiResist,
+    baoJiDamage:    ciTiaoFixed.baoJiDamage,
+    lianJi:         ciTiaoFixed.lianJi,
+    fanJi:          ciTiaoFixed.fanJi,
+    recovery:       ciTiaoFixed.recovery,
+    xiXie:          ciTiaoFixed.xiXie,
+    damageAddition: ciTiaoFixed.damageAddition,
+    damageReduce:   ciTiaoFixed.damageReduce,
+    ignoreDef:      wingFlat, // 装备主属性不含穿透,只有翅膀给固定值;穿透词条是百分比,见 ignoreDefPercent
+    returnDamage:   ciTiaoFixed.returnDamage,
+    lucky:          ciTiaoFixed.lucky,
+    atkPercent:       ciTiaoPercent.atk,
+    defPercent:       ciTiaoPercent.def,
+    hpPercent:        ciTiaoPercent.hp,
+    speedPercent:     ciTiaoPercent.speed,
+    ignoreDefPercent: ciTiaoPercent.ignoreDef,
     craftCount,
     finalLianqiLevel: lianqiLevel,
     finalLianqiExp:   lianqiExp,
