@@ -70,3 +70,7 @@ export function compareByCoin (money = 1_0000_0000) {
     make("神通卷轴","shentongjuanzhouTozhanli",shentongjuanzhouTozhanli)
   ].sort((a,b) => b.攻击 - a.攻击);
 }
+
+// 直接执行本文件时按攻击降序输出 12 条完整结果.
+// 用 JSON.stringify 展开,避免 console.log 的深层嵌套被 [Object] 省略而看不到全部字段.
+console.log(JSON.stringify(compareByCoin(),null,2));
