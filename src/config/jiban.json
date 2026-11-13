@@ -1,0 +1,264 @@
+[
+  {
+    "id": 1,
+    "type": 0,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 1,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 1,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 1,
+        "level": 3
+      },
+      {
+        "count": 5,
+        "entry": 1,
+        "level": 4
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "type": 1,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 2,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 2,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 2,
+        "level": 3
+      },
+      {
+        "count": 5,
+        "entry": 2,
+        "level": 4
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "type": 2,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 3,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 3,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 3,
+        "level": 3
+      },
+      {
+        "count": 5,
+        "entry": 3,
+        "level": 4
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "type": 3,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 4,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 4,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 4,
+        "level": 3
+      },
+      {
+        "count": 5,
+        "entry": 4,
+        "level": 4
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "type": 4,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 5,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 5,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 5,
+        "level": 3
+      },
+      {
+        "count": 5,
+        "entry": 5,
+        "level": 4
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "type": 5,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 6,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 6,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 6,
+        "level": 3
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "type": 6,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 7,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 7,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "type": 7,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 8,
+        "level": 1
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "type": 8,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 9,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 9,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 9,
+        "level": 3
+      },
+      {
+        "count": 5,
+        "entry": 9,
+        "level": 4
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "type": 9,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 10,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 10,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 10,
+        "level": 3
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "type": 10,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 11,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 11,
+        "level": 2
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "type": 11,
+    "levels": [
+      {
+        "count": 2,
+        "entry": 275,
+        "level": 1
+      },
+      {
+        "count": 3,
+        "entry": 275,
+        "level": 2
+      },
+      {
+        "count": 4,
+        "entry": 275,
+        "level": 3
+      }
+    ]
+  }
+]

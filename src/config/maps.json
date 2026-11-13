@@ -1,0 +1,77 @@
+[
+  {
+    "mapID": 1,
+    "louLouID": 1,
+    "jingYingID": 2,
+    "bossID": 3,
+    "baseRound": 0,
+    "growth": 1.0,
+    "shengShou": {
+      "index": 1,
+      "property1": 2,
+      "property2": 1,
+      "property3": 7,
+      "remandProp": 1
+    }
+  },
+  {
+    "mapID": 2,
+    "louLouID": 4,
+    "jingYingID": 5,
+    "bossID": 6,
+    "baseRound": 100,
+    "growth": 2.0,
+    "shengShou": {
+      "index": 2,
+      "property1": 15,
+      "property2": 2,
+      "property3": 6,
+      "remandProp": 6
+    }
+  },
+  {
+    "mapID": 3,
+    "louLouID": 7,
+    "jingYingID": 8,
+    "bossID": 9,
+    "baseRound": 200,
+    "growth": 4.0,
+    "shengShou": {
+      "index": 3,
+      "property1": 0,
+      "property2": 1,
+      "property3": 5,
+      "remandProp": 8
+    }
+  },
+  {
+    "mapID": 4,
+    "louLouID": 10,
+    "jingYingID": 11,
+    "bossID": 12,
+    "baseRound": 300,
+    "growth": 8.0,
+    "shengShou": {
+      "index": 4,
+      "property1": 0,
+      "property2": 15,
+      "property3": 3,
+      "remandProp": 92
+    }
+  },
+  {
+    "mapID": 5,
+    "louLouID": 13,
+    "jingYingID": 14,
+    "bossID": 15,
+    "baseRound": 1500,
+    "growth": 16.0,
+    "shengShou": {
+      "index": 5,
+      "property1": 0,
+      "property2": 2,
+      "property3": 4,
+      "remandProp": 80
+    }
+  }
+]

@@ -1,0 +1,242 @@
+[
+  {
+    "id": 1,
+    "pinzhi": 1,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 2,
+    "params2": 2
+  },
+  {
+    "id": 2,
+    "pinzhi": 1,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 0,
+    "params2": 2
+  },
+  {
+    "id": 3,
+    "pinzhi": 1,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 1,
+    "params2": 2
+  },
+  {
+    "id": 4,
+    "pinzhi": 1,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 15,
+    "params2": 2
+  },
+  {
+    "id": 5,
+    "pinzhi": 1,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 8,
+    "params2": 2
+  },
+  {
+    "id": 6,
+    "pinzhi": 1,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 3,
+    "params2": 1
+  },
+  {
+    "id": 7,
+    "pinzhi": 2,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 9,
+    "params2": 1
+  },
+  {
+    "id": 8,
+    "pinzhi": 2,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 10,
+    "params2": 1
+  },
+  {
+    "id": 9,
+    "pinzhi": 2,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 4,
+    "params2": 1
+  },
+  {
+    "id": 10,
+    "pinzhi": 2,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 5,
+    "params2": 2
+  },
+  {
+    "id": 11,
+    "pinzhi": 2,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 6,
+    "params2": 1
+  },
+  {
+    "id": 12,
+    "pinzhi": 2,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 7,
+    "params2": 3
+  },
+  {
+    "id": 13,
+    "pinzhi": 3,
+    "maxLevel": 10,
+    "effectName": 1,
+    "params1": 35,
+    "params2": 1
+  },
+  {
+    "id": 14,
+    "pinzhi": 3,
+    "maxLevel": 10,
+    "effectName": 1,
+    "params1": 36,
+    "params2": 1
+  },
+  {
+    "id": 15,
+    "pinzhi": 3,
+    "maxLevel": 10,
+    "effectName": 1,
+    "params1": 37,
+    "params2": 1
+  },
+  {
+    "id": 16,
+    "pinzhi": 3,
+    "maxLevel": 10,
+    "effectName": 1,
+    "params1": 38,
+    "params2": 1
+  },
+  {
+    "id": 17,
+    "pinzhi": 3,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 8,
+    "params2": 5
+  },
+  {
+    "id": 18,
+    "pinzhi": 3,
+    "maxLevel": 10,
+    "effectName": 0,
+    "params1": 3,
+    "params2": 5
+  },
+  {
+    "id": 19,
+    "pinzhi": 4,
+    "maxLevel": 5,
+    "effectName": 1,
+    "params1": 39,
+    "params2": 1
+  },
+  {
+    "id": 20,
+    "pinzhi": 4,
+    "maxLevel": 5,
+    "effectName": 1,
+    "params1": 40,
+    "params2": 1
+  },
+  {
+    "id": 21,
+    "pinzhi": 4,
+    "maxLevel": 5,
+    "effectName": 1,
+    "params1": 41,
+    "params2": 1
+  },
+  {
+    "id": 22,
+    "pinzhi": 4,
+    "maxLevel": 5,
+    "effectName": 1,
+    "params1": 42,
+    "params2": 1
+  },
+  {
+    "id": 23,
+    "pinzhi": 4,
+    "maxLevel": 5,
+    "effectName": 1,
+    "params1": 43,
+    "params2": 1
+  },
+  {
+    "id": 24,
+    "pinzhi": 4,
+    "maxLevel": 5,
+    "effectName": 1,
+    "params1": 44,
+    "params2": 1
+  },
+  {
+    "id": 25,
+    "pinzhi": 5,
+    "maxLevel": 3,
+    "effectName": 0,
+    "params1": 13,
+    "params2": 5
+  },
+  {
+    "id": 26,
+    "pinzhi": 5,
+    "maxLevel": 3,
+    "effectName": 0,
+    "params1": 14,
+    "params2": 5
+  },
+  {
+    "id": 27,
+    "pinzhi": 5,
+    "maxLevel": 1,
+    "effectName": 1,
+    "params1": 45,
+    "params2": 1
+  },
+  {
+    "id": 28,
+    "pinzhi": 5,
+    "maxLevel": 1,
+    "effectName": 1,
+    "params1": 46,
+    "params2": 1
+  },
+  {
+    "id": 29,
+    "pinzhi": 5,
+    "maxLevel": 1,
+    "effectName": 1,
+    "params1": 47,
+    "params2": 1
+  },
+  {
+    "id": 30,
+    "pinzhi": 5,
+    "maxLevel": 1,
+    "effectName": 0,
+    "params1": 3,
+    "params2": 10
+  }
+]

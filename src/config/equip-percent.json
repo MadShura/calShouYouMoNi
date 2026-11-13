@@ -1,0 +1,77 @@
+[
+  {
+    "pinzhi": 1,
+    "initialLevel": 0,
+    "percentLevelAdd": 1000
+  },
+  {
+    "pinzhi": 2,
+    "initialLevel": -1,
+    "percentLevelAdd": 32
+  },
+  {
+    "pinzhi": 3,
+    "initialLevel": 0,
+    "percentLevelAdd": 27
+  },
+  {
+    "pinzhi": 4,
+    "initialLevel": 2,
+    "percentLevelAdd": 22
+  },
+  {
+    "pinzhi": 5,
+    "initialLevel": 10,
+    "percentLevelAdd": 18
+  },
+  {
+    "pinzhi": 6,
+    "initialLevel": 15,
+    "percentLevelAdd": 15
+  },
+  {
+    "pinzhi": 7,
+    "initialLevel": 25,
+    "percentLevelAdd": 12
+  },
+  {
+    "pinzhi": 8,
+    "initialLevel": 35,
+    "percentLevelAdd": 9
+  },
+  {
+    "pinzhi": 9,
+    "initialLevel": 45,
+    "percentLevelAdd": 6
+  },
+  {
+    "pinzhi": 10,
+    "initialLevel": 60,
+    "percentLevelAdd": 3
+  },
+  {
+    "pinzhi": 11,
+    "initialLevel": 100,
+    "percentLevelAdd": 2
+  },
+  {
+    "pinzhi": 12,
+    "initialLevel": 200,
+    "percentLevelAdd": 1
+  },
+  {
+    "pinzhi": 13,
+    "initialLevel": 350,
+    "percentLevelAdd": 1
+  },
+  {
+    "pinzhi": 14,
+    "initialLevel": 500,
+    "percentLevelAdd": 1
+  },
+  {
+    "pinzhi": 15,
+    "initialLevel": 700,
+    "percentLevelAdd": 1
+  }
+]

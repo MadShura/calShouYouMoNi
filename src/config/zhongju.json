@@ -1,0 +1,522 @@
+[
+  {
+    "tiaoZhanID": 1,
+    "remandShiLianCengShu": 200,
+    "additionEffect": 250,
+    "bossID": [
+      1,
+      2,
+      3,
+      9,
+      4
+    ],
+    "stats": [
+      {
+        "property": 0,
+        "base": 269676724224.0,
+        "percent": 110500
+      },
+      {
+        "property": 1,
+        "base": 168547942400.0,
+        "percent": 110500
+      },
+      {
+        "property": 2,
+        "base": 25282192343040.0,
+        "percent": 30100000
+      },
+      {
+        "property": 3,
+        "base": 7035.0,
+        "percent": 251
+      },
+      {
+        "property": 4,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 5,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 6,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 7,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 8,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 9,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 10,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 11,
+        "base": 20.0,
+        "percent": 0
+      },
+      {
+        "property": 12,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 13,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 14,
+        "base": 703.0,
+        "percent": 0
+      },
+      {
+        "property": 15,
+        "base": 168547942400.0,
+        "percent": 110500
+      },
+      {
+        "property": 16,
+        "base": 20.0,
+        "percent": 0
+      },
+      {
+        "property": 17,
+        "base": 703.0,
+        "percent": 0
+      }
+    ]
+  },
+  {
+    "tiaoZhanID": 2,
+    "remandShiLianCengShu": 400,
+    "additionEffect": 251,
+    "bossID": [
+      3,
+      4,
+      2,
+      8,
+      9
+    ],
+    "stats": [
+      {
+        "property": 0,
+        "base": 4054153428992.0,
+        "percent": 210500
+      },
+      {
+        "property": 1,
+        "base": 2533845893120.0,
+        "percent": 210500
+      },
+      {
+        "property": 2,
+        "base": 3800768813465600.0,
+        "percent": 501000000
+      },
+      {
+        "property": 3,
+        "base": 14035.0,
+        "percent": 451
+      },
+      {
+        "property": 4,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 5,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 6,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 7,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 8,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 9,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 10,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 11,
+        "base": 30.0,
+        "percent": 0
+      },
+      {
+        "property": 12,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 13,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 14,
+        "base": 1303.0,
+        "percent": 0
+      },
+      {
+        "property": 15,
+        "base": 2533845893120.0,
+        "percent": 210500
+      },
+      {
+        "property": 16,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 17,
+        "base": 1303.0,
+        "percent": 0
+      }
+    ]
+  },
+  {
+    "tiaoZhanID": 3,
+    "remandShiLianCengShu": 600,
+    "additionEffect": 252,
+    "bossID": [
+      4,
+      1,
+      3,
+      7,
+      6
+    ],
+    "stats": [
+      {
+        "property": 0,
+        "base": 20204562153472.0,
+        "percent": 311000
+      },
+      {
+        "property": 1,
+        "base": 12627850821632.0,
+        "percent": 311000
+      },
+      {
+        "property": 2,
+        "base": 1.89417754984448e+17,
+        "percent": 7020000000
+      },
+      {
+        "property": 3,
+        "base": 21070.0,
+        "percent": 652
+      },
+      {
+        "property": 4,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 5,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 6,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 7,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 8,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 9,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 10,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 11,
+        "base": 30.0,
+        "percent": 0
+      },
+      {
+        "property": 12,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 13,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 14,
+        "base": 1906.0,
+        "percent": 0
+      },
+      {
+        "property": 15,
+        "base": 12627850821632.0,
+        "percent": 311000
+      },
+      {
+        "property": 16,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 17,
+        "base": 1906.0,
+        "percent": 0
+      }
+    ]
+  },
+  {
+    "tiaoZhanID": 4,
+    "remandShiLianCengShu": 800,
+    "additionEffect": 253,
+    "bossID": [
+      2,
+      4,
+      5,
+      6,
+      8
+    ],
+    "stats": [
+      {
+        "property": 0,
+        "base": 63221239119872.0,
+        "percent": 411000
+      },
+      {
+        "property": 1,
+        "base": 39513275498496.0,
+        "percent": 411000
+      },
+      {
+        "property": 2,
+        "base": 5.9269911150592e+18,
+        "percent": 9020000000
+      },
+      {
+        "property": 3,
+        "base": 28070.0,
+        "percent": 852
+      },
+      {
+        "property": 4,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 5,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 6,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 7,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 8,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 9,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 10,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 11,
+        "base": 30.0,
+        "percent": 0
+      },
+      {
+        "property": 12,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 13,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 14,
+        "base": 2506.0,
+        "percent": 0
+      },
+      {
+        "property": 15,
+        "base": 39513275498496.0,
+        "percent": 411000
+      },
+      {
+        "property": 16,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 17,
+        "base": 2506.0,
+        "percent": 0
+      }
+    ]
+  },
+  {
+    "tiaoZhanID": 5,
+    "remandShiLianCengShu": 1000,
+    "additionEffect": 254,
+    "bossID": [
+      7,
+      8,
+      9,
+      6,
+      5
+    ],
+    "stats": [
+      {
+        "property": 0,
+        "base": 153442823700480.0,
+        "percent": 511000
+      },
+      {
+        "property": 1,
+        "base": 95901771104256.0,
+        "percent": 511000
+      },
+      {
+        "property": 2,
+        "base": 1.43852654978662e+18,
+        "percent": 110200000000
+      },
+      {
+        "property": 3,
+        "base": 35070.0,
+        "percent": 1052
+      },
+      {
+        "property": 4,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 5,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 6,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 7,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 8,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 9,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 10,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 11,
+        "base": 30.0,
+        "percent": 0
+      },
+      {
+        "property": 12,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 13,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 14,
+        "base": 3106.0,
+        "percent": 0
+      },
+      {
+        "property": 15,
+        "base": 95901771104256.0,
+        "percent": 511000
+      },
+      {
+        "property": 16,
+        "base": 0.0,
+        "percent": 0
+      },
+      {
+        "property": 17,
+        "base": 3106.0,
+        "percent": 0
+      }
+    ]
+  }
+]

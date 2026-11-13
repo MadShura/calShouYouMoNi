@@ -1,0 +1,437 @@
+[
+  {
+    "index": 1,
+    "yingLingType": 5,
+    "skills": [
+      1,
+      2,
+      3
+    ],
+    "bonds": [
+      0,
+      5
+    ],
+    "skillMo": 1000,
+    "skillShen": 1001
+  },
+  {
+    "index": 2,
+    "yingLingType": 6,
+    "skills": [
+      4,
+      5,
+      6
+    ],
+    "bonds": [
+      0,
+      6
+    ],
+    "skillMo": 1002,
+    "skillShen": 1003
+  },
+  {
+    "index": 3,
+    "yingLingType": 4,
+    "skills": [
+      7,
+      8,
+      9
+    ],
+    "bonds": [
+      0,
+      5
+    ],
+    "skillMo": 1004,
+    "skillShen": 1005
+  },
+  {
+    "index": 4,
+    "yingLingType": 2,
+    "skills": [
+      10,
+      11,
+      12
+    ],
+    "bonds": [
+      0,
+      7
+    ],
+    "skillMo": 1006,
+    "skillShen": 1007
+  },
+  {
+    "index": 5,
+    "yingLingType": 3,
+    "skills": [
+      13,
+      14,
+      15
+    ],
+    "bonds": [
+      0,
+      8
+    ],
+    "skillMo": 1008,
+    "skillShen": 1009
+  },
+  {
+    "index": 6,
+    "yingLingType": 5,
+    "skills": [
+      16,
+      17,
+      18
+    ],
+    "bonds": [
+      1,
+      8
+    ],
+    "skillMo": 1010,
+    "skillShen": 1011
+  },
+  {
+    "index": 7,
+    "yingLingType": 6,
+    "skills": [
+      19,
+      20,
+      21
+    ],
+    "bonds": [
+      1,
+      6
+    ],
+    "skillMo": 1012,
+    "skillShen": 1013
+  },
+  {
+    "index": 8,
+    "yingLingType": 4,
+    "skills": [
+      22,
+      23,
+      24
+    ],
+    "bonds": [
+      1,
+      8
+    ],
+    "skillMo": 1014,
+    "skillShen": 1015
+  },
+  {
+    "index": 9,
+    "yingLingType": 2,
+    "skills": [
+      25,
+      26,
+      27
+    ],
+    "bonds": [
+      1,
+      9
+    ],
+    "skillMo": 1016,
+    "skillShen": 1017
+  },
+  {
+    "index": 10,
+    "yingLingType": 3,
+    "skills": [
+      28,
+      29,
+      30
+    ],
+    "bonds": [
+      1,
+      8
+    ],
+    "skillMo": 1018,
+    "skillShen": 1019
+  },
+  {
+    "index": 11,
+    "yingLingType": 5,
+    "skills": [
+      31,
+      32,
+      33
+    ],
+    "bonds": [
+      2,
+      10
+    ],
+    "skillMo": 1020,
+    "skillShen": 1021
+  },
+  {
+    "index": 12,
+    "yingLingType": 6,
+    "skills": [
+      34,
+      35,
+      36
+    ],
+    "bonds": [
+      2,
+      4
+    ],
+    "skillMo": 1022,
+    "skillShen": 1023
+  },
+  {
+    "index": 13,
+    "yingLingType": 4,
+    "skills": [
+      37,
+      38,
+      39
+    ],
+    "bonds": [
+      2,
+      9
+    ],
+    "skillMo": 1024,
+    "skillShen": 1025
+  },
+  {
+    "index": 14,
+    "yingLingType": 2,
+    "skills": [
+      40,
+      41,
+      42
+    ],
+    "bonds": [
+      2,
+      3
+    ],
+    "skillMo": 1026,
+    "skillShen": 1027
+  },
+  {
+    "index": 15,
+    "yingLingType": 3,
+    "skills": [
+      43,
+      44,
+      45
+    ],
+    "bonds": [
+      2,
+      10
+    ],
+    "skillMo": 1028,
+    "skillShen": 1029
+  },
+  {
+    "index": 16,
+    "yingLingType": 5,
+    "skills": [
+      46,
+      47,
+      48
+    ],
+    "bonds": [
+      3,
+      5
+    ],
+    "skillMo": 1030,
+    "skillShen": 1031
+  },
+  {
+    "index": 17,
+    "yingLingType": 6,
+    "skills": [
+      49,
+      50,
+      51
+    ],
+    "bonds": [
+      3,
+      6
+    ],
+    "skillMo": 1032,
+    "skillShen": 1033
+  },
+  {
+    "index": 18,
+    "yingLingType": 4,
+    "skills": [
+      52,
+      53,
+      54
+    ],
+    "bonds": [
+      3,
+      10
+    ],
+    "skillMo": 1034,
+    "skillShen": 1035
+  },
+  {
+    "index": 19,
+    "yingLingType": 2,
+    "skills": [
+      55,
+      56,
+      57
+    ],
+    "bonds": [
+      3,
+      7
+    ],
+    "skillMo": 1036,
+    "skillShen": 1037
+  },
+  {
+    "index": 20,
+    "yingLingType": 3,
+    "skills": [
+      58,
+      59,
+      60
+    ],
+    "bonds": [
+      3,
+      8
+    ],
+    "skillMo": 1038,
+    "skillShen": 1039
+  },
+  {
+    "index": 21,
+    "yingLingType": 5,
+    "skills": [
+      61,
+      62,
+      63
+    ],
+    "bonds": [
+      4,
+      9
+    ],
+    "skillMo": 1040,
+    "skillShen": 1041
+  },
+  {
+    "index": 22,
+    "yingLingType": 6,
+    "skills": [
+      64,
+      65,
+      66
+    ],
+    "bonds": [
+      4,
+      2
+    ],
+    "skillMo": 1042,
+    "skillShen": 1043
+  },
+  {
+    "index": 23,
+    "yingLingType": 4,
+    "skills": [
+      67,
+      68,
+      69
+    ],
+    "bonds": [
+      4,
+      9
+    ],
+    "skillMo": 1044,
+    "skillShen": 1045
+  },
+  {
+    "index": 24,
+    "yingLingType": 2,
+    "skills": [
+      70,
+      71,
+      72
+    ],
+    "bonds": [
+      4,
+      2
+    ],
+    "skillMo": 1046,
+    "skillShen": 1047
+  },
+  {
+    "index": 25,
+    "yingLingType": 3,
+    "skills": [
+      73,
+      74,
+      75
+    ],
+    "bonds": [
+      4,
+      5
+    ],
+    "skillMo": 1048,
+    "skillShen": 1049
+  },
+  {
+    "index": 26,
+    "yingLingType": 6,
+    "skills": [
+      76,
+      77,
+      78
+    ],
+    "bonds": [
+      11,
+      9
+    ],
+    "skillMo": 1050,
+    "skillShen": 1051
+  },
+  {
+    "index": 27,
+    "yingLingType": 2,
+    "skills": [
+      79,
+      80,
+      81
+    ],
+    "bonds": [
+      11,
+      4
+    ],
+    "skillMo": 1052,
+    "skillShen": 1053
+  },
+  {
+    "index": 28,
+    "yingLingType": 5,
+    "skills": [
+      82,
+      83,
+      84
+    ],
+    "bonds": [
+      11,
+      4
+    ],
+    "skillMo": 1054,
+    "skillShen": 1055
+  },
+  {
+    "index": 29,
+    "yingLingType": 3,
+    "skills": [
+      85,
+      86,
+      87
+    ],
+    "bonds": [
+      11,
+      4
+    ],
+    "skillMo": 1056,
+    "skillShen": 1057
+  }
+]

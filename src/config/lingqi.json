@@ -1,0 +1,373 @@
+{
+  "levelUpRemandCount": 5,
+  "levels": [
+    {
+      "pinzhi": 1,
+      "hp": 500,
+      "atk": 500,
+      "def": 500
+    },
+    {
+      "pinzhi": 2,
+      "hp": 1000,
+      "atk": 1000,
+      "def": 1000
+    },
+    {
+      "pinzhi": 3,
+      "hp": 2000,
+      "atk": 2000,
+      "def": 2000
+    },
+    {
+      "pinzhi": 4,
+      "hp": 4000,
+      "atk": 4000,
+      "def": 4000
+    },
+    {
+      "pinzhi": 5,
+      "hp": 8000,
+      "atk": 8000,
+      "def": 8000
+    },
+    {
+      "pinzhi": 6,
+      "hp": 15000,
+      "atk": 15000,
+      "def": 15000
+    },
+    {
+      "pinzhi": 7,
+      "hp": 30000,
+      "atk": 30000,
+      "def": 30000
+    },
+    {
+      "pinzhi": 8,
+      "hp": 50000,
+      "atk": 50000,
+      "def": 50000
+    },
+    {
+      "pinzhi": 9,
+      "hp": 80000,
+      "atk": 80000,
+      "def": 80000
+    },
+    {
+      "pinzhi": 10,
+      "hp": 150000,
+      "atk": 150000,
+      "def": 150000
+    },
+    {
+      "pinzhi": 11,
+      "hp": 200000,
+      "atk": 200000,
+      "def": 200000
+    },
+    {
+      "pinzhi": 12,
+      "hp": 300000,
+      "atk": 300000,
+      "def": 300000
+    },
+    {
+      "pinzhi": 13,
+      "hp": 400000,
+      "atk": 400000,
+      "def": 400000
+    },
+    {
+      "pinzhi": 15,
+      "hp": 400000,
+      "atk": 400000,
+      "def": 400000
+    },
+    {
+      "pinzhi": 20,
+      "hp": 500000,
+      "atk": 500000,
+      "def": 500000
+    }
+  ],
+  "weapons": [
+    {
+      "index": 1,
+      "id": 1,
+      "icon": 10000,
+      "entryValue": 12,
+      "entry": "XuanYuanJian",
+      "stayRound": 3,
+      "fire": 6,
+      "water": 8,
+      "name": "轩辕剑",
+      "entryText": "回合结束时，提高自身{0}%的攻击力。持续{1}回合"
+    },
+    {
+      "index": 2,
+      "id": 2,
+      "icon": 10001,
+      "entryValue": 13,
+      "entry": "RenHuangYin",
+      "stayRound": 0,
+      "fire": 4,
+      "water": 5,
+      "name": "人皇印",
+      "entryText": "战斗开始时增加50怒气，行动结束时增加{0}点怒气"
+    },
+    {
+      "index": 3,
+      "id": 3,
+      "icon": 10002,
+      "entryValue": 14,
+      "entry": "LeiGongChui",
+      "stayRound": 0,
+      "fire": 4,
+      "water": 8,
+      "name": "雷公锤",
+      "entryText": "对敌人造成伤害时，有{0}%概率使敌人进入麻痹状态，下回合无法行动。"
+    },
+    {
+      "index": 4,
+      "id": 4,
+      "icon": 10003,
+      "entryValue": 15,
+      "entry": "DongHuangZhong",
+      "stayRound": 2,
+      "fire": 5,
+      "water": 11,
+      "name": "东皇钟",
+      "entryText": "每次受到攻击时，提高自身{0}%的防御力，持续{1}回合"
+    },
+    {
+      "index": 5,
+      "id": 5,
+      "icon": 10004,
+      "entryValue": 16,
+      "entry": "ShenNongDing",
+      "stayRound": 3,
+      "fire": 7,
+      "water": 11,
+      "name": "神农鼎",
+      "entryText": "对友军造成治疗时，若友军血量大于50%，使友军提高{0}%的攻击力，持续3回合\\n若友军血量低于50%，使友军提高{0}%的防御力，持续3回合"
+    },
+    {
+      "index": 6,
+      "id": 6,
+      "icon": 10005,
+      "entryValue": 17,
+      "entry": "WanHunFan",
+      "stayRound": 0,
+      "fire": 4,
+      "water": 6,
+      "name": "万魂帆",
+      "entryText": "战斗时，获得的御力提升{0}%，多个万魂幡可叠加"
+    },
+    {
+      "index": 7,
+      "id": 7,
+      "icon": 10006,
+      "entryValue": 18,
+      "entry": "ZhanXianFeiDao",
+      "stayRound": 0,
+      "fire": 6,
+      "water": 8,
+      "name": "斩仙飞刀",
+      "entryText": "攻击敌人时若敌人血量低于50%，攻击伤害提高{0}%"
+    },
+    {
+      "index": 8,
+      "id": 8,
+      "icon": 10007,
+      "entryValue": 19,
+      "entry": "LingLongTa",
+      "stayRound": 0,
+      "fire": 7,
+      "water": 11,
+      "name": "玲珑塔",
+      "entryText": "回合开始时，使血量百分比最低的队友提高{0}%的防御，持续1回合"
+    },
+    {
+      "index": 9,
+      "id": 9,
+      "icon": 10008,
+      "entryValue": 20,
+      "entry": "KunLunJing",
+      "stayRound": 0,
+      "fire": 6,
+      "water": 7,
+      "name": "昆仑镜",
+      "entryText": "攻击时{0}%对敌人施加1层魅惑，使敌人承受所有伤害提高3%"
+    },
+    {
+      "index": 10,
+      "id": 10,
+      "icon": 10009,
+      "entryValue": 21,
+      "entry": "YangZhiYuJingPing",
+      "stayRound": 3,
+      "fire": 11,
+      "water": 6,
+      "name": "羊脂玉净瓶",
+      "entryText": "回合开始时，若有队友死亡，复活1个队友。并且恢复该队友{0}%生命值的{0}点怒气、并使该队友获得{0}%增伤，持续{1}回合。对玉净瓶携带者自身无法生效，每个玉净瓶每场战斗只能使用1次。"
+    },
+    {
+      "index": 11,
+      "id": 11,
+      "icon": 10010,
+      "entryValue": 22,
+      "entry": "HuangJinSheng",
+      "stayRound": 2,
+      "fire": 3,
+      "water": 13,
+      "name": "幌金绳",
+      "entryText": "攻击时可以降低敌人{0}点速度，持续{1}回合"
+    },
+    {
+      "index": 12,
+      "id": 12,
+      "icon": 10011,
+      "entryValue": 23,
+      "entry": "HunYuanJinDou",
+      "stayRound": 0,
+      "fire": 4,
+      "water": 5,
+      "name": "混元金斗",
+      "entryText": "若攻击时被敌人闪避，提高{0}%的命中，持续3回合"
+    },
+    {
+      "index": 13,
+      "id": 13,
+      "icon": 10012,
+      "entryValue": 24,
+      "entry": "NvWaShi",
+      "stayRound": 0,
+      "fire": 7,
+      "water": 11,
+      "name": "女娲石",
+      "entryText": "回合开始时获得{0}%最大生命值的护盾，拥有护盾时，获得{1}%的减伤"
+    },
+    {
+      "index": 14,
+      "id": 14,
+      "icon": 10013,
+      "entryValue": 25,
+      "entry": "FuXiQin",
+      "stayRound": 0,
+      "fire": 3,
+      "water": 13,
+      "name": "伏羲琴",
+      "entryText": "攻击时，敌人身上的每种负面状态会使攻击伤害提高{0}%，有{1}%概率时使敌人随机负面状态层数+2"
+    },
+    {
+      "index": 15,
+      "id": 15,
+      "icon": 10014,
+      "entryValue": 26,
+      "entry": "PanGuFu",
+      "stayRound": 2,
+      "fire": 4,
+      "water": 8,
+      "name": "盘古斧",
+      "entryText": "攻击使敌人降低{0}%的治疗效果，持续{1}回合"
+    },
+    {
+      "index": 16,
+      "id": 16,
+      "icon": 10015,
+      "entryValue": 27,
+      "entry": "HouYiGong",
+      "stayRound": 0,
+      "fire": 4,
+      "water": 5,
+      "name": "后羿弓",
+      "entryText": "攻击时，若被敌人闪避，有{0}%概率将本次攻击扭转为命中，但伤害降低{1}%"
+    },
+    {
+      "index": 17,
+      "id": 17,
+      "icon": 10016,
+      "entryValue": 28,
+      "entry": "XingTianDun",
+      "stayRound": 0,
+      "fire": 7,
+      "water": 11,
+      "name": "刑天盾",
+      "entryText": "反击或反伤时会附加自身{0}%最大生命值的伤害"
+    },
+    {
+      "index": 18,
+      "id": 18,
+      "icon": 10017,
+      "entryValue": 29,
+      "entry": "YingLongLin",
+      "stayRound": 0,
+      "fire": 9,
+      "water": 10,
+      "name": "应龙鳞",
+      "entryText": "连击时有{0}%概率可以再次触发连击"
+    },
+    {
+      "index": 19,
+      "id": 19,
+      "icon": 10018,
+      "entryValue": 30,
+      "entry": "HeTu",
+      "stayRound": 0,
+      "fire": 4,
+      "water": 8,
+      "name": "河图",
+      "entryText": "攻击会附加{0}%的防御力作为基础伤害"
+    },
+    {
+      "index": 20,
+      "id": 20,
+      "icon": 10019,
+      "entryValue": 31,
+      "entry": "PanGuanBi",
+      "stayRound": 0,
+      "fire": 6,
+      "water": 8,
+      "name": "判官笔",
+      "entryText": "回合开始时，{0}%概率使本回合行动次数+1"
+    },
+    {
+      "index": 21,
+      "id": 21,
+      "icon": 10020,
+      "entryValue": 32,
+      "entry": "ZhuQueYu",
+      "stayRound": 2,
+      "fire": 5,
+      "water": 6,
+      "name": "朱雀羽",
+      "entryText": "未能闪避敌人攻击时，提高自身{0}%闪避率，持续{1}回合（可叠加）"
+    },
+    {
+      "index": 22,
+      "id": 22,
+      "icon": 10021,
+      "entryValue": 33,
+      "entry": "WuJinHuoHuLu",
+      "stayRound": 0,
+      "fire": 9,
+      "water": 10,
+      "name": "乌金火葫芦",
+      "entryText": "连击和反击伤害提高{0}%"
+    },
+    {
+      "index": 23,
+      "id": 23,
+      "icon": 10022,
+      "entryValue": 34,
+      "entry": "ZiJinBaGuaLu",
+      "stayRound": 0,
+      "fire": 4,
+      "water": 5,
+      "name": "紫金八卦炉",
+      "entryText": "普通攻击{0}%概率使敌人掉落一份道具（获得各种道具的概率与敌人掉落概率一致）"
+    }
+  ]
+}
