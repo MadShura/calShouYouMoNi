@@ -1,0 +1,1922 @@
+{
+  "cannianYingLingCount": 29,
+  "note": "来自游戏 StreamingAssets/Prop_Data_Json.txt + Prop_Chest_*.cs + PropHelper.GerateFaBao;unit 为 ValueCost×0.7 的钱币单价",
+  "pools": {
+    "LingPai|1": {
+      "avg": {
+        "hp": 200,
+        "atk": 200,
+        "def": 200,
+        "hpPercent": 5,
+        "atkPercent": 5,
+        "defPercent": 5
+      },
+      "best": {
+        "gain": {
+          "hp": 200,
+          "atk": 200,
+          "def": 200,
+          "hpPercent": 5,
+          "atkPercent": 5,
+          "defPercent": 5
+        },
+        "id": 100
+      },
+      "count": 1
+    },
+    "All|1": {
+      "avg": {
+        "hp": 430,
+        "atk": 430,
+        "def": 430,
+        "hpPercent": 0.16666666666666666,
+        "atkPercent": 0.16666666666666666,
+        "defPercent": 0.16666666666666666,
+        "baoJi": 0.03333333333333333,
+        "mingZhong": 0.03333333333333333,
+        "fanJi": 0.03333333333333333,
+        "shanBi": 0.03333333333333333,
+        "baoJiDamage": 0.06666666666666667,
+        "lianJi": 0.03333333333333333
+      },
+      "best": {
+        "gain": {
+          "atk": 500,
+          "def": 500,
+          "hp": 500
+        },
+        "id": 10000
+      },
+      "count": 30
+    },
+    "LingPai|2": {
+      "avg": {
+        "hp": 500,
+        "atk": 500,
+        "def": 500,
+        "hpPercent": 10,
+        "atkPercent": 10,
+        "defPercent": 10
+      },
+      "best": {
+        "gain": {
+          "hp": 500,
+          "atk": 500,
+          "def": 500,
+          "hpPercent": 10,
+          "atkPercent": 10,
+          "defPercent": 10
+        },
+        "id": 101
+      },
+      "count": 1
+    },
+    "All|2": {
+      "avg": {
+        "hp": 883.3333333333334,
+        "atk": 883.3333333333334,
+        "def": 883.3333333333334,
+        "hpPercent": 0.3333333333333333,
+        "atkPercent": 0.3333333333333333,
+        "defPercent": 0.3333333333333333,
+        "baoJi": 0.06666666666666667,
+        "mingZhong": 0.06666666666666667,
+        "fanJi": 0.06666666666666667,
+        "shanBi": 0.06666666666666667,
+        "baoJiDamage": 0.13333333333333333,
+        "lianJi": 0.06666666666666667
+      },
+      "best": {
+        "gain": {
+          "atk": 1000,
+          "def": 1000,
+          "hp": 1000
+        },
+        "id": 10001
+      },
+      "count": 30
+    },
+    "LingPai|3": {
+      "avg": {
+        "hp": 1000,
+        "atk": 1000,
+        "def": 1000,
+        "hpPercent": 20,
+        "atkPercent": 20,
+        "defPercent": 20
+      },
+      "best": {
+        "gain": {
+          "hp": 1000,
+          "atk": 1000,
+          "def": 1000,
+          "hpPercent": 20,
+          "atkPercent": 20,
+          "defPercent": 20
+        },
+        "id": 102
+      },
+      "count": 1
+    },
+    "All|3": {
+      "avg": {
+        "hp": 1766.6666666666667,
+        "atk": 1766.6666666666667,
+        "def": 1766.6666666666667,
+        "hpPercent": 0.6666666666666666,
+        "atkPercent": 0.6666666666666666,
+        "defPercent": 0.6666666666666666,
+        "baoJi": 0.13333333333333333,
+        "mingZhong": 0.13333333333333333,
+        "fanJi": 0.13333333333333333,
+        "shanBi": 0.13333333333333333,
+        "baoJiDamage": 0.26666666666666666,
+        "lianJi": 0.13333333333333333
+      },
+      "best": {
+        "gain": {
+          "atk": 2000,
+          "def": 2000,
+          "hp": 2000
+        },
+        "id": 10002
+      },
+      "count": 30
+    },
+    "LingPai|4": {
+      "avg": {
+        "hp": 2000,
+        "atk": 2000,
+        "def": 2000,
+        "hpPercent": 40,
+        "atkPercent": 40,
+        "defPercent": 40
+      },
+      "best": {
+        "gain": {
+          "hp": 2000,
+          "atk": 2000,
+          "def": 2000,
+          "hpPercent": 40,
+          "atkPercent": 40,
+          "defPercent": 40
+        },
+        "id": 103
+      },
+      "count": 1
+    },
+    "All|4": {
+      "avg": {
+        "hp": 3533.3333333333335,
+        "atk": 3533.3333333333335,
+        "def": 3533.3333333333335,
+        "hpPercent": 1.3333333333333333,
+        "atkPercent": 1.3333333333333333,
+        "defPercent": 1.3333333333333333,
+        "baoJi": 0.2,
+        "mingZhong": 0.2,
+        "fanJi": 0.2,
+        "shanBi": 0.2,
+        "baoJiDamage": 0.4,
+        "lianJi": 0.2
+      },
+      "best": {
+        "gain": {
+          "atk": 4000,
+          "def": 4000,
+          "hp": 4000
+        },
+        "id": 10003
+      },
+      "count": 30
+    },
+    "LingPai|5": {
+      "avg": {
+        "hp": 4000,
+        "atk": 4000,
+        "def": 4000,
+        "hpPercent": 60,
+        "atkPercent": 60,
+        "defPercent": 60
+      },
+      "best": {
+        "gain": {
+          "hp": 4000,
+          "atk": 4000,
+          "def": 4000,
+          "hpPercent": 60,
+          "atkPercent": 60,
+          "defPercent": 60
+        },
+        "id": 104
+      },
+      "count": 1
+    },
+    "All|5": {
+      "avg": {
+        "hp": 7066.666666666667,
+        "atk": 7066.666666666667,
+        "def": 7066.666666666667,
+        "hpPercent": 2,
+        "atkPercent": 2,
+        "defPercent": 2,
+        "baoJi": 0.26666666666666666,
+        "mingZhong": 0.26666666666666666,
+        "fanJi": 0.26666666666666666,
+        "shanBi": 0.26666666666666666,
+        "baoJiDamage": 0.6666666666666666,
+        "lianJi": 0.26666666666666666
+      },
+      "best": {
+        "gain": {
+          "atk": 8000,
+          "def": 8000,
+          "hp": 8000
+        },
+        "id": 10004
+      },
+      "count": 30
+    },
+    "LingPai|6": {
+      "avg": {
+        "hp": 8000,
+        "atk": 8000,
+        "def": 8000,
+        "hpPercent": 80,
+        "atkPercent": 80,
+        "defPercent": 80
+      },
+      "best": {
+        "gain": {
+          "hp": 8000,
+          "atk": 8000,
+          "def": 8000,
+          "hpPercent": 80,
+          "atkPercent": 80,
+          "defPercent": 80
+        },
+        "id": 105
+      },
+      "count": 1
+    },
+    "All|6": {
+      "avg": {
+        "hp": 12966.666666666666,
+        "atk": 12966.666666666666,
+        "def": 12966.666666666666,
+        "hpPercent": 2.6666666666666665,
+        "atkPercent": 2.6666666666666665,
+        "defPercent": 2.6666666666666665,
+        "baoJi": 0.3333333333333333,
+        "mingZhong": 0.3333333333333333,
+        "fanJi": 0.3333333333333333,
+        "shanBi": 0.3333333333333333,
+        "baoJiDamage": 1,
+        "lianJi": 0.3333333333333333
+      },
+      "best": {
+        "gain": {
+          "atk": 15000,
+          "def": 15000,
+          "hp": 15000
+        },
+        "id": 10005
+      },
+      "count": 30
+    },
+    "LingPai|7": {
+      "avg": {
+        "hp": 15000,
+        "atk": 15000,
+        "def": 15000,
+        "hpPercent": 100,
+        "atkPercent": 100,
+        "defPercent": 100
+      },
+      "best": {
+        "gain": {
+          "hp": 15000,
+          "atk": 15000,
+          "def": 15000,
+          "hpPercent": 100,
+          "atkPercent": 100,
+          "defPercent": 100
+        },
+        "id": 106
+      },
+      "count": 1
+    },
+    "All|7": {
+      "avg": {
+        "hp": 25500,
+        "atk": 25500,
+        "def": 25500,
+        "hpPercent": 3.3333333333333335,
+        "atkPercent": 3.3333333333333335,
+        "defPercent": 3.3333333333333335,
+        "baoJi": 0.4666666666666667,
+        "mingZhong": 0.4666666666666667,
+        "fanJi": 0.4,
+        "shanBi": 0.4666666666666667,
+        "baoJiDamage": 1.5,
+        "lianJi": 0.4
+      },
+      "best": {
+        "gain": {
+          "atk": 30000,
+          "def": 30000,
+          "hp": 30000
+        },
+        "id": 10006
+      },
+      "count": 30
+    },
+    "LingPai|8": {
+      "avg": {
+        "hp": 30000,
+        "atk": 30000,
+        "def": 30000,
+        "hpPercent": 125,
+        "atkPercent": 125,
+        "defPercent": 125
+      },
+      "best": {
+        "gain": {
+          "hp": 30000,
+          "atk": 30000,
+          "def": 30000,
+          "hpPercent": 125,
+          "atkPercent": 125,
+          "defPercent": 125
+        },
+        "id": 107
+      },
+      "count": 1
+    },
+    "All|8": {
+      "avg": {
+        "hp": 43333.333333333336,
+        "atk": 43333.333333333336,
+        "def": 43333.333333333336,
+        "hpPercent": 4.166666666666667,
+        "atkPercent": 4.166666666666667,
+        "defPercent": 4.166666666666667,
+        "baoJi": 0.6,
+        "mingZhong": 0.6,
+        "fanJi": 0.4666666666666667,
+        "shanBi": 0.6,
+        "baoJiDamage": 2,
+        "lianJi": 0.4666666666666667
+      },
+      "best": {
+        "gain": {
+          "atk": 50000,
+          "def": 50000,
+          "hp": 50000
+        },
+        "id": 10007
+      },
+      "count": 30
+    },
+    "LingPai|9": {
+      "avg": {
+        "hp": 45000,
+        "atk": 45000,
+        "def": 45000,
+        "hpPercent": 150,
+        "atkPercent": 150,
+        "defPercent": 150
+      },
+      "best": {
+        "gain": {
+          "hp": 45000,
+          "atk": 45000,
+          "def": 45000,
+          "hpPercent": 150,
+          "atkPercent": 150,
+          "defPercent": 150
+        },
+        "id": 108
+      },
+      "count": 1
+    },
+    "All|9": {
+      "avg": {
+        "hp": 68833.33333333333,
+        "atk": 68833.33333333333,
+        "def": 68833.33333333333,
+        "hpPercent": 5,
+        "atkPercent": 5,
+        "defPercent": 5,
+        "baoJi": 0.7333333333333333,
+        "mingZhong": 0.7333333333333333,
+        "fanJi": 0.5666666666666667,
+        "shanBi": 0.7333333333333333,
+        "baoJiDamage": 2.6666666666666665,
+        "lianJi": 0.5666666666666667
+      },
+      "best": {
+        "gain": {
+          "atk": 80000,
+          "def": 80000,
+          "hp": 80000
+        },
+        "id": 10008
+      },
+      "count": 30
+    },
+    "LingPai|10": {
+      "avg": {
+        "hp": 80000,
+        "atk": 80000,
+        "def": 80000,
+        "hpPercent": 200,
+        "atkPercent": 200,
+        "defPercent": 200
+      },
+      "best": {
+        "gain": {
+          "hp": 80000,
+          "atk": 80000,
+          "def": 80000,
+          "hpPercent": 200,
+          "atkPercent": 200,
+          "defPercent": 200
+        },
+        "id": 109
+      },
+      "count": 1
+    },
+    "All|10": {
+      "avg": {
+        "hp": 125666.66666666667,
+        "atk": 125666.66666666667,
+        "def": 125666.66666666667,
+        "hpPercent": 6.666666666666667,
+        "atkPercent": 6.666666666666667,
+        "defPercent": 6.666666666666667,
+        "baoJi": 1,
+        "mingZhong": 1,
+        "fanJi": 0.6666666666666666,
+        "shanBi": 1,
+        "baoJiDamage": 3.3333333333333335,
+        "lianJi": 0.6666666666666666
+      },
+      "best": {
+        "gain": {
+          "atk": 150000,
+          "def": 150000,
+          "hp": 150000
+        },
+        "id": 10009
+      },
+      "count": 30
+    },
+    "LingPai|11": {
+      "avg": {
+        "hp": 150000,
+        "atk": 150000,
+        "def": 150000,
+        "hpPercent": 250,
+        "atkPercent": 250,
+        "defPercent": 250
+      },
+      "best": {
+        "gain": {
+          "hp": 150000,
+          "atk": 150000,
+          "def": 150000,
+          "hpPercent": 250,
+          "atkPercent": 250,
+          "defPercent": 250
+        },
+        "id": 110
+      },
+      "count": 1
+    },
+    "All|11": {
+      "avg": {
+        "hp": 174333.33333333334,
+        "atk": 174333.33333333334,
+        "def": 174333.33333333334,
+        "hpPercent": 8.333333333333334,
+        "atkPercent": 8.333333333333334,
+        "defPercent": 8.333333333333334,
+        "baoJi": 1.1666666666666667,
+        "mingZhong": 1.1666666666666667,
+        "fanJi": 0.8333333333333334,
+        "shanBi": 1.1666666666666667,
+        "baoJiDamage": 4,
+        "lianJi": 0.8333333333333334
+      },
+      "best": {
+        "gain": {
+          "atk": 200000,
+          "def": 200000,
+          "hp": 200000
+        },
+        "id": 10010
+      },
+      "count": 30
+    },
+    "LingPai|12": {
+      "avg": {
+        "hp": 200000,
+        "atk": 200000,
+        "def": 200000,
+        "hpPercent": 300,
+        "atkPercent": 300,
+        "defPercent": 300
+      },
+      "best": {
+        "gain": {
+          "hp": 200000,
+          "atk": 200000,
+          "def": 200000,
+          "hpPercent": 300,
+          "atkPercent": 300,
+          "defPercent": 300
+        },
+        "id": 111
+      },
+      "count": 1
+    },
+    "All|12": {
+      "avg": {
+        "hp": 256666.66666666666,
+        "atk": 256666.66666666666,
+        "def": 256666.66666666666,
+        "hpPercent": 10,
+        "atkPercent": 10,
+        "defPercent": 10,
+        "baoJi": 1.3333333333333333,
+        "mingZhong": 1.3333333333333333,
+        "fanJi": 1,
+        "shanBi": 1.3333333333333333,
+        "baoJiDamage": 4.666666666666667,
+        "lianJi": 1
+      },
+      "best": {
+        "gain": {
+          "atk": 300000,
+          "def": 300000,
+          "hp": 300000
+        },
+        "id": 10011
+      },
+      "count": 30
+    },
+    "LingPai|13": {
+      "avg": {
+        "hp": 300000,
+        "atk": 300000,
+        "def": 300000,
+        "hpPercent": 400,
+        "atkPercent": 400,
+        "defPercent": 400
+      },
+      "best": {
+        "gain": {
+          "hp": 300000,
+          "atk": 300000,
+          "def": 300000,
+          "hpPercent": 400,
+          "atkPercent": 400,
+          "defPercent": 400
+        },
+        "id": 112
+      },
+      "count": 1
+    },
+    "All|13": {
+      "avg": {
+        "hp": 346666.6666666667,
+        "atk": 346666.6666666667,
+        "def": 346666.6666666667,
+        "hpPercent": 13.333333333333334,
+        "atkPercent": 13.333333333333334,
+        "defPercent": 13.333333333333334,
+        "baoJi": 1.5,
+        "mingZhong": 1.5,
+        "fanJi": 1.1666666666666667,
+        "shanBi": 1.5,
+        "baoJiDamage": 5.333333333333333,
+        "lianJi": 1.1666666666666667
+      },
+      "best": {
+        "gain": {
+          "atk": 400000,
+          "def": 400000,
+          "hp": 400000
+        },
+        "id": 10012
+      },
+      "count": 30
+    },
+    "LingPai|14": {
+      "avg": {
+        "hp": 400000,
+        "atk": 400000,
+        "def": 400000,
+        "hpPercent": 500,
+        "atkPercent": 500,
+        "defPercent": 500
+      },
+      "best": {
+        "gain": {
+          "hp": 400000,
+          "atk": 400000,
+          "def": 400000,
+          "hpPercent": 500,
+          "atkPercent": 500,
+          "defPercent": 500
+        },
+        "id": 113
+      },
+      "count": 1
+    },
+    "All|14": {
+      "avg": {
+        "hp": 360000,
+        "atk": 360000,
+        "def": 360000,
+        "hpPercent": 16.666666666666668,
+        "atkPercent": 16.666666666666668,
+        "defPercent": 16.666666666666668,
+        "baoJi": 1.6666666666666667,
+        "mingZhong": 1.6666666666666667,
+        "fanJi": 1.3333333333333333,
+        "shanBi": 1.6666666666666667,
+        "baoJiDamage": 6,
+        "lianJi": 1.3333333333333333
+      },
+      "best": {
+        "gain": {
+          "hp": 400000,
+          "atk": 400000,
+          "def": 400000,
+          "hpPercent": 500,
+          "atkPercent": 500,
+          "defPercent": 500
+        },
+        "id": 113
+      },
+      "count": 30
+    },
+    "LingPai|15": {
+      "avg": {
+        "hp": 500000,
+        "atk": 500000,
+        "def": 500000,
+        "hpPercent": 600,
+        "atkPercent": 600,
+        "defPercent": 600
+      },
+      "best": {
+        "gain": {
+          "hp": 500000,
+          "atk": 500000,
+          "def": 500000,
+          "hpPercent": 600,
+          "atkPercent": 600,
+          "defPercent": 600
+        },
+        "id": 114
+      },
+      "count": 1
+    },
+    "All|15": {
+      "avg": {
+        "hp": 450000,
+        "atk": 450000,
+        "def": 450000,
+        "hpPercent": 20,
+        "atkPercent": 20,
+        "defPercent": 20,
+        "baoJi": 1.8333333333333333,
+        "mingZhong": 1.8333333333333333,
+        "fanJi": 1.5,
+        "shanBi": 1.8333333333333333,
+        "baoJiDamage": 6.666666666666667,
+        "lianJi": 1.5
+      },
+      "best": {
+        "gain": {
+          "hp": 500000,
+          "atk": 500000,
+          "def": 500000,
+          "hpPercent": 600,
+          "atkPercent": 600,
+          "defPercent": 600
+        },
+        "id": 114
+      },
+      "count": 30
+    },
+    "BaoShi|1": {
+      "avg": {
+        "hp": 200,
+        "atk": 200,
+        "def": 200,
+        "baoJi": 0.16666666666666666,
+        "mingZhong": 0.16666666666666666,
+        "fanJi": 0.16666666666666666,
+        "shanBi": 0.16666666666666666,
+        "baoJiDamage": 0.3333333333333333,
+        "lianJi": 0.16666666666666666
+      },
+      "best": {
+        "gain": {
+          "hp": 200,
+          "atk": 200,
+          "def": 200,
+          "baoJi": 1
+        },
+        "id": 200
+      },
+      "count": 6
+    },
+    "BaoShi|2": {
+      "avg": {
+        "hp": 500,
+        "atk": 500,
+        "def": 500,
+        "baoJi": 0.3333333333333333,
+        "mingZhong": 0.3333333333333333,
+        "fanJi": 0.3333333333333333,
+        "shanBi": 0.3333333333333333,
+        "baoJiDamage": 0.6666666666666666,
+        "lianJi": 0.3333333333333333
+      },
+      "best": {
+        "gain": {
+          "hp": 500,
+          "atk": 500,
+          "def": 500,
+          "baoJi": 2
+        },
+        "id": 201
+      },
+      "count": 6
+    },
+    "BaoShi|3": {
+      "avg": {
+        "hp": 1000,
+        "atk": 1000,
+        "def": 1000,
+        "baoJi": 0.6666666666666666,
+        "mingZhong": 0.6666666666666666,
+        "fanJi": 0.6666666666666666,
+        "shanBi": 0.6666666666666666,
+        "baoJiDamage": 1.3333333333333333,
+        "lianJi": 0.6666666666666666
+      },
+      "best": {
+        "gain": {
+          "hp": 1000,
+          "atk": 1000,
+          "def": 1000,
+          "baoJi": 4
+        },
+        "id": 202
+      },
+      "count": 6
+    },
+    "BaoShi|4": {
+      "avg": {
+        "hp": 2000,
+        "atk": 2000,
+        "def": 2000,
+        "baoJi": 1,
+        "mingZhong": 1,
+        "fanJi": 1,
+        "shanBi": 1,
+        "baoJiDamage": 2,
+        "lianJi": 1
+      },
+      "best": {
+        "gain": {
+          "hp": 2000,
+          "atk": 2000,
+          "def": 2000,
+          "baoJi": 6
+        },
+        "id": 203
+      },
+      "count": 6
+    },
+    "BaoShi|5": {
+      "avg": {
+        "hp": 4000,
+        "atk": 4000,
+        "def": 4000,
+        "baoJi": 1.3333333333333333,
+        "mingZhong": 1.3333333333333333,
+        "fanJi": 1.3333333333333333,
+        "shanBi": 1.3333333333333333,
+        "baoJiDamage": 3.3333333333333335,
+        "lianJi": 1.3333333333333333
+      },
+      "best": {
+        "gain": {
+          "hp": 4000,
+          "atk": 4000,
+          "def": 4000,
+          "baoJi": 8
+        },
+        "id": 204
+      },
+      "count": 6
+    },
+    "BaoShi|6": {
+      "avg": {
+        "hp": 6000,
+        "atk": 6000,
+        "def": 6000,
+        "baoJi": 1.6666666666666667,
+        "mingZhong": 1.6666666666666667,
+        "fanJi": 1.6666666666666667,
+        "shanBi": 1.6666666666666667,
+        "baoJiDamage": 5,
+        "lianJi": 1.6666666666666667
+      },
+      "best": {
+        "gain": {
+          "hp": 6000,
+          "atk": 6000,
+          "def": 6000,
+          "baoJi": 10
+        },
+        "id": 205
+      },
+      "count": 6
+    },
+    "BaoShi|7": {
+      "avg": {
+        "hp": 10000,
+        "atk": 10000,
+        "def": 10000,
+        "baoJi": 2.3333333333333335,
+        "mingZhong": 2.3333333333333335,
+        "fanJi": 2,
+        "shanBi": 2.3333333333333335,
+        "baoJiDamage": 7.5,
+        "lianJi": 2
+      },
+      "best": {
+        "gain": {
+          "hp": 10000,
+          "atk": 10000,
+          "def": 10000,
+          "baoJi": 14
+        },
+        "id": 206
+      },
+      "count": 6
+    },
+    "BaoShi|8": {
+      "avg": {
+        "hp": 20000,
+        "atk": 20000,
+        "def": 20000,
+        "baoJi": 3,
+        "mingZhong": 3,
+        "fanJi": 2.3333333333333335,
+        "shanBi": 3,
+        "baoJiDamage": 10,
+        "lianJi": 2.3333333333333335
+      },
+      "best": {
+        "gain": {
+          "hp": 20000,
+          "atk": 20000,
+          "def": 20000,
+          "baoJi": 18
+        },
+        "id": 207
+      },
+      "count": 6
+    },
+    "BaoShi|9": {
+      "avg": {
+        "hp": 30000,
+        "atk": 30000,
+        "def": 30000,
+        "baoJi": 3.6666666666666665,
+        "mingZhong": 3.6666666666666665,
+        "fanJi": 2.8333333333333335,
+        "shanBi": 3.6666666666666665,
+        "baoJiDamage": 13.333333333333334,
+        "lianJi": 2.8333333333333335
+      },
+      "best": {
+        "gain": {
+          "hp": 30000,
+          "atk": 30000,
+          "def": 30000,
+          "baoJi": 22
+        },
+        "id": 208
+      },
+      "count": 6
+    },
+    "BaoShi|10": {
+      "avg": {
+        "hp": 40000,
+        "atk": 40000,
+        "def": 40000,
+        "baoJi": 5,
+        "mingZhong": 5,
+        "fanJi": 3.3333333333333335,
+        "shanBi": 5,
+        "baoJiDamage": 16.666666666666668,
+        "lianJi": 3.3333333333333335
+      },
+      "best": {
+        "gain": {
+          "hp": 40000,
+          "atk": 40000,
+          "def": 40000,
+          "baoJi": 30
+        },
+        "id": 209
+      },
+      "count": 6
+    },
+    "BaoShi|11": {
+      "avg": {
+        "hp": 80000,
+        "atk": 80000,
+        "def": 80000,
+        "baoJi": 5.833333333333333,
+        "mingZhong": 5.833333333333333,
+        "fanJi": 4.166666666666667,
+        "shanBi": 5.833333333333333,
+        "baoJiDamage": 20,
+        "lianJi": 4.166666666666667
+      },
+      "best": {
+        "gain": {
+          "hp": 80000,
+          "atk": 80000,
+          "def": 80000,
+          "baoJi": 35
+        },
+        "id": 210
+      },
+      "count": 6
+    },
+    "BaoShi|12": {
+      "avg": {
+        "hp": 100000,
+        "atk": 100000,
+        "def": 100000,
+        "baoJi": 6.666666666666667,
+        "mingZhong": 6.666666666666667,
+        "fanJi": 5,
+        "shanBi": 6.666666666666667,
+        "baoJiDamage": 23.333333333333332,
+        "lianJi": 5
+      },
+      "best": {
+        "gain": {
+          "hp": 100000,
+          "atk": 100000,
+          "def": 100000,
+          "baoJi": 40
+        },
+        "id": 211
+      },
+      "count": 6
+    },
+    "BaoShi|13": {
+      "avg": {
+        "hp": 150000,
+        "atk": 150000,
+        "def": 150000,
+        "baoJi": 7.5,
+        "mingZhong": 7.5,
+        "fanJi": 5.833333333333333,
+        "shanBi": 7.5,
+        "baoJiDamage": 26.666666666666668,
+        "lianJi": 5.833333333333333
+      },
+      "best": {
+        "gain": {
+          "hp": 150000,
+          "atk": 150000,
+          "def": 150000,
+          "baoJi": 45
+        },
+        "id": 212
+      },
+      "count": 6
+    },
+    "BaoShi|14": {
+      "avg": {
+        "hp": 200000,
+        "atk": 200000,
+        "def": 200000,
+        "baoJi": 8.333333333333334,
+        "mingZhong": 8.333333333333334,
+        "fanJi": 6.666666666666667,
+        "shanBi": 8.333333333333334,
+        "baoJiDamage": 30,
+        "lianJi": 6.666666666666667
+      },
+      "best": {
+        "gain": {
+          "hp": 200000,
+          "atk": 200000,
+          "def": 200000,
+          "baoJi": 50
+        },
+        "id": 213
+      },
+      "count": 6
+    },
+    "BaoShi|15": {
+      "avg": {
+        "hp": 250000,
+        "atk": 250000,
+        "def": 250000,
+        "baoJi": 9.166666666666666,
+        "mingZhong": 9.166666666666666,
+        "fanJi": 7.5,
+        "shanBi": 9.166666666666666,
+        "baoJiDamage": 33.333333333333336,
+        "lianJi": 7.5
+      },
+      "best": {
+        "gain": {
+          "hp": 250000,
+          "atk": 250000,
+          "def": 250000,
+          "baoJi": 55
+        },
+        "id": 214
+      },
+      "count": 6
+    },
+    "LingQi|1": {
+      "avg": {
+        "atk": 500,
+        "def": 500,
+        "hp": 500
+      },
+      "best": {
+        "gain": {
+          "atk": 500,
+          "def": 500,
+          "hp": 500
+        },
+        "id": 10000
+      },
+      "count": 23
+    },
+    "LingQi|2": {
+      "avg": {
+        "atk": 1000,
+        "def": 1000,
+        "hp": 1000
+      },
+      "best": {
+        "gain": {
+          "atk": 1000,
+          "def": 1000,
+          "hp": 1000
+        },
+        "id": 10001
+      },
+      "count": 23
+    },
+    "LingQi|3": {
+      "avg": {
+        "atk": 2000,
+        "def": 2000,
+        "hp": 2000
+      },
+      "best": {
+        "gain": {
+          "atk": 2000,
+          "def": 2000,
+          "hp": 2000
+        },
+        "id": 10002
+      },
+      "count": 23
+    },
+    "LingQi|4": {
+      "avg": {
+        "atk": 4000,
+        "def": 4000,
+        "hp": 4000
+      },
+      "best": {
+        "gain": {
+          "atk": 4000,
+          "def": 4000,
+          "hp": 4000
+        },
+        "id": 10003
+      },
+      "count": 23
+    },
+    "LingQi|5": {
+      "avg": {
+        "atk": 8000,
+        "def": 8000,
+        "hp": 8000
+      },
+      "best": {
+        "gain": {
+          "atk": 8000,
+          "def": 8000,
+          "hp": 8000
+        },
+        "id": 10004
+      },
+      "count": 23
+    },
+    "LingQi|6": {
+      "avg": {
+        "atk": 15000,
+        "def": 15000,
+        "hp": 15000
+      },
+      "best": {
+        "gain": {
+          "atk": 15000,
+          "def": 15000,
+          "hp": 15000
+        },
+        "id": 10005
+      },
+      "count": 23
+    },
+    "LingQi|7": {
+      "avg": {
+        "atk": 30000,
+        "def": 30000,
+        "hp": 30000
+      },
+      "best": {
+        "gain": {
+          "atk": 30000,
+          "def": 30000,
+          "hp": 30000
+        },
+        "id": 10006
+      },
+      "count": 23
+    },
+    "LingQi|8": {
+      "avg": {
+        "atk": 50000,
+        "def": 50000,
+        "hp": 50000
+      },
+      "best": {
+        "gain": {
+          "atk": 50000,
+          "def": 50000,
+          "hp": 50000
+        },
+        "id": 10007
+      },
+      "count": 23
+    },
+    "LingQi|9": {
+      "avg": {
+        "atk": 80000,
+        "def": 80000,
+        "hp": 80000
+      },
+      "best": {
+        "gain": {
+          "atk": 80000,
+          "def": 80000,
+          "hp": 80000
+        },
+        "id": 10008
+      },
+      "count": 23
+    },
+    "LingQi|10": {
+      "avg": {
+        "atk": 150000,
+        "def": 150000,
+        "hp": 150000
+      },
+      "best": {
+        "gain": {
+          "atk": 150000,
+          "def": 150000,
+          "hp": 150000
+        },
+        "id": 10009
+      },
+      "count": 23
+    },
+    "LingQi|11": {
+      "avg": {
+        "atk": 200000,
+        "def": 200000,
+        "hp": 200000
+      },
+      "best": {
+        "gain": {
+          "atk": 200000,
+          "def": 200000,
+          "hp": 200000
+        },
+        "id": 10010
+      },
+      "count": 23
+    },
+    "LingQi|12": {
+      "avg": {
+        "atk": 300000,
+        "def": 300000,
+        "hp": 300000
+      },
+      "best": {
+        "gain": {
+          "atk": 300000,
+          "def": 300000,
+          "hp": 300000
+        },
+        "id": 10011
+      },
+      "count": 23
+    },
+    "LingQi|13": {
+      "avg": {
+        "atk": 400000,
+        "def": 400000,
+        "hp": 400000
+      },
+      "best": {
+        "gain": {
+          "atk": 400000,
+          "def": 400000,
+          "hp": 400000
+        },
+        "id": 10012
+      },
+      "count": 23
+    },
+    "LingQi|14": {
+      "avg": {
+        "atk": 400000,
+        "def": 400000,
+        "hp": 400000
+      },
+      "best": {
+        "gain": {
+          "atk": 400000,
+          "def": 400000,
+          "hp": 400000
+        },
+        "id": 10013
+      },
+      "count": 23
+    },
+    "LingQi|15": {
+      "avg": {
+        "atk": 500000,
+        "def": 500000,
+        "hp": 500000
+      },
+      "best": {
+        "gain": {
+          "atk": 500000,
+          "def": 500000,
+          "hp": 500000
+        },
+        "id": 10014
+      },
+      "count": 23
+    }
+  },
+  "chests": [
+    {
+      "id": 11,
+      "kind": "fix",
+      "name": "寒铁宝箱",
+      "unit": 35,
+      "target": 1,
+      "min": 10,
+      "max": 88
+    },
+    {
+      "id": 12,
+      "kind": "fix",
+      "name": "强化宝箱",
+      "unit": 175,
+      "target": 5,
+      "min": 10,
+      "max": 88
+    },
+    {
+      "id": 13,
+      "kind": "fix",
+      "name": "神石宝箱",
+      "unit": 175,
+      "target": 2,
+      "min": 10,
+      "max": 88
+    },
+    {
+      "id": 14,
+      "kind": "fix",
+      "name": "神通宝箱",
+      "unit": 70,
+      "target": 6,
+      "min": 10,
+      "max": 88
+    },
+    {
+      "id": 15,
+      "kind": "fix",
+      "name": "研究宝箱",
+      "unit": 70,
+      "target": 9,
+      "min": 10,
+      "max": 88
+    },
+    {
+      "id": 16,
+      "kind": "fix",
+      "name": "灵纹宝箱",
+      "unit": 70,
+      "target": 7,
+      "min": 10,
+      "max": 88
+    },
+    {
+      "id": 18,
+      "kind": "suiPian",
+      "name": "残念锦囊",
+      "unit": 7,
+      "ziXuan": false
+    },
+    {
+      "id": 19,
+      "kind": "suiPian",
+      "name": "自选残念锦囊",
+      "unit": 70,
+      "ziXuan": true
+    },
+    {
+      "id": 20,
+      "kind": "fix",
+      "name": "御力宝箱Lv1",
+      "unit": 7,
+      "target": 4,
+      "min": 100000,
+      "max": 100000
+    },
+    {
+      "id": 21,
+      "kind": "fix",
+      "name": "御力宝箱Lv2",
+      "unit": 14,
+      "target": 4,
+      "min": 200000,
+      "max": 200000
+    },
+    {
+      "id": 22,
+      "kind": "fix",
+      "name": "御力宝箱Lv3",
+      "unit": 21,
+      "target": 4,
+      "min": 300000,
+      "max": 300000
+    },
+    {
+      "id": 23,
+      "kind": "fix",
+      "name": "御力宝箱Lv4",
+      "unit": 28,
+      "target": 4,
+      "min": 400000,
+      "max": 400000
+    },
+    {
+      "id": 24,
+      "kind": "fix",
+      "name": "御力宝箱Lv5",
+      "unit": 35,
+      "target": 4,
+      "min": 500000,
+      "max": 500000
+    },
+    {
+      "id": 25,
+      "kind": "fix",
+      "name": "御力宝箱Lv6",
+      "unit": 42,
+      "target": 4,
+      "min": 600000,
+      "max": 600000
+    },
+    {
+      "id": 26,
+      "kind": "fix",
+      "name": "御力宝箱Lv7",
+      "unit": 49,
+      "target": 4,
+      "min": 700000,
+      "max": 700000
+    },
+    {
+      "id": 27,
+      "kind": "fix",
+      "name": "御力宝箱Lv8",
+      "unit": 56,
+      "target": 4,
+      "min": 800000,
+      "max": 800000
+    },
+    {
+      "id": 28,
+      "kind": "fix",
+      "name": "御力宝箱Lv9",
+      "unit": 62.99999999999999,
+      "target": 4,
+      "min": 900000,
+      "max": 900000
+    },
+    {
+      "id": 29,
+      "kind": "fix",
+      "name": "御力宝箱Lv10",
+      "unit": 70,
+      "target": 4,
+      "min": 1000000,
+      "max": 1000000
+    },
+    {
+      "id": 30,
+      "kind": "type",
+      "name": "宝石匣Lv1",
+      "unit": 5.6,
+      "pinzhi": 1,
+      "pool": "BaoShi|1",
+      "ziXuan": false
+    },
+    {
+      "id": 31,
+      "kind": "type",
+      "name": "宝石匣Lv2",
+      "unit": 28,
+      "pinzhi": 2,
+      "pool": "BaoShi|2",
+      "ziXuan": false
+    },
+    {
+      "id": 32,
+      "kind": "type",
+      "name": "宝石匣Lv3",
+      "unit": 140,
+      "pinzhi": 3,
+      "pool": "BaoShi|3",
+      "ziXuan": false
+    },
+    {
+      "id": 33,
+      "kind": "type",
+      "name": "宝石匣Lv4",
+      "unit": 700,
+      "pinzhi": 4,
+      "pool": "BaoShi|4",
+      "ziXuan": false
+    },
+    {
+      "id": 34,
+      "kind": "type",
+      "name": "宝石匣Lv5",
+      "unit": 3500,
+      "pinzhi": 5,
+      "pool": "BaoShi|5",
+      "ziXuan": false
+    },
+    {
+      "id": 35,
+      "kind": "type",
+      "name": "宝石匣Lv6",
+      "unit": 17500,
+      "pinzhi": 6,
+      "pool": "BaoShi|6",
+      "ziXuan": false
+    },
+    {
+      "id": 36,
+      "kind": "type",
+      "name": "宝石匣Lv7",
+      "unit": 87500,
+      "pinzhi": 7,
+      "pool": "BaoShi|7",
+      "ziXuan": false
+    },
+    {
+      "id": 37,
+      "kind": "type",
+      "name": "宝石匣Lv8",
+      "unit": 437500,
+      "pinzhi": 8,
+      "pool": "BaoShi|8",
+      "ziXuan": false
+    },
+    {
+      "id": 38,
+      "kind": "type",
+      "name": "宝石匣Lv9",
+      "unit": 2187500,
+      "pinzhi": 9,
+      "pool": "BaoShi|9",
+      "ziXuan": false
+    },
+    {
+      "id": 39,
+      "kind": "type",
+      "name": "宝石匣Lv10",
+      "unit": 10937500,
+      "pinzhi": 10,
+      "pool": "BaoShi|10",
+      "ziXuan": false
+    },
+    {
+      "id": 40,
+      "kind": "type",
+      "name": "自选宝石匣Lv1",
+      "unit": 7,
+      "pinzhi": 1,
+      "pool": "BaoShi|1",
+      "ziXuan": true
+    },
+    {
+      "id": 41,
+      "kind": "type",
+      "name": "自选宝石匣Lv2",
+      "unit": 35,
+      "pinzhi": 2,
+      "pool": "BaoShi|2",
+      "ziXuan": true
+    },
+    {
+      "id": 42,
+      "kind": "type",
+      "name": "自选宝石匣Lv3",
+      "unit": 175,
+      "pinzhi": 3,
+      "pool": "BaoShi|3",
+      "ziXuan": true
+    },
+    {
+      "id": 43,
+      "kind": "type",
+      "name": "自选宝石匣Lv4",
+      "unit": 875,
+      "pinzhi": 4,
+      "pool": "BaoShi|4",
+      "ziXuan": true
+    },
+    {
+      "id": 44,
+      "kind": "type",
+      "name": "自选宝石匣Lv5",
+      "unit": 4375,
+      "pinzhi": 5,
+      "pool": "BaoShi|5",
+      "ziXuan": true
+    },
+    {
+      "id": 45,
+      "kind": "type",
+      "name": "自选宝石匣Lv6",
+      "unit": 21875,
+      "pinzhi": 6,
+      "pool": "BaoShi|6",
+      "ziXuan": true
+    },
+    {
+      "id": 46,
+      "kind": "type",
+      "name": "自选宝石匣Lv7",
+      "unit": 109375,
+      "pinzhi": 7,
+      "pool": "BaoShi|7",
+      "ziXuan": true
+    },
+    {
+      "id": 47,
+      "kind": "type",
+      "name": "自选宝石匣Lv8",
+      "unit": 546875,
+      "pinzhi": 8,
+      "pool": "BaoShi|8",
+      "ziXuan": true
+    },
+    {
+      "id": 48,
+      "kind": "type",
+      "name": "自选宝石匣Lv9",
+      "unit": 2734375,
+      "pinzhi": 9,
+      "pool": "BaoShi|9",
+      "ziXuan": true
+    },
+    {
+      "id": 49,
+      "kind": "type",
+      "name": "自选宝石匣Lv10",
+      "unit": 13671875,
+      "pinzhi": 10,
+      "pool": "BaoShi|10",
+      "ziXuan": true
+    },
+    {
+      "id": 50,
+      "kind": "type",
+      "name": "灵宝匣Lv1",
+      "unit": 5.6,
+      "pinzhi": 1,
+      "pool": "LingQi|1",
+      "ziXuan": false
+    },
+    {
+      "id": 51,
+      "kind": "type",
+      "name": "灵宝匣Lv2",
+      "unit": 28,
+      "pinzhi": 2,
+      "pool": "LingQi|2",
+      "ziXuan": false
+    },
+    {
+      "id": 52,
+      "kind": "type",
+      "name": "灵宝匣Lv3",
+      "unit": 140,
+      "pinzhi": 3,
+      "pool": "LingQi|3",
+      "ziXuan": false
+    },
+    {
+      "id": 53,
+      "kind": "type",
+      "name": "灵宝匣Lv4",
+      "unit": 700,
+      "pinzhi": 4,
+      "pool": "LingQi|4",
+      "ziXuan": false
+    },
+    {
+      "id": 54,
+      "kind": "type",
+      "name": "灵宝匣Lv5",
+      "unit": 3500,
+      "pinzhi": 5,
+      "pool": "LingQi|5",
+      "ziXuan": false
+    },
+    {
+      "id": 55,
+      "kind": "type",
+      "name": "灵宝匣Lv6",
+      "unit": 17500,
+      "pinzhi": 6,
+      "pool": "LingQi|6",
+      "ziXuan": false
+    },
+    {
+      "id": 56,
+      "kind": "type",
+      "name": "灵宝匣Lv7",
+      "unit": 87500,
+      "pinzhi": 7,
+      "pool": "LingQi|7",
+      "ziXuan": false
+    },
+    {
+      "id": 57,
+      "kind": "type",
+      "name": "灵宝匣Lv8",
+      "unit": 437500,
+      "pinzhi": 8,
+      "pool": "LingQi|8",
+      "ziXuan": false
+    },
+    {
+      "id": 58,
+      "kind": "type",
+      "name": "灵宝匣Lv9",
+      "unit": 2187500,
+      "pinzhi": 9,
+      "pool": "LingQi|9",
+      "ziXuan": false
+    },
+    {
+      "id": 59,
+      "kind": "type",
+      "name": "灵宝匣Lv10",
+      "unit": 10937500,
+      "pinzhi": 10,
+      "pool": "LingQi|10",
+      "ziXuan": false
+    },
+    {
+      "id": 60,
+      "kind": "type",
+      "name": "自选灵宝匣Lv1",
+      "unit": 7,
+      "pinzhi": 1,
+      "pool": "LingQi|1",
+      "ziXuan": true
+    },
+    {
+      "id": 61,
+      "kind": "type",
+      "name": "自选灵宝匣Lv2",
+      "unit": 35,
+      "pinzhi": 2,
+      "pool": "LingQi|2",
+      "ziXuan": true
+    },
+    {
+      "id": 62,
+      "kind": "type",
+      "name": "自选灵宝匣Lv3",
+      "unit": 175,
+      "pinzhi": 3,
+      "pool": "LingQi|3",
+      "ziXuan": true
+    },
+    {
+      "id": 63,
+      "kind": "type",
+      "name": "自选灵宝匣Lv4",
+      "unit": 875,
+      "pinzhi": 4,
+      "pool": "LingQi|4",
+      "ziXuan": true
+    },
+    {
+      "id": 64,
+      "kind": "type",
+      "name": "自选灵宝匣Lv5",
+      "unit": 4375,
+      "pinzhi": 5,
+      "pool": "LingQi|5",
+      "ziXuan": true
+    },
+    {
+      "id": 65,
+      "kind": "type",
+      "name": "自选灵宝匣Lv6",
+      "unit": 21875,
+      "pinzhi": 6,
+      "pool": "LingQi|6",
+      "ziXuan": true
+    },
+    {
+      "id": 66,
+      "kind": "type",
+      "name": "自选灵宝匣Lv7",
+      "unit": 109375,
+      "pinzhi": 7,
+      "pool": "LingQi|7",
+      "ziXuan": true
+    },
+    {
+      "id": 67,
+      "kind": "type",
+      "name": "自选灵宝匣Lv8",
+      "unit": 546875,
+      "pinzhi": 8,
+      "pool": "LingQi|8",
+      "ziXuan": true
+    },
+    {
+      "id": 68,
+      "kind": "type",
+      "name": "自选灵宝匣Lv9",
+      "unit": 2734375,
+      "pinzhi": 9,
+      "pool": "LingQi|9",
+      "ziXuan": true
+    },
+    {
+      "id": 69,
+      "kind": "type",
+      "name": "自选灵宝匣Lv10",
+      "unit": 13671875,
+      "pinzhi": 10,
+      "pool": "LingQi|10",
+      "ziXuan": true
+    },
+    {
+      "id": 70,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv1",
+      "unit": 0.7,
+      "pinzhi": 1,
+      "pool": "All|1",
+      "next": 71
+    },
+    {
+      "id": 71,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv2",
+      "unit": 0.7,
+      "pinzhi": 2,
+      "pool": "All|2",
+      "next": 72
+    },
+    {
+      "id": 72,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv3",
+      "unit": 0.7,
+      "pinzhi": 3,
+      "pool": "All|3",
+      "next": 73
+    },
+    {
+      "id": 73,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv4",
+      "unit": 0.7,
+      "pinzhi": 4,
+      "pool": "All|4",
+      "next": 74
+    },
+    {
+      "id": 74,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv5",
+      "unit": 0.7,
+      "pinzhi": 5,
+      "pool": "All|5",
+      "next": 75
+    },
+    {
+      "id": 75,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv6",
+      "unit": 0.7,
+      "pinzhi": 6,
+      "pool": "All|6",
+      "next": 76
+    },
+    {
+      "id": 76,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv7",
+      "unit": 0.7,
+      "pinzhi": 7,
+      "pool": "All|7",
+      "next": 77
+    },
+    {
+      "id": 77,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv8",
+      "unit": 0.7,
+      "pinzhi": 8,
+      "pool": "All|8",
+      "next": 78
+    },
+    {
+      "id": 78,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv9",
+      "unit": 0.7,
+      "pinzhi": 9,
+      "pool": "All|9",
+      "next": 79
+    },
+    {
+      "id": 79,
+      "kind": "taowa",
+      "name": "套娃宝箱Lv10",
+      "unit": 0.7,
+      "pinzhi": 10,
+      "pool": "All|10",
+      "next": 0
+    },
+    {
+      "id": 96,
+      "kind": "mibao",
+      "name": "试炼秘宝",
+      "unit": 342221.6,
+      "pinzhi": 15,
+      "pool": "All|15",
+      "ziXuan": true
+    }
+  ],
+  "research33Reduce": 30
+}

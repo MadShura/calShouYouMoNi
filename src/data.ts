@@ -1,3 +1,5 @@
+import {readFileSync} from "node:fs";
+
 // 18 项属性各自的「真百分比」增量(BattleData_Recorder.PercentAddition,GetFinal 乘 (100+百分比)/100).
 // property.json 中 percent=0 的 5 项(攻/防/血/速/穿透)会真正走 PercentAddition；
 // percent=1 的 13 项源码只加 Base_Value 固定值,此接口仍全部列出,便于统一返回结构.
@@ -638,5 +640,62 @@ export const SHEN_TONG_NODES: readonly ShenTongNode[] = [
   [19,4,5,1,39,1],[20,4,5,1,40,1],[21,4,5,1,41,1],[22,4,5,1,42,1],[23,4,5,1,43,1],[24,4,5,1,44,1],
   [25,5,3,0,13,5],[26,5,3,0,14,5],[27,5,1,1,45,1],[28,5,1,1,46,1],[29,5,1,1,47,1],[30,5,1,0,3,10]
 ];
+
+// ---- 残念锦囊(18/19) → 单个英灵升星:Character_YingLing.cs:194-201,203-210,294-309 ----
+// 残念是 600+英灵Index 的专属碎片(601-629 共 29 种,YingLing_SettingData.cs:25),不是通用 600.
+// GetStarRemand:Star<15 用 20×2^⌊Star/5⌋,Star≥15 用 100×(⌊Star/200⌋+1)+⌊(Star-14)/5⌋×40,
+// 再经研究33「因陋就简」满级 -30%(Cul_Percent_ToInt),CulMaxStarUpTimes:227-230 有下限 1.
+// LevelUpStar 先按「当前 Star」结算效果再 Star++:四维 PercentAddition 各 +min(⌊Star/5⌋+1,20)×5,
+// 速度 +1 固定值,轮转属性 LevelUpStartEffect[⌊Star/5⌋%8] +1(这些属性 percent=1 → Base_Value).
+// 效果只写该英灵自己的 BattleData_Manager(:207),不乘英灵数量(与 POJING_YINGLING_COUNT=1 同口径).
+export const CANNIAN_YINGLING_COUNT = 29;
+export const CANNIAN_RESEARCH_33_REDUCE = 30;
+export const CANNIAN_STAR_BRANCH = 15;
+export const CANNIAN_STAR_COST_BASE = 20;
+export const CANNIAN_STAR_COST_CAP = 21_4748_3646;
+export const CANNIAN_STAR_DIVISOR = 5;
+export const CANNIAN_STAR_PCT_CAP = 20;
+export const CANNIAN_STAR_PCT_PER_STEP = 5;
+export const YINGLING_STAR_ROTATE_PROPS: readonly number[] = [6,13,9,10,14,4,5,7];
+
+// ---- 宝箱/锦囊配置:config/chests.json(按游戏 StreamingAssets/Prop_Data_Json.txt 导出) ----
+// 开奖源码:Prop_Chest_FixProp.cs:28-44 / Prop_Chest_RandomSuiPian.cs:23-50 /
+// Prop_Chest_TypeBaoXiang.cs:37-86 / Prop_Chest_TaoWa.cs:24-75 / Prop_Chest_MiBao.cs:26-41；
+// 候选池含 PropHelper.GerateFaBao(:194-230)动态生成的 23×15 件灵器.
+// unit 是 ValueCost×(100−研究44 30%)/100 的钱币单价(PropHelper.cs:29-64),不取整,保留小数.
+export type ChestKind = "fix"|"mibao"|"suiPian"|"taowa"|"type";
+export type ChestGain = Record<string,number>;
+
+export interface ChestPool {
+  avg:   ChestGain;
+  best:  {gain: ChestGain; id: number};
+  count: number;
+}
+
+export interface ChestDef {
+  id:      number;
+  kind:    ChestKind;
+  max?:    number;
+  min?:    number;
+  name:    string;
+  next?:   number;
+  pinzhi?: number;
+  pool?:   string;
+  target?: number;
+  unit:    number;
+  ziXuan?: boolean;
+}
+
+export interface ChestData {
+  cannianYingLingCount: number;
+  chests:                readonly ChestDef[];
+  note:                  string;
+  pools:                 Record<string,ChestPool>;
+  research33Reduce:      number;
+}
+
+export const CHEST_DATA: ChestData = JSON.parse(
+  readFileSync(new URL("./config/chests.json",import.meta.url),"utf8")
+) as ChestData;
 
 // #endregion
