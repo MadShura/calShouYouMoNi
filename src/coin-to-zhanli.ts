@@ -1,16 +1,17 @@
 /**
- * coin-to-zhanli.ts — 固定钱币 → 11 种材料 → 12 个 tozhanli 方法的完整对比(导出全量对比 compareByCoin 与精简打印辅助方法 printKeyProps)
+ * coin-to-zhanli.ts — 固定钱币 → 11 种材料 → 13 条结果的完整对比(导出全量对比 compareByCoin 与精简打印辅助方法 printKeyProps)
  * 钱币换算按源码 PropHelper.GetPropValue(:29-38) 的「整批一次取整」:
  * round(单价 × 数量) ≤ 钱币 的最大整数数量；单价直接取 data.ts 的 MATERIAL_COST_PER_UNIT
  * (表内数值已是 ValueCost × (100−研究44 商店折扣)/100,不再二次打折).
- * 12 条结果先按「攻击 atk」的数值降序排序,再按 DESIGN.md:89 的口径转成展示结果:
+ * 灵纹按天覆阵(阵法1)与鸟翔阵(阵法8)各算一条,9 个阵法里只取这两个,故共 13 条结果.
+ * 13 条结果先按「攻击 atk」的数值降序排序,再按 DESIGN.md:89 的口径转成展示结果:
  * 数字用 readSave.ts 的 formatSuoXie(ToolClass.TranslateNumsToSuoXie:10 万以下整数,
  * 10 万起按 万/亿/兆/京... 每四位递进),字段名统一译成中文；
  * 所以 compareByCoin 返回的所有数值都是字符串(排序在格式化之前完成,不受影响).
  * 百分比字段名按源码核查结果标注:config/property.json 里 percent=1 的 13 项属性
  * (BattleData_Recorder.GetFinal 直接返回 True_Base_Value,GetZhanLi 把该值进乘区数组)数值即百分比点数,
  * 字段名加 % 后缀但数值不改;PercentAddition 类字段已含「百分比」字样,保持不动.
- * 结果结构说明:9 个新增方法为 ToZhanliResult(18 项固定值 + 18 项百分比 + 过程量),
+ * 结果结构说明:10 个方法为 ToZhanliResult(18 项固定值 + 18 项百分比 + 过程量),
  * 寒铁为 HantieToZhanliResult,强化石两个方法为 AllProperties;缺失字段即源码不产出该属性.
  * 神兵火炼/水炼只投「想要的属性」数组指定的炼化轨(默认 命中、速度):水炼 23 条轨里
  * 没有命中与速度,故忘情水默认结果为 0;传 伤害加成、暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
@@ -18,13 +19,14 @@
 import {
   hantieTozhanli,
   lingjingTozhanli,
-  lingwenTozhanli,
   lishibenjiTozhanli,
+  niaoxiangzhenTozhanli,
   pojingshiTozhanli,
   qianghuazhiTozhanli1,
   qianghuazhiTozhanli2,
   sanweizhenhuoTozhanli,
   shentongjuanzhouTozhanli,
+  tianfuzhenTozhanli,
   wangqingshuiTozhanli,
   wucaishenshiTozhanli,
   yulingbaodianTozhanli
@@ -32,10 +34,10 @@ import {
 import {DEFAULT_WANTED_PROPERTIES,MATERIAL_COST_PER_UNIT} from "./data.ts";
 import {formatSuoXie} from "./readSave.ts";
 
-// 英文字段名 → 中文:覆盖 3 种返回类型的全部数值字段(18 项固定值,18 项百分比,7 个过程量,
+// 英文字段名 → 中文:覆盖 3 种返回类型的全部数值字段(18 项固定值,18 项百分比,8 个过程量,
 // 寒铁特有的 10 个过程量);行级的 攻击/数量/方法/材料/结果 已是中文,不在表内.按字母序排列.
 // 13 项 percent=1 属性的数值是百分比点数(源码 GetFinal 不乘,GetZhanLi 进乘区数组),字段名加 % 后缀;
-// PercentAddition 类(xxxPercent)与 特殊百分比/战力百分比 本就是百分比且名字已标明,保持不动;
+// PercentAddition 类(xxxPercent)与 特殊百分比/战力百分比/阵法最高攻加成百分比 本就是百分比且名字已标明,保持不动;
 // 5 项 percent=0 属性(攻/防/血/速/穿透)与全部计数/等级/材料过程量是固定值,不加 %.
 const FIELD_NAMES: Record<string,string> = {
   atk:                   "攻击",
@@ -90,18 +92,24 @@ const FIELD_NAMES: Record<string,string> = {
   wucaiUsed:             "消耗五彩神石",
   xiXie:                 "吸血%",
   xiXiePercent:          "吸血百分比",
-  zhanliPercent:         "战力百分比"
+  zhanliPercent:         "战力百分比",
+  zhenFaAttackPercent:   "阵法最高攻加成百分比"
 };
 
 /**
- * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 12 个 tozhanli 方法, 按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
+ * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 13 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
  * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中、速度,传 伤害加成、暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
+ * 灵纹按天覆阵/鸟翔阵各算一条;mySpeed/enemySpeed 透传给鸟翔阵的速度差伤害加成,默认都是 0.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
  * @param wanted 想要的属性中文名数组(默认 命中、速度)
+ * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
+ * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
  */
 export function compareByCoin (
   money = 1_0000_0000,
-  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
+  mySpeed = 0,
+  enemySpeed = 0
 ) {
 
   // 整批一次取整:求最大 N 使 Math.round(单价×N) ≤ money(二分避免浮点边界与逐个试算).
@@ -139,7 +147,8 @@ export function compareByCoin (
     make("御灵宝典","yulingbaodianTozhanli",yulingbaodianTozhanli),
     make("忘情水","wangqingshuiTozhanli",n => wangqingshuiTozhanli(n,wanted)),
     make("灵晶","lingjingTozhanli",lingjingTozhanli),
-    make("灵纹","lingwenTozhanli",lingwenTozhanli),
+    make("灵纹","tianfuzhenTozhanli",tianfuzhenTozhanli),
+    make("灵纹","niaoxiangzhenTozhanli",n => niaoxiangzhenTozhanli(n,mySpeed,enemySpeed)),
     make("破境石","pojingshiTozhanli",pojingshiTozhanli),
     make("神通卷轴","shentongjuanzhouTozhanli",shentongjuanzhouTozhanli)
   ].sort((a,b) => b.攻击 - a.攻击);
@@ -159,22 +168,26 @@ export function compareByCoin (
 const KEY_PROPS = ["伤害加成%","命中%","幸运%","攻击","暴击%","暴击伤害%","穿透","速度","闪避%"] as const;
 
 /**
- * 辅助方法:按攻击降序打印 12 条精简结果,每条一行中文文本,只列 KEY_PROPS 的 9 项属性(值为 0 也显示).
- * 顶部先打印一行「想要的属性」,便于确认当前查询条件;compareByCoin 仍返回全量结果.
+ * 辅助方法:按攻击降序打印 13 条精简结果,每条一行中文文本,只列 KEY_PROPS 的 9 项属性(值为 0 也显示).
+ * 顶部先打印一行查询条件(想要的属性 + 我方/敌方速度),便于确认当前口径;compareByCoin 仍返回全量结果.
  * 直接执行本文件时只调用本方法,以大幅减少输出内容.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
  * @param wanted 想要的属性中文名数组(默认 命中、速度)
+ * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
+ * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
  */
 export function printKeyProps (
   money = 1_0000_0000,
-  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
+  mySpeed = 0,
+  enemySpeed = 0
 ): void {
-  console.log(`想要的属性:${wanted.join("、")}`);
-  for (const row of compareByCoin(money,wanted)) {
+  console.log(`想要的属性:${wanted.join("、")} 我方速度:${String(mySpeed)} 敌方速度:${String(enemySpeed)}`);
+  for (const row of compareByCoin(money,wanted,mySpeed,enemySpeed)) {
     const props = KEY_PROPS.map(key => `${key}=${row.结果[key] ?? "0"}`).join(" ");
     console.log(`${row.材料} ${row.方法} ${props}`);
   }
 }
 
-// 直接执行本文件时只打印精简结果:1 行查询条件 + 12 行,每行一条中文文本.
+// 直接执行本文件时只打印精简结果:1 行查询条件 + 13 行,每行一条中文文本.
 printKeyProps();

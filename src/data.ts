@@ -133,13 +133,14 @@ export interface SystemGain {
 // 9 个新增 tozhanli 方法的统一返回:18 项固定值 + 18 项百分比 + 过程量.
 // 只统计「本次投入材料」带来的增量,初始态(研究全满等)只影响消耗/系数,不重复计入.
 export interface ToZhanliResult extends AllPercentProperties,AllProperties {
-  count:          number; // 升级/制造/突破次数
-  finalLevel:     number; // 最终等级
-  left:           number; // 剩余材料
-  maxLevel:       number; // 该系统等级上限
-  specialPercent: number; // 非面板属性的特殊百分比(圣兽 Property3 每 250 级 +1%)
-  used:           number; // 消耗材料
-  zhanliPercent:  number; // 战力百分比(神通 EntryEffect 类:Level×PinZhi,进 GetZhanLi 乘区)
+  count:               number; // 升级/制造/突破次数
+  finalLevel:          number; // 最终等级
+  left:                number; // 剩余材料
+  maxLevel:            number; // 该系统等级上限
+  specialPercent:      number; // 非面板属性的特殊百分比(圣兽 Property3 每 250 级 +1%)
+  used:                number; // 消耗材料
+  zhanliPercent:       number; // 战力百分比(神通 EntryEffect 类:Level×PinZhi,进 GetZhanLi 乘区)
+  zhenFaAttackPercent: number; // 阵法1(天覆阵)战斗期给最高攻单位 +阵法等级% 攻击(非面板,单独记过程量)
 }
 
 // 18 项里走「真百分比」的 5 项(property.json 中 percent=0):
@@ -602,6 +603,13 @@ export const RESEARCH_26_LINGWEN_REDUCE = 50;
 export const ZHENFA_ADD_BASE = 200;
 export const ZHENFA_ADD_PER_LEVEL = 35;
 export const ZHENFA_LEVEL_CAP = 21_4748_3646;
+
+// 9 个阵法里只算对输出有用的 2 个:ZhenFaData.GetZhenFaEffect 的 ChangeBattleProperty(面板)与 EntryEffect(战斗期).
+// 数值见 MoNiShouYou_伤害计算与加成上限.md:139,146 的阵法 1/8 表;封顶来自 Entry_ZhenFa_8.cs:37-39.
+// ZhenFa_Skill 的 EffectRecoder 配置未导出到 config/*.json,故按已核查的反编译效果记录在此.
+export const ZHENFA_TIANFU_ATK_PERCENT = 15;             // 阵法1 天覆阵:面板攻击 PercentAddition +15
+export const ZHENFA_NIAOXIANG_SPEED = 15;                // 阵法8 鸟翔阵:面板速度固定值 +15
+export const ZHENFA_NIAOXIANG_DAMAGE_CAP = 21_4748_3646; // 速度差转伤害% 的夹取上限(源码 2147483646)
 
 // ---- 破境石(3) → 英灵等级上限:Character_YingLing.cs:294-309,352-367 ----
 // Max_Level 初始 500,Star 初始 0；GetLevelUpStarEffect 的四维用 value:true → PercentAddition +5%,
