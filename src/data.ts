@@ -525,8 +525,7 @@ export const SHEN_BING_COST_CAP = 100_0000;
 export const SHEN_BING_MAX_LV = 100; // 神兵解封后 TuPo 一次 MaxLv+=100(ShenBingRecorder.cs:85-91)
 
 // 23 件神兵的炼化轨:逐条抄录 config/lingqi.json weapons[].fire / [].water,值即 PropertyTypeEnum.
-// 脚本核对分布:fire 3=速度2,4=命中8,5=闪避2,6=暴击4,7=抗暴4,9=连击2,11=恢复1;
-// water 5=闪避4,6=暴击3,7=抗暴1,8=暴伤6,10=反击2,11=恢复5,13=伤害加成2.
+// 脚本核对分布:fire 3=速度2,4=命中8,5=闪避2,6=暴击4,7=抗暴4,9=连击2,11=恢复1; water 5=闪避4,6=暴击3,7=抗暴1,8=暴伤6,10=反击2,11=恢复5,13=伤害加成2.
 // 其中 fire4=8 件 / water13=2 件 / water8=6 件 与 DESIGN.md:52 的三组轨数逐条吻合.
 export const SHEN_BING_FIRE_TRACKS: readonly number[] = [
   6,4,4,5,7,4,6,7,6,11,3,4,7,3,4,4,7,9,4,6,5,9,4
@@ -541,25 +540,25 @@ export const DEFAULT_WANTED_PROPERTIES: readonly string[] = ["命中","速度"];
 // 「想要的属性」中文名 → AllProperties 字段名;键名与 coin-to-zhanli.ts 的 FIELD_NAMES 中文名一致,
 // 调用方可带 % 后缀(在 calzhanli.ts 统一去掉),暴伤 是 暴击伤害 的简称.
 export const PROPERTY_NAME_TO_KEY: Readonly<Record<string,keyof AllProperties>> = {
-  "攻击":     "atk",
-  "暴击":     "baoJi",
-  "暴击伤害": "baoJiDamage",
-  "暴伤":     "baoJiDamage",
-  "抗暴":     "baoJiResist",
-  "伤害加成": "damageAddition",
-  "伤害减免": "damageReduce",
-  "防御":     "def",
-  "反击":     "fanJi",
-  "生命":     "hp",
-  "穿透":     "ignoreDef",
-  "连击":     "lianJi",
-  "幸运":     "lucky",
-  "命中":     "mingZhong",
-  "恢复":     "recovery",
-  "反弹伤害": "returnDamage",
-  "闪避":     "shanBi",
-  "速度":     "speed",
-  "吸血":     "xiXie"
+  伤害减免: "damageReduce",
+  伤害加成: "damageAddition",
+  反击:   "fanJi",
+  反弹伤害: "returnDamage",
+  吸血:   "xiXie",
+  命中:   "mingZhong",
+  幸运:   "lucky",
+  恢复:   "recovery",
+  抗暴:   "baoJiResist",
+  攻击:   "atk",
+  暴伤:   "baoJiDamage",
+  暴击:   "baoJi",
+  暴击伤害: "baoJiDamage",
+  生命:   "hp",
+  穿透:   "ignoreDef",
+  连击:   "lianJi",
+  速度:   "speed",
+  闪避:   "shanBi",
+  防御:   "def"
 };
 
 // ---- 转职强化(历史本纪 9):ZhuanZhiManager.cs:16-39,79-130 ----
@@ -642,7 +641,7 @@ export const SHEN_TONG_NODES: readonly ShenTongNode[] = [
 ];
 
 // ---- 残念锦囊(18/19) → 单个英灵升星:Character_YingLing.cs:194-201,203-210,294-309 ----
-// 残念是 600+英灵Index 的专属碎片(601-629 共 29 种,YingLing_SettingData.cs:25),不是通用 600.
+// 残念是 600+英灵 Index 的专属碎片(601-629 共 29 种,YingLing_SettingData.cs:25),不是通用 600.
 // GetStarRemand:Star<15 用 20×2^⌊Star/5⌋,Star≥15 用 100×(⌊Star/200⌋+1)+⌊(Star-14)/5⌋×40,
 // 再经研究33「因陋就简」满级 -30%(Cul_Percent_ToInt),CulMaxStarUpTimes:227-230 有下限 1.
 // LevelUpStar 先按「当前 Star」结算效果再 Star++:四维 PercentAddition 各 +min(⌊Star/5⌋+1,20)×5,
@@ -657,21 +656,13 @@ export const CANNIAN_STAR_DIVISOR = 5;
 export const CANNIAN_STAR_PCT_CAP = 20;
 export const CANNIAN_STAR_PCT_PER_STEP = 5;
 export const YINGLING_STAR_ROTATE_PROPS: readonly number[] = [6,13,9,10,14,4,5,7];
-
-// ---- 宝箱/锦囊配置:config/chests.json(按游戏 StreamingAssets/Prop_Data_Json.txt 导出) ----
-// 开奖源码:Prop_Chest_FixProp.cs:28-44 / Prop_Chest_RandomSuiPian.cs:23-50 /
-// Prop_Chest_TypeBaoXiang.cs:37-86 / Prop_Chest_TaoWa.cs:24-75 / Prop_Chest_MiBao.cs:26-41；
-// 候选池含 PropHelper.GerateFaBao(:194-230)动态生成的 23×15 件灵器.
-// unit 是 ValueCost×(100−研究44 30%)/100 的钱币单价(PropHelper.cs:29-64),不取整,保留小数.
-export type ChestKind = "fix"|"mibao"|"suiPian"|"taowa"|"type";
-export type ChestGain = Record<string,number>;
-
-export interface ChestPool {
-  avg:   ChestGain;
-  best:  {gain: ChestGain; id: number};
-  count: number;
+export interface ChestData {
+  cannianYingLingCount: number;
+  chests:               readonly ChestDef[];
+  note:                 string;
+  pools:                Record<string,ChestPool>;
+  research33Reduce:     number;
 }
-
 export interface ChestDef {
   id:      number;
   kind:    ChestKind;
@@ -685,15 +676,19 @@ export interface ChestDef {
   unit:    number;
   ziXuan?: boolean;
 }
+export type ChestGain = Record<string,number>;
 
-export interface ChestData {
-  cannianYingLingCount: number;
-  chests:                readonly ChestDef[];
-  note:                  string;
-  pools:                 Record<string,ChestPool>;
-  research33Reduce:      number;
+// ---- 宝箱/锦囊配置:config/chests.json(按游戏 StreamingAssets/Prop_Data_Json.txt 导出) ----
+// 开奖源码:Prop_Chest_FixProp.cs:28-44 / Prop_Chest_RandomSuiPian.cs:23-50 /
+// Prop_Chest_TypeBaoXiang.cs:37-86 / Prop_Chest_TaoWa.cs:24-75 / Prop_Chest_MiBao.cs:26-41；
+// 候选池含 PropHelper.GerateFaBao(:194-230)动态生成的 23×15 件灵器.
+// unit 是 ValueCost×(100−研究44 30%)/100 的钱币单价(PropHelper.cs:29-64),不取整,保留小数.
+export type ChestKind = "fix" | "mibao" | "suiPian" | "taowa" | "type";
+export interface ChestPool {
+  avg:   ChestGain;
+  best:  {gain: ChestGain; id: number};
+  count: number;
 }
-
 export const CHEST_DATA: ChestData = JSON.parse(
   readFileSync(new URL("./config/chests.json",import.meta.url),"utf8")
 ) as ChestData;
