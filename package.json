@@ -10,12 +10,17 @@
   "scripts": {
     "build": "tsc",
     "cl": "pnpm prune && pnpm store prune",
+    "cleanhis": "axl clean-history",
+    "compare": "pnpm exec tsx src/scripts/compare.ts",
+    "compare2": "pnpm exec tsx src/composite-compare.ts",
     "dev": "vite",
     "enemy": "pnpm exec tsx src/scripts/enemy-stats.ts",
+    "lianqi": "pnpm exec tsx src/scripts/lianqi.ts",
     "lint": "run-s --continue-on-error lint:ox lint:es",
     "lint-rules": "axl lint-rules",
     "lint:es": "eslint . --fix --cache > lint-es.log 2>&1",
     "lint:ox": "oxlint . --fix --type-aware > lint-ox.log 2>&1",
+    "map": "axl map",
     "preview": "vite preview",
     "push": "axl push",
     "rei": "rimraf node_modules && pnpm i",
@@ -24,25 +29,23 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:all": "pnpm test",
     "up:tsConfig": "axl tsconfig-exclude",
-    "compare": "pnpm exec tsx src/scripts/compare.ts",
     "yuanbao": "pnpm exec tsx src/scripts/camp-yuanbao.ts",
     "yuling": "pnpm exec tsx src/scripts/yulingshi-level.ts",
-    "zhizao": "pnpm exec tsx src/scripts/zhizao.ts",
-    "lianqi": "pnpm exec tsx src/scripts/lianqi.ts"
+    "zhizao": "pnpm exec tsx src/scripts/zhizao.ts"
   },
   "dependencies": {
     "axl-utils": "workspace:*"
   },
   "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@types/eslint": "catalog:",
+    "@types/node": "catalog:",
     "axl-lint": "workspace:*",
     "axl-scripts": "workspace:*",
     "eslint": "catalog:",
-    "@eslint/js": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "tsx": "catalog:",
-    "@types/eslint": "catalog:",
-    "@types/node": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   },

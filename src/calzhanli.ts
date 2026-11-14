@@ -1457,3 +1457,170 @@ function strengthProps (add: number): AllProperties {
 }
 
 // #endregion
+// #region 系统换算(源码找到的非材料制造类:英灵/御灵师养成、转生、转职、羁绊、技能、修炼)
+// 这些系统的「消耗资源」各不相同(御力/孟婆汤/残念/疲劳/历史本纪,或阵容/等级无消耗),
+// 故统一以「投入次数/等级」为入参,返回与上面 tozhanli 一致的 ToZhanliResult.
+// 公式来源(均在 src/反编译/):
+// - 御灵师升级:YingLing/GameRecorder.cs:697-712 ShowAddition(每级 四维 += 御灵师等级×250)
+// - 英灵升级:YingLing.CharacterSystem/Character_YingLing.cs:178-192 GetLevelUpEffect
+// - 英灵升星:Character_YingLing.cs:294-309 GetLevelUpStarEffect
+// - 转生:YingLing.CharacterSystem/ZhuanShengManager.cs:48-62 ZhuanSheng(每次 命/闪/暴/抗暴/暴伤 % += 15×(次+1))
+// - 转职强化:YingLing.CharacterSystem/ZhuanZhiManager.cs:21-33 Strength(每级 四维 +(20+50L),速度+1,消耗历史本纪)
+// - 羁绊:YingLing.CharacterSystem/ZhenRong_JiBan.cs(阵容人数激活,产出配置 EffectRecoder)
+// - 英灵技能/神转职:YingLing.SkillSystem/Skill.cs + config/yingling.json(skillShen=神转职技能 ID)
+// - 修炼:YingLing.KeJinSystem/ShiLian_Manger.cs(生成神魔分身,属性来自技能+双转职)
+// 属性枚举(PropertyTypeEnum.cs):0 atk,1 def,2 hp,3 speed,4 mingZhong,5 shanBi,6 baoJi,7 baoJiResist,
+//   8 baoJiDamage,9 lianJi,10 fanJi,11 recovery,12 xiXie,13 damageAddition,14 damageReduce,15 ignoreDef,16 returnDamage,17 lucky
+
+/* eslint-disable import/first */
+import {readFileSync} from "node:fs";
+
+/** 通用:把一组「属性枚举+数值+是否百分比」落地为属性增量(同 PropEffect_ChangeBattleProperty.cs:84-88). */
+function applyBattleProps (
+  result: ToZhanliResult,
+  effects: readonly {prop: number; value: number; percent: boolean}[]
+): void {
+  const fieldOf: Record<number,string> = {
+    0:"atk",1:"def",2:"hp",3:"speed",4:"mingZhong",5:"shanBi",6:"baoJi",7:"baoJiResist",
+    8:"baoJiDamage",9:"lianJi",10:"fanJi",11:"recovery",12:"xiXie",13:"damageAddition",
+    14:"damageReduce",15:"ignoreDef",16:"returnDamage",17:"lucky"
+  };
+  const r = result as unknown as Record<string,number>;
+  for (const e of effects) {
+    const base = fieldOf[e.prop];
+    if (base === undefined) {
+      continue;
+    }
+    const key = e.percent ? `${base}Percent` : base;
+    r[key] = (r[key] ?? 0) + e.value;
+  }
+}
+
+/** 御灵师升级:投入 levels 个御灵师等级(消耗御力),每级 生命/攻击/防御/穿透 各 += 当前御灵师等级×250. */
+export function yuLingShiShengJiTozhanli (levels: number,startLevel = 1): ToZhanliResult {
+  assertWholeAtLeast(levels,0,"御灵师升级次数");
+  const result = emptyToZhanli();
+  let lv = startLevel;
+  for (let i = 0; i < levels; i++) {
+    const add = lv * 250;
+    result.atk += add; result.def += add; result.hp += add; result.ignoreDef += add;
+    lv += 1;
+  }
+  result.count = levels; result.finalLevel = lv - 1; result.used = 0; result.maxLevel = lv - 1;
+  return result;
+}
+
+/** 英灵升级:投入 levels 级经验升级(消耗御力经验),每级 HP+225n/DEF+15n/ATK+24n/穿透+15n,n=等级/50+1,转生放大. */
+export function yingLingShengJiTozhanli (levels: number,startLevel = 1,zhuanShengCount = 0): ToZhanliResult {
+  assertWholeAtLeast(levels,0,"英灵升级次数");
+  const result = emptyToZhanli();
+  let lv = startLevel;
+  const zsMul = (zhuanShengCount * 25 + 100) / 100;
+  for (let i = 0; i < levels; i++) {
+    let n = Math.trunc(lv / 50) + 1;
+    if (zhuanShengCount > 0) {
+      n = Math.round(n * zsMul);
+    }
+    result.hp += 225 * n; result.def += 15 * n; result.atk += 24 * n; result.ignoreDef += 15 * n;
+    lv += 1;
+  }
+  result.count = levels; result.finalLevel = lv - 1; result.maxLevel = lv - 1;
+  return result;
+}
+
+/** 英灵升星:投入 stars 次升星,每星 四维% += (星/5+1)*5、速度+1、轮换属性% +1. */
+export function yingLingShengXingTozhanli (stars: number,startStar = 0): ToZhanliResult {
+  assertWholeAtLeast(stars,0,"英灵升星次数");
+  const result = emptyToZhanli();
+  let st = startStar;
+  for (let i = 0; i < stars; i++) {
+    const num = Math.min(20,Math.trunc(st / 5) + 1);
+    result.atkPercent += num * 5; result.defPercent += num * 5;
+    result.hpPercent += num * 5; result.ignoreDefPercent += num * 5;
+    result.speed += 1;
+    // 轮换属性之一(源码 LevelUpStartEffect.GetOrder) % 8:暴击/伤害加成/连击/反击/减伤/命中/闪避/抗暴;默认取命中
+    result.mingZhongPercent += 1;
+    st += 1;
+  }
+  result.count = stars; result.finalLevel = st - 1; result.maxLevel = st - 1;
+  return result;
+}
+
+/** 转生:投入 count 次转生(消耗孟婆汤 (次+1)*2),每次 命/闪/暴/抗暴/暴伤 % += 15×(次数+1). */
+export function zhuanShengTozhanli (count: number): ToZhanliResult {
+  assertWholeAtLeast(count,0,"转生次数");
+  const result = emptyToZhanli();
+  for (let cur = 0; cur < count; cur++) {
+    const add = 15 * (cur + 1);
+    result.mingZhongPercent += add;
+    result.shanBiPercent += add;
+    result.baoJiPercent += add;
+    result.baoJiResistPercent += add;
+    result.baoJiDamagePercent += add;
+  }
+  result.count = count; result.maxLevel = count;
+  return result;
+}
+
+/** 转职强化:投入 levels 级强化(消耗历史本纪 10+10L),每级 四维 +(20+50L)、速度+1. */
+export function zhuanZhiQiangHuaTozhanli (levels: number): ToZhanliResult {
+  assertWholeAtLeast(levels,0,"转职强化次数");
+  const result = emptyToZhanli();
+  let l = 0;
+  for (let i = 0; i < levels; i++) {
+    const add = 20 + 50 * l;
+    result.atk += add; result.def += add; result.hp += add; result.ignoreDef += add;
+    result.speed += 1;
+    l += 1;
+  }
+  result.count = levels; result.finalLevel = l; result.maxLevel = l;
+  return result;
+}
+
+/**
+ * 羁绊:给定激活的羁绊档位(每个档位给出属性枚举+数值+是否百分比),落地为属性增量.
+ * 源码 ZhenRong_JiBan.cs 按上场同类型英灵人数取对应档位,羁绊效果经 PropEffect_ChangeBattleProperty
+ * (ChangeBattleProperty 类直接加属性)或 PropEffect_EntryEffect(EntryEffect 类为特殊机制,不进面板,由调用方自行处理).
+ * 这里只处理 ChangeBattleProperty 类;调用方负责把阵容解析成激活的 effects 列表
+ * (档位表来自 config/jiban.json:每个 id 的 levels[] 含 count/entry/level).
+ */
+export function jiBanTozhanli (effects: readonly {prop: number; value: number; percent: boolean}[]): ToZhanliResult {
+  const result = emptyToZhanli();
+  applyBattleProps(result,effects);
+  result.count = effects.length;
+  result.maxLevel = effects.length;
+  return result;
+}
+
+/**
+ * 英灵技能/神转职:返回该英灵 3 个技能 + 魔/神转职技能 ID(来自 config/yingling.json).
+ * 技能本体是配置驱动——Skill_Data_Json 里每个技能是一组 EffectRecoder,经 PropEffect_ChangeBattleProperty
+ * 落地为属性(孙悟空的 skillShen 即「神转职」,其命中加成来自该技能配置里的 ChangeBattleProperty(MingZhong,...);
+ * 源码没有「幸运→命中」的通用转换逻辑,命中是技能配置直接给的固定值).
+ * 注:当前 config/ 只有 skill-text.json(文本),Skill_Data_Json 数值表缺失,故这里只返回 ID;
+ * 待补充数值表后,可在此调用 applyBattleProps 把技能 EffectRecoder 落地.
+ */
+export function yingLingJiNengTozhanli (index: number): {skillIds:number[]; skillMo:number; skillShen:number} {
+  const data = JSON.parse(readFileSync(new URL("./config/yingling.json",import.meta.url),"utf8")) as
+    {index:number; skills:number[]; bonds:number[]; skillMo:number; skillShen:number}[];
+  const def = data.find(y => y.index === index);
+  if (def === undefined) {
+    throw new Error(`英灵 index ${String(index)} 不存在于 config/yingling.json`);
+  }
+  return {skillIds: def.skills, skillMo: def.skillMo, skillShen: def.skillShen};
+}
+
+/**
+ * 修炼:生成神魔分身,属性来自技能(3 技能全解锁)+ 双转职,组合上面逻辑.
+ * 分身等级 = 10000 + (层-1)*250*(层/10+1)(ShiLian_Manger.cs:154-158);
+ * 具体属性产出依赖技能/转职配置(同 yingLingJiNengTozhanli,待 Skill_Data_Json 补全).
+ */
+export function xiuLianTozhanli (cengShu: number): ToZhanliResult {
+  assertWholeAtLeast(cengShu,0,"修炼层数");
+  const result = emptyToZhanli();
+  result.finalLevel = 10000 + (cengShu - 1) * 250 * (Math.trunc(cengShu / 10) + 1);
+  result.count = cengShu; result.maxLevel = cengShu;
+  return result;
+}
+
+// #endregion
