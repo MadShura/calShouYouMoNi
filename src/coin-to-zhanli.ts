@@ -1,17 +1,18 @@
 /**
- * coin-to-zhanli.ts — 固定钱币 → 11 种材料 + 2 种残念锦囊 + 67 个宝箱 → 82 条结果的完整对比(导出全量对比 compareByCoin 与精简打印辅助方法 printKeyProps)
+ * coin-to-zhanli.ts — 固定钱币 → 11 种材料 + 自选残念锦囊 + 16 个材料宝箱 → 30 条结果的完整对比(导出全量对比 compareByCoin 与精简打印辅助方法 printKeyProps)
  * 钱币换算按源码 PropHelper.GetPropValue(:29-38) 的「整批一次取整」:
  * round(单价 × 数量) ≤ 钱币 的最大整数数量；材料单价取 data.ts 的 MATERIAL_COST_PER_UNIT,
  * 宝箱/锦囊单价取 config/chests.json 的 unit(同为 ValueCost × (100−研究44 商店折扣)/100,不再二次打折).
- * 宝箱按 ValueCost 折算成等价值钱币对比:PropHelper.GenrateStore(:165-191) 的商店只卖 11-16/18/19 等,
- * 套娃宝箱配置 _valueCost=0,按 GetSingleValue(:54-64) 的下限 1 计价,故其行数是「等值折算」而非实际可购买.
+ * 宝箱按 ValueCost 折算成等价值钱币对比:PropHelper.GenrateStore(:165-191) 的商店只卖 11-16/18/19 等.
  * 灵纹按天覆阵(阵法1)与鸟翔阵(阵法8)各算一条,9 个阵法里只取这两个;与其余材料合计 13 行基础结果.
- * 另加 2 行残念锦囊(18/19)与 67 行宝箱(11-16/20-79/96):开奖期望与装备候选池全部来自
- * config/chests.json(游戏 Prop_Data_Json.txt + Prop_Chest_*.cs 导出),折算方法在 calzhanli.ts 的
- * baoxiangTozhanli / zixuancannianjinnangTozhanli / cannianjinnangTozhanli,默认只算一个英灵.
+ * 另加 1 行自选残念锦囊(19)与 16 行固定材料宝箱(11-16/20-29):开奖期望来自 config/chests.json
+ * (游戏 Prop_Data_Json.txt + Prop_Chest_*.cs 导出),折算方法在 calzhanli.ts 的
+ * baoxiangTozhanli / zixuancannianjinnangTozhanli,默认只算一个英灵.
+ * 随机残念锦囊(18)、宝石匣/灵宝匣(30-69)、套娃宝箱(70-79)、试炼秘宝(96)的换算方法仍保留在
+ * calzhanli.ts,按用户口径不在本对比表使用.
  * 同材料多方法时「材料」列带中文后缀(强化石·单槽强化 / 灵纹·天覆阵 等),
  * 但单价仍按 MATERIAL_COST_PER_UNIT 里的原材料名查,显示名不参与查表.
- * 82 条结果先按「攻击 atk」的数值降序排序,再按 DESIGN.md:89 的口径转成展示结果:
+ * 30 条结果先按「攻击 atk」的数值降序排序,再按 DESIGN.md:89 的口径转成展示结果:
  * 数字用 readSave.ts 的 formatSuoXie(ToolClass.TranslateNumsToSuoXie:10 万以下整数,
  * 10 万起按 万/亿/兆/京... 每四位递进),字段名统一译成中文；
  * 所以 compareByCoin 返回的所有数值都是字符串(排序在格式化之前完成,不受影响).
@@ -32,7 +33,6 @@
 import {readFileSync} from "node:fs";
 import {
   baoxiangTozhanli,
-  cannianjinnangTozhanli,
   hantieTozhanli,
   lingjingTozhanli,
   lishibenjiTozhanli,
@@ -216,7 +216,7 @@ function calcOutput (panel: MasterPanel): {damage: number; mustCrit: boolean} {
 }
 // #endregion
 
-// #region 固定钱币 → 82 条结果
+// #region 固定钱币 → 30 条结果
 interface CoinRow {
   攻击: number;
   数量: number;
@@ -226,7 +226,7 @@ interface CoinRow {
 }
 
 /**
- * 构造 82 条未格式化的原始结果(数值仍是 number),按攻击降序;展示格式化与输出计算都复用它.
+ * 构造 30 条未格式化的原始结果(数值仍是 number),按攻击降序;展示格式化与输出计算都复用它.
  * @param money 投入的钱币总数(默认 1 亿)
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
@@ -295,9 +295,9 @@ function buildRows (
     make("破境石","pojingshiTozhanli",pojingshiTozhanli),
     make("神通卷轴","shentongjuanzhouTozhanli",shentongjuanzhouTozhanli),
     make("自选残念锦囊","zixuancannianjinnangTozhanli",zixuancannianjinnangTozhanli,chestUnit(19)),
-    make("残念锦囊","cannianjinnangTozhanli",cannianjinnangTozhanli,chestUnit(18)),
     ...CHEST_DATA.chests
-      .filter(item => item.id !== 18 && item.id !== 19)
+      // 只保留固定材料箱(11-16/20-29):随机锦囊、宝石匣/灵宝匣、套娃、试炼秘宝不纳入本表
+      .filter(item => item.kind === "fix")
       .map(item => make(
         item.name,
         `baoxiangTozhanli(${String(item.id)})`,
@@ -320,7 +320,7 @@ function formatRow (row: CoinRow) {
 }
 
 /**
- * 给定固定钱币数,把 11 种材料、2 种残念锦囊与 67 个宝箱各自能买到的数量投进对应的 82 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
+ * 给定固定钱币数,把 11 种材料、自选残念锦囊与 16 个固定材料宝箱各自能买到的数量投进对应的 30 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
  * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中,速度,传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
  * 灵纹按天覆阵/鸟翔阵各算一条;mySpeed/enemySpeed 透传给鸟翔阵的速度差伤害加成,默认都是 0.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
@@ -345,7 +345,7 @@ export function compareByCoin (
 const KEY_PROPS = ["伤害加成%","命中%","幸运%","攻击","暴击%","暴击伤害%","穿透","速度","闪避%"] as const;
 
 /**
- * 辅助方法:按攻击降序打印 82 条精简结果,每条一行中文文本,先列 KEY_PROPS 的 9 项属性,
+ * 辅助方法:按攻击降序打印 30 条精简结果,每条一行中文文本,先列 KEY_PROPS 的 9 项属性,
  * 再追加「输出」与「相对存档基准的提升率」;顶部打印查询条件、存档路径、敌人档位与基准输出.
  * 输出按存档主角面板 + 终局第 5 层敌人计算,命中率固定 1,只有暴击率 100% 时才按暴击伤害算.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
@@ -372,6 +372,6 @@ export function printKeyProps (
   }
 }
 
-// 直接执行本文件时只打印精简结果:2 行说明 + 82 行,每行一条中文文本.
+// 直接执行本文件时只打印精简结果:2 行说明 + 30 行,每行一条中文文本.
 printKeyProps();
 // #endregion
