@@ -19,7 +19,7 @@
  * - VIP 16；翅膀等级,万魂帆等级为参数,默认 0
  * - 5 图 × 3 品质的真实掉落表全部内联；幸运 50010 时所有条目都封顶 1000‰,必掉
  */
-import {BOOK_YULI_BASE,CRAFT_EXP_BASE,EMPTY_PERCENT_PROPERTIES,EMPTY_PROPERTIES,EQUIP_BASE,EQUIP_CI_TIAO_POOL,EQUIP_PER_LEVEL,EQUIP_PINZHI,EQUIP_PINZHI_FACTOR,EQUIP_PINZHI_PER_LEVEL,EQUIP_RANDOM_AVG,EQUIP_SLOT_COUNT,LIANQI_START_EXP,LIANQI_START_LEVEL,LUCKY,MAKE_EQUIP_COST_CAP,MAP_EFFECT,MAPS,MATERIAL_COST_PER_UNIT,NORMAL_SECONDS,PERCENT_BASE,POJING_COST_PER_100_LEVEL,POJING_MAX_LEVEL_STEP,POJING_STAR_DIVISOR,POJING_STAR_PCT_CAP,POJING_STAR_PCT_PER_STEP,POJING_START_MAX_LEVEL,POJING_START_STAR,POJING_YINGLING_COUNT,PROP_NAMES,PROPERTY_TO_KEY,QIDING_LEVEL_CAP,QIDING_START_LEVEL,QILU_COST_BASE,QILU_TIER_SIZE,RAGE_SECONDS,RESEARCH,RESEARCH_15_HANTIE_REDUCE,RESEARCH_16_EXP_ADD,RESEARCH_18_EQUIP_ADD,RESEARCH_20_WUCAI_REDUCE,RESEARCH_24_RONGLIAN_ADD,RESEARCH_25_STRENGTH_REDUCE,RESEARCH_26_LINGWEN_REDUCE,RESEARCH_34_POJING_REDUCE,RESEARCH_35_SHENTONG_REDUCE,RESEARCH_48_BOOK_EXP_ADD,RONGLIAN_LEVEL_DIVISOR,SAO_DANG_REMAIN_TIMER,SECONDS_PER_HOUR,SHEN_BING_COST_CAP,SHEN_BING_COST_PER_LEVEL,SHEN_BING_FIRE_HIT_TRACKS,SHEN_BING_MAX_LV,SHEN_BING_WATER_CRIT_TRACKS,SHEN_BING_WATER_DAMAGE_TRACKS,SHEN_TONG_COST_BY_PINZHI,SHEN_TONG_ENTRY_EFFECT,SHEN_TONG_NODES,SHEN_TONG_PROPERTY_EFFECT,SHENG_SHOU_ADD_BASE,SHENG_SHOU_ADD_PER_LEVEL,SHENG_SHOU_COST_BASE,SHENG_SHOU_COST_CAP,SHENG_SHOU_COST_PER_LEVEL,SHENG_SHOU_LEVEL_CAP,SHENG_SHOU_MAX_ROUND,SHENG_SHOU_SPECIAL_CYCLE,SHENG_SHOU_START_LEVEL,START_ROUND,STRENGTH_ADD_BASE,STRENGTH_ADD_PER_LEVEL,STRENGTH_COST_BASE,STRENGTH_COST_CAP,STRENGTH_COST_MIN,STRENGTH_COST_PER_LEVEL,STRENGTH_HIGH_MULTIPLIER,STRENGTH_HIGH_THRESHOLD,VIP_PERCENT_ADD_COUNT,VIP_SAO_DANG_SPEED,VIP_YU_LI_DROP,WAVE_COMPOSITION,WING_EXP_PER_LEVEL,WING_FLAT_BASE,WING_FLAT_PER_LEVEL,YULING_LEVEL_CAP,YULINGSHI_START_EXP,YULINGSHI_START_LEVEL,ZHENFA_ADD_BASE,ZHENFA_ADD_PER_LEVEL,ZHENFA_COST_PER_LEVEL,ZHENFA_LEVEL_CAP,ZHENFA_START_LEVEL,ZHENFA_UNLOCK_COST,ZHENFA_UNLOCK_COUNT,ZHUANZHI_ADD_BASE,ZHUANZHI_ADD_PER_LEVEL,ZHUANZHI_COST_BASE,ZHUANZHI_COST_PER_LEVEL,ZHUANZHI_LEVEL_CAP,ZHUANZHI_SPEED_PER_LEVEL,ZHUANZHI_START_LEVEL} from "./data.ts";
+import {BOOK_YULI_BASE,CRAFT_EXP_BASE,DEFAULT_WANTED_PROPERTIES,EMPTY_PERCENT_PROPERTIES,EMPTY_PROPERTIES,EQUIP_BASE,EQUIP_CI_TIAO_POOL,EQUIP_PER_LEVEL,EQUIP_PINZHI,EQUIP_PINZHI_FACTOR,EQUIP_PINZHI_PER_LEVEL,EQUIP_RANDOM_AVG,EQUIP_SLOT_COUNT,LIANQI_START_EXP,LIANQI_START_LEVEL,LUCKY,MAKE_EQUIP_COST_CAP,MAP_EFFECT,MAPS,MATERIAL_COST_PER_UNIT,NORMAL_SECONDS,PERCENT_BASE,POJING_COST_PER_100_LEVEL,POJING_MAX_LEVEL_STEP,POJING_STAR_DIVISOR,POJING_STAR_PCT_CAP,POJING_STAR_PCT_PER_STEP,POJING_START_MAX_LEVEL,POJING_START_STAR,POJING_YINGLING_COUNT,PROP_NAMES,PROPERTY_NAME_TO_KEY,PROPERTY_TO_KEY,QIDING_LEVEL_CAP,QIDING_START_LEVEL,QILU_COST_BASE,QILU_TIER_SIZE,RAGE_SECONDS,RESEARCH,RESEARCH_15_HANTIE_REDUCE,RESEARCH_16_EXP_ADD,RESEARCH_18_EQUIP_ADD,RESEARCH_20_WUCAI_REDUCE,RESEARCH_24_RONGLIAN_ADD,RESEARCH_25_STRENGTH_REDUCE,RESEARCH_26_LINGWEN_REDUCE,RESEARCH_34_POJING_REDUCE,RESEARCH_35_SHENTONG_REDUCE,RESEARCH_48_BOOK_EXP_ADD,RONGLIAN_LEVEL_DIVISOR,SAO_DANG_REMAIN_TIMER,SECONDS_PER_HOUR,SHEN_BING_COST_CAP,SHEN_BING_COST_PER_LEVEL,SHEN_BING_FIRE_TRACKS,SHEN_BING_MAX_LV,SHEN_BING_WATER_TRACKS,SHEN_TONG_COST_BY_PINZHI,SHEN_TONG_ENTRY_EFFECT,SHEN_TONG_NODES,SHEN_TONG_PROPERTY_EFFECT,SHENG_SHOU_ADD_BASE,SHENG_SHOU_ADD_PER_LEVEL,SHENG_SHOU_COST_BASE,SHENG_SHOU_COST_CAP,SHENG_SHOU_COST_PER_LEVEL,SHENG_SHOU_LEVEL_CAP,SHENG_SHOU_MAX_ROUND,SHENG_SHOU_SPECIAL_CYCLE,SHENG_SHOU_START_LEVEL,START_ROUND,STRENGTH_ADD_BASE,STRENGTH_ADD_PER_LEVEL,STRENGTH_COST_BASE,STRENGTH_COST_CAP,STRENGTH_COST_MIN,STRENGTH_COST_PER_LEVEL,STRENGTH_HIGH_MULTIPLIER,STRENGTH_HIGH_THRESHOLD,VIP_PERCENT_ADD_COUNT,VIP_SAO_DANG_SPEED,VIP_YU_LI_DROP,WAVE_COMPOSITION,WING_EXP_PER_LEVEL,WING_FLAT_BASE,WING_FLAT_PER_LEVEL,YULING_LEVEL_CAP,YULINGSHI_START_EXP,YULINGSHI_START_LEVEL,ZHENFA_ADD_BASE,ZHENFA_ADD_PER_LEVEL,ZHENFA_COST_PER_LEVEL,ZHENFA_LEVEL_CAP,ZHENFA_START_LEVEL,ZHENFA_UNLOCK_COST,ZHENFA_UNLOCK_COUNT,ZHUANZHI_ADD_BASE,ZHUANZHI_ADD_PER_LEVEL,ZHUANZHI_COST_BASE,ZHUANZHI_COST_PER_LEVEL,ZHUANZHI_LEVEL_CAP,ZHUANZHI_SPEED_PER_LEVEL,ZHUANZHI_START_LEVEL} from "./data.ts";
 import type {AllProperties,CiTiaoPercentKey,DropRow,EquipStrengthenResult,FarmModeResult,FarmResult,HantieToZhanliResult,MapConfig,MapID,ResearchReduce,SweepResult,SystemGain,ToZhanliResult} from "./data.ts";
 
 // 保持原有对外类型/常量可用(data.ts 是唯一依赖).
@@ -422,38 +422,22 @@ export function research (): ResearchReduce {
 
 // ============================== 三味真火 → 神兵火炼 ==============================
 /**
- * 三味真火投入神兵火炼(8 条 Fire_Lian=命中 轨)的完整模拟,统一返回 18 项固定值 + 百分比字段 + 过程量.
+ * 三味真火投入神兵火炼的完整模拟,统一返回 18 项固定值 + 百分比字段 + 过程量.
  * 源码 ShenBingRecorder.GetStrengthRemand(:28-36):每级消耗 min(1000000,(Cur_Lv+1)×10000);
  * LevelUp(:93-100) 每级把 Fire_Lian 属性 +1,GetEffectToAdd(:110-123) 会置 Bool_Value=true,
- * 但命中在 property.json 里 percent=1,BattleData_Recorder.ChangeValue(:37-49) 实为 Base_Value += 1 固定值.
- * 初始:8 条轨各 Lv.0,神兵已解封(MaxLv=100),无研究减免；按「等级最低的轨优先」平均分配材料.
+ * 但目标属性在 property.json 里 percent=1,BattleData_Recorder.ChangeValue(:37-49) 实为 Base_Value += 1 固定值.
+ * 23 条轨的属性取自 config/lingqi.json weapons[].fire;只投 wanted 指定的属性,按「等级最低的轨优先」平均分配.
+ * 默认 wanted=命中/速度 是 8 条命中轨 + 2 条速度轨;只传 命中 即复现 DESIGN.md:52 的 8 轨口径.
  * @param sanwei 投入的三味真火数量
+ * @param wanted 想要的属性中文名数组(默认 命中、速度),可带 % 后缀
  */
-export function sanweizhenhuoTozhanli (sanwei: number): ToZhanliResult {
+export function sanweizhenhuoTozhanli (
+  sanwei: number,
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
+): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(sanwei,"三味真火");
-  const levels = Array.from({length: SHEN_BING_FIRE_HIT_TRACKS},() => 0);
-  let left = material;
-  let count = 0;
-  for (; ;) {
-    const target = lowestUpgradableTrack(levels);
-    if (target < 0) {
-      break;
-    }
-    const cost = shenBingCost(levels[target] ?? 0);
-    if (left < cost) {
-      break;
-    }
-    left -= cost;
-    levels[target] = (levels[target] ?? 0) + 1;
-    result.mingZhong += 1;
-    count += 1;
-  }
-  result.count = count;
-  result.finalLevel = Math.min(...levels);
-  result.left = left;
-  result.maxLevel = SHEN_BING_MAX_LV;
-  result.used = material - left;
+  runShenBingTracks(result,material,SHEN_BING_FIRE_TRACKS,wanted);
   return result;
 }
 
@@ -625,41 +609,22 @@ export function tuJian (level: number): SystemGain {
 
 // ============================== 忘情水 → 神兵水炼 ==============================
 /**
- * 忘情水投入神兵水炼(2 条 Water_Lian=伤害加成 + 6 条 =暴伤)的完整模拟.
+ * 忘情水投入神兵水炼的完整模拟.
  * 消耗与火炼同源 ShenBingRecorder.cs:28-36;每升一级对应属性 +1 固定值(理由同火炼:percent=1 走 Base_Value).
- * 按 DESIGN.md 口径忘情水不用于突破重随；这里 8 条轨各从 Lv.0 起,按「等级最低的轨优先」平均分配.
+ * 按 DESIGN.md 口径忘情水不用于突破重随;23 条轨的属性取自 config/lingqi.json weapons[].water,
+ * 只投 wanted 指定的属性,按「等级最低的轨优先」平均分配.
+ * 水炼轨里没有命中(4)与速度(3),故默认 wanted=命中/速度 时可用轨为 0,结果为全 0;
+ * 传 伤害加成、暴伤 即选中 DESIGN.md:52 的 2 条伤害加成 + 6 条暴伤轨(仍按平均分配,与该文档的边际收益分配不同).
  * @param water 投入的忘情水数量
+ * @param wanted 想要的属性中文名数组(默认 命中、速度),可带 % 后缀
  */
-export function wangqingshuiTozhanli (water: number): ToZhanliResult {
+export function wangqingshuiTozhanli (
+  water: number,
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
+): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(water,"忘情水");
-  const trackCount = SHEN_BING_WATER_DAMAGE_TRACKS + SHEN_BING_WATER_CRIT_TRACKS;
-  const levels = Array.from({length: trackCount},() => 0);
-  let left = material;
-  let count = 0;
-  for (; ;) {
-    const target = lowestUpgradableTrack(levels);
-    if (target < 0) {
-      break;
-    }
-    const cost = shenBingCost(levels[target] ?? 0);
-    if (left < cost) {
-      break;
-    }
-    left -= cost;
-    levels[target] = (levels[target] ?? 0) + 1;
-    if (target < SHEN_BING_WATER_DAMAGE_TRACKS) {
-      result.damageAddition += 1;
-    } else {
-      result.baoJiDamage += 1;
-    }
-    count += 1;
-  }
-  result.count = count;
-  result.finalLevel = Math.min(...levels);
-  result.left = left;
-  result.maxLevel = SHEN_BING_MAX_LV;
-  result.used = material - left;
+  runShenBingTracks(result,material,SHEN_BING_WATER_TRACKS,wanted);
   return result;
 }
 
@@ -1059,6 +1024,63 @@ function simulateMode (
 
 // 18 项里走「真百分比」的 5 项;其余 13 项按源码是固定值
 const isCiTiaoPercentKey = (key: keyof AllProperties): key is CiTiaoPercentKey => key === "atk" || key === "def" || key === "hp" || key === "speed" || key === "ignoreDef";
+
+// 「想要的属性」中文名数组 → AllProperties 字段名集合;允许带 % 后缀(与 FIELD_NAMES 中文名一致),
+// 未知名字直接报错而不是静默忽略,避免拼错属性名后误以为该材料没有收益.
+function wantedPropertyKeys (wanted: readonly string[]): Set<keyof AllProperties> {
+  const keys = new Set<keyof AllProperties>();
+  for (const name of wanted) {
+    const field = PROPERTY_NAME_TO_KEY[name.replace(/%$/,"")];
+    if (field === undefined) {
+      throw new Error(`不认识的属性「${name}」,可用:${Object.keys(PROPERTY_NAME_TO_KEY).join("、")}`);
+    }
+    keys.add(field);
+  }
+  return keys;
+}
+
+// 按 wanted 从 23 条炼化轨里筛出可用轨,再按「等级最低的轨优先」平均分配材料,每级把该轨属性 +1 累加到 result.
+// 一条轨都没筛中时不消耗材料,finalLevel 记 0(不能对空数组取 Math.min,会得到 Infinity).
+function runShenBingTracks (
+  result: ToZhanliResult,
+  material: number,
+  tracks: readonly number[],
+  wanted: readonly string[]
+): void {
+  const keys = wantedPropertyKeys(wanted);
+  const fields: (keyof AllProperties)[] = [];
+  for (const type of tracks) {
+    const field = PROPERTY_TO_KEY[type];
+    if (field !== undefined && keys.has(field)) {
+      fields.push(field);
+    }
+  }
+  const levels = fields.map(() => 0);
+  let left = material;
+  let count = 0;
+  for (; ;) {
+    const target = lowestUpgradableTrack(levels);
+    if (target < 0) {
+      break;
+    }
+    const cost = shenBingCost(levels[target] ?? 0);
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    levels[target] = (levels[target] ?? 0) + 1;
+    const field = fields[target];
+    if (field !== undefined) {
+      result[field] += 1;
+    }
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = levels.length > 0 ? Math.min(...levels) : 0;
+  result.left = left;
+  result.maxLevel = SHEN_BING_MAX_LV;
+  result.used = material - left;
+}
 
 // 在神兵多轨平均分配里,挑当前等级最低且未达 MaxLv 的一条轨;全满返回 -1
 function lowestUpgradableTrack (levels: number[]): number {

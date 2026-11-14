@@ -12,6 +12,8 @@
  * 字段名加 % 后缀但数值不改;PercentAddition 类字段已含「百分比」字样,保持不动.
  * 结果结构说明:9 个新增方法为 ToZhanliResult(18 项固定值 + 18 项百分比 + 过程量),
  * 寒铁为 HantieToZhanliResult,强化石两个方法为 AllProperties;缺失字段即源码不产出该属性.
+ * 神兵火炼/水炼只投「想要的属性」数组指定的炼化轨(默认 命中、速度):水炼 23 条轨里
+ * 没有命中与速度,故忘情水默认结果为 0;传 伤害加成、暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
  */
 import {
   hantieTozhanli,
@@ -27,7 +29,7 @@ import {
   wucaishenshiTozhanli,
   yulingbaodianTozhanli
 } from "./calzhanli.ts";
-import {MATERIAL_COST_PER_UNIT} from "./data.ts";
+import {DEFAULT_WANTED_PROPERTIES,MATERIAL_COST_PER_UNIT} from "./data.ts";
 import {formatSuoXie} from "./readSave.ts";
 
 // 英文字段名 → 中文:覆盖 3 种返回类型的全部数值字段(18 项固定值,18 项百分比,7 个过程量,
@@ -93,9 +95,14 @@ const FIELD_NAMES: Record<string,string> = {
 
 /**
  * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 12 个 tozhanli 方法, 按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
+ * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中、速度,传 伤害加成、暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
+ * @param wanted 想要的属性中文名数组(默认 命中、速度)
  */
-export function compareByCoin (money = 1_0000_0000) {
+export function compareByCoin (
+  money = 1_0000_0000,
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
+) {
 
   // 整批一次取整:求最大 N 使 Math.round(单价×N) ≤ money(二分避免浮点边界与逐个试算).
   const buyCount = (name: string): number => {
@@ -123,14 +130,14 @@ export function compareByCoin (money = 1_0000_0000) {
     return {攻击: 结果.atk,数量,方法,材料,结果};
   };
   const rows = [
-    make("三味真火","sanweizhenhuoTozhanli",sanweizhenhuoTozhanli),
+    make("三味真火","sanweizhenhuoTozhanli",n => sanweizhenhuoTozhanli(n,wanted)),
     make("五彩神石","wucaishenshiTozhanli",wucaishenshiTozhanli),
     make("历史本纪","lishibenjiTozhanli",lishibenjiTozhanli),
     make("寒铁","hantieTozhanli",n => hantieTozhanli(n,0,0)),
     make("强化石","qianghuazhiTozhanli1",qianghuazhiTozhanli1),
     make("强化石","qianghuazhiTozhanli2",qianghuazhiTozhanli2),
     make("御灵宝典","yulingbaodianTozhanli",yulingbaodianTozhanli),
-    make("忘情水","wangqingshuiTozhanli",wangqingshuiTozhanli),
+    make("忘情水","wangqingshuiTozhanli",n => wangqingshuiTozhanli(n,wanted)),
     make("灵晶","lingjingTozhanli",lingjingTozhanli),
     make("灵纹","lingwenTozhanli",lingwenTozhanli),
     make("破境石","pojingshiTozhanli",pojingshiTozhanli),
@@ -153,15 +160,21 @@ const KEY_PROPS = ["伤害加成%","命中%","幸运%","攻击","暴击%","暴�
 
 /**
  * 辅助方法:按攻击降序打印 12 条精简结果,每条一行中文文本,只列 KEY_PROPS 的 9 项属性(值为 0 也显示).
- * compareByCoin 仍返回全量结果;直接执行本文件时只调用本方法,以大幅减少输出内容.
+ * 顶部先打印一行「想要的属性」,便于确认当前查询条件;compareByCoin 仍返回全量结果.
+ * 直接执行本文件时只调用本方法,以大幅减少输出内容.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
+ * @param wanted 想要的属性中文名数组(默认 命中、速度)
  */
-export function printKeyProps (money = 1_0000_0000): void {
-  for (const row of compareByCoin(money)) {
+export function printKeyProps (
+  money = 1_0000_0000,
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
+): void {
+  console.log(`想要的属性:${wanted.join("、")}`);
+  for (const row of compareByCoin(money,wanted)) {
     const props = KEY_PROPS.map(key => `${key}=${row.结果[key] ?? "0"}`).join(" ");
     console.log(`${row.材料} ${row.方法} ${props}`);
   }
 }
 
-// 直接执行本文件时只打印精简结果:12 行,每行一条中文文本.
+// 直接执行本文件时只打印精简结果:1 行查询条件 + 12 行,每行一条中文文本.
 printKeyProps();

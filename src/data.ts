@@ -521,6 +521,44 @@ export const SHEN_BING_COST_PER_LEVEL = 10000;
 export const SHEN_BING_COST_CAP = 100_0000;
 export const SHEN_BING_MAX_LV = 100; // 神兵解封后 TuPo 一次 MaxLv+=100(ShenBingRecorder.cs:85-91)
 
+// 23 件神兵的炼化轨:逐条抄录 config/lingqi.json weapons[].fire / [].water,值即 PropertyTypeEnum.
+// 脚本核对分布:fire 3=速度2,4=命中8,5=闪避2,6=暴击4,7=抗暴4,9=连击2,11=恢复1;
+// water 5=闪避4,6=暴击3,7=抗暴1,8=暴伤6,10=反击2,11=恢复5,13=伤害加成2.
+// 其中 fire4=8 件 / water13=2 件 / water8=6 件 与 DESIGN.md:52 的三组轨数逐条吻合.
+export const SHEN_BING_FIRE_TRACKS: readonly number[] = [
+  6,4,4,5,7,4,6,7,6,11,3,4,7,3,4,4,7,9,4,6,5,9,4
+];
+export const SHEN_BING_WATER_TRACKS: readonly number[] = [
+  8,5,8,11,11,6,8,11,7,6,13,5,11,13,8,5,11,10,8,8,6,10,5
+];
+
+// 「想要的属性」默认只投命中与速度;火炼有 10 条对应轨,水炼一条都没有(故忘情水默认结果为 0).
+export const DEFAULT_WANTED_PROPERTIES: readonly string[] = ["命中","速度"];
+
+// 「想要的属性」中文名 → AllProperties 字段名;键名与 coin-to-zhanli.ts 的 FIELD_NAMES 中文名一致,
+// 调用方可带 % 后缀(在 calzhanli.ts 统一去掉),暴伤 是 暴击伤害 的简称.
+export const PROPERTY_NAME_TO_KEY: Readonly<Record<string,keyof AllProperties>> = {
+  "攻击":     "atk",
+  "暴击":     "baoJi",
+  "暴击伤害": "baoJiDamage",
+  "暴伤":     "baoJiDamage",
+  "抗暴":     "baoJiResist",
+  "伤害加成": "damageAddition",
+  "伤害减免": "damageReduce",
+  "防御":     "def",
+  "反击":     "fanJi",
+  "生命":     "hp",
+  "穿透":     "ignoreDef",
+  "连击":     "lianJi",
+  "幸运":     "lucky",
+  "命中":     "mingZhong",
+  "恢复":     "recovery",
+  "反弹伤害": "returnDamage",
+  "闪避":     "shanBi",
+  "速度":     "speed",
+  "吸血":     "xiXie"
+};
+
 // ---- 转职强化(历史本纪 9):ZhuanZhiManager.cs:16-39,79-130 ----
 // 研究全满后不再扣 309,665 研究消耗；GetStrengthRemand 直接 new PropRecorder(9,10+10L),源码无研究减免.
 export const ZHUANZHI_START_LEVEL = 0;
