@@ -1027,6 +1027,10 @@ function addGain (result: ToZhanliResult,gain: object,scale = 1): void {
       fields[key] = (fields[key] ?? 0) + value * scale;
     }
   }
+  const bonus = (gain as {combatBonus?: {name: string; percent: number}[]}).combatBonus;
+  if (Array.isArray(bonus)) {
+    result.combatBonus.push(...bonus);
+  }
 }
 function addMonsterDrops (
   drops: Record<string,number>,
@@ -1138,7 +1142,8 @@ function emptyToZhanli (): ToZhanliResult {
     specialPercent:      0,
     used:                0,
     zhanliPercent:       0,
-    zhenFaAttackPercent: 0
+    zhenFaAttackPercent: 0,
+    combatBonus:         []
   };
 }
 
@@ -1523,14 +1528,51 @@ const SKILL_DATA: readonly SkillData[] = JSON.parse(
   readFileSync(new URL("config/skill-data.json",import.meta.url),"utf8")
 ) as SkillData[];
 
+// 羁绊/技能 EntryEffect 的战斗价值:全部来自反编译 Entry_*.cs(数值为源码 Base,不在 config 里),
+// 与 yingling-output.ts 的 bondMultiplier/输出乘区 同源,已逐条对照 Entry_*.cs 核验.
+// 这些效果多依赖战斗上下文(敌人数/命中差/血量),故用 CombatCtx 提供代表性假设(可覆盖).
+// 注意:羁绊效果按 ZhenRongJiBanTypeEnum(bond.type,0-11) 取,不用 EffectRecoder.Params_1(=entry);
+// 西行取经 的 Params_1 在配置里是 275,并非 EntryNameEnum,反例见 jiban.json id 12.
+interface CombatCtx {
+  enemyAlive:            number; // 敌方存活数(一波 5);万人敌用
+  hitMinusDodge:        number; // 己命中-敌闪避;西行取经用
+  shanBiMinusMingZhong: number; // 己闪避-敌命中;神鬼之翼用
+  targetHpPercent:      number; // 目标当前血量%(0-100);三国群英用
+}
+const DEFAULT_CTX: CombatCtx = {enemyAlive: 5,hitMinusDodge: 0,shanBiMinusMingZhong: 0,targetHpPercent: 50};
+interface BondEffect {
+  combat: {name: string; percent: number}[];
+  panel:  {percent: boolean; prop: number; value: number}[];
+}
+// 键 = ZhenRongJiBanTypeEnum(bond.type);lv = 羁绊档位等级(EffectRecoder.Level).
+// 仅 万人敌/西行取经/三国群英/神鬼之翼 进战斗乘区(combatBonus),其余为触发型机制/控制/团队 buff,静态不计.
+// 乱世谋臣(type6)→暴伤% +20×lv、忠肝义胆(type8)→反击% +4×lv 是面板属性(prop 8/10),落面板不重复进乘区.
+const ENTRY_BOND_TABLE: Record<number,(lv: number,ctx: CombatCtx) => BondEffect> = {
+  0:  (lv,ctx) => ({combat: [{name: "三国群英",percent: (100 - ctx.targetHpPercent) / (4 - 0.5 * lv)}],panel: []}),
+  1:  () => ({combat: [],panel: []}),         // 梁山群雄:仅反击时 +20×lv% 伤,静态不计
+  2:  () => ({combat: [],panel: []}),         // 倾国倾城:命中后概率魅惑(控制)
+  3:  () => ({combat: [],panel: []}),         // 千古流芳:命中后概率流血(控制/debuff)
+  4:  (lv,ctx) => ({combat: [{name: "神鬼之翼",percent: ctx.shanBiMinusMingZhong * (0.2 + 0.2 * lv)}],panel: []}),
+  5:  (lv,ctx) => ({combat: [{name: "万人敌",percent: lv * ctx.enemyAlive}],panel: []}),
+  6:  (lv) => ({combat: [],panel: [{percent: true,prop: 8,value: 20 * lv}]}),  // 乱世谋臣:暴伤 +20×lv%(Base=20)
+  7:  () => ({combat: [],panel: []}),         // 济世名医:治疗时给友方 +10×lv 攻击(team buff)
+  8:  (lv) => ({combat: [],panel: [{percent: true,prop: 10,value: 4 * lv}]}),  // 忠肝义胆:反击率 +4×lv%(Base=4)
+  9:  () => ({combat: [],panel: []}),         // 桀骜不驯:命中后概率随机 debuff(控制)
+  10: () => ({combat: [],panel: []}),         // 义无反顾:攻击后自身 +3×lv 怒气(resource)
+  11: (lv,ctx) => ({combat: [{name: "西行取经",percent: ctx.hitMinusDodge * (0.25 + 0.25 * lv)}],panel: []})
+};
+
 /**
  * 羁绊(按阵容聚合):传入上场英灵的 index 数组,按每个英灵的 bonds(=ZhenRongJiBanTypeEnum)归类,
- * 统计每类人数后分别激活对应羁绊档位(羁绊 id = 类型 + 1),合并所有 ChangeBattleProperty 类面板属性.
- * 注:当前 config 的羁绊全部是 EntryEffect(特殊机制),故面板通常为空,但过程量(各类激活档位)已正确聚合.
+ * 统计每类人数后分别激活对应羁绊档位(羁绊 id = 类型 + 1),合并所有面板属性与伤害乘区贡献.
+ * 注:当前 config 的羁绊全部是 EntryEffect(特殊机制),按 bond.type 查 ENTRY_BOND_TABLE 折算战斗价值;
+ * 其中乱世谋臣(暴伤%)/忠肝义胆(反击%) 落面板,万人敌/西行取经/三国群英/神鬼之翼 进 combatBonus 乘区,
+ * 其余为触发型机制(反击/控制/团队buff/回怒)静态不计入.
  * @param zhenRong 上场英灵的 index 数组(如 [1,2,3,4,5])
- * @returns 所有激活羁绊 ChangeBattleProperty 类面板属性之和(当前 config 羁绊均为 EntryEffect,面板通常为空)
+ * @param ctx 战斗上下文(敌人数/命中差/血量等),用于折算条件型乘区,缺省用代表性假设
+ * @returns 所有激活羁绊的面板属性之和 + 伤害乘区来源(combatBonus);过程量记录激活档位等级
  */
-export function jiBanFromZhenRong (zhenRong: readonly number[]): ToZhanliResult {
+export function jiBanFromZhenRong (zhenRong: readonly number[],ctx: Partial<CombatCtx> = {}): ToZhanliResult {
   const result = emptyToZhanli();
   const countsByType = new Map<number,number>();
   for (const idx of zhenRong) {
@@ -1543,7 +1585,7 @@ export function jiBanFromZhenRong (zhenRong: readonly number[]): ToZhanliResult 
     }
   }
   for (const [bt,c] of countsByType) {
-    addGain(result,jiBanTozhanli(bt + 1,c));
+    addGain(result,jiBanTozhanli(bt + 1,c,ctx));
   }
   result.count = zhenRong.length;
   result.used = zhenRong.length;
@@ -1552,15 +1594,18 @@ export function jiBanFromZhenRong (zhenRong: readonly number[]): ToZhanliResult 
 }
 
 /**
- * 羁绊:给定羁绊 id 与上场人数 count,取「满足 count」的最高档,把可直接加属性的效果
- * (EffectNameEnum=0 ChangeBattleProperty)经 applyBattleProps 落面板;
- * EntryEffect(=1,如三国群英伤害公式)为特殊机制,不进面板(由 src/scripts/jiban-value.ts 单独按阵容类型处理).
+ * 羁绊:给定羁绊 id 与上场人数 count,取「满足 count」的最高档.
+ * - EffectNameEnum=0 ChangeBattleProperty:经 applyBattleProps 落面板(当前 config 无此类羁绊).
+ * - EntryEffect(=1,如三国群英/万人敌伤害机制):按 bond.type 查 ENTRY_BOND_TABLE 折算战斗价值:
+ *   乱世谋臣(暴伤%)/忠肝义胆(反击%) 落面板;万人敌/西行取经/三国群英/神鬼之翼 进 combatBonus 乘区;
+ *   其余触发型机制(反击/控制/团队buff/回怒)静态不计入.
  * 配置来源 config/jiban.json(StreamingAssets/JiBan_Data_Json.txt 导出).
  * @param bondId 羁绊 id(1-12,id = ZhenRongJiBanTypeEnum + 1)
  * @param count 上场阵容中属于该羁绊类型的英灵人数
- * @returns 各档位 ChangeBattleProperty 类效果的面板属性(EntryEffect 不计入);过程量记录激活档位等级
+ * @param ctx 战斗上下文(敌人数/命中差/血量等),用于折算条件型乘区,缺省用代表性假设
+ * @returns ChangeBattleProperty 类面板属性 + 伤害乘区来源(combatBonus);过程量记录激活档位等级
  */
-export function jiBanTozhanli (bondId: number,count: number): ToZhanliResult {
+export function jiBanTozhanli (bondId: number,count: number,ctx: Partial<CombatCtx> = {}): ToZhanliResult {
   assertWholeAtLeast(count,0,"上场人数");
   const bond = JIBAN.find(b => b.id === bondId);
   if (bond === undefined) {
@@ -1576,6 +1621,15 @@ export function jiBanTozhanli (bondId: number,count: number): ToZhanliResult {
   if (chosen !== null) {
     if (chosen.effectName === EFFECT_CHANGE_BATTLE_PROPERTY) {
       applyBattleProps(result,[{percent: chosen.boolValue,prop: chosen.entry,value: chosen.level}]);
+    } else {
+      const fn = ENTRY_BOND_TABLE[bond.type];
+      if (fn !== undefined) {
+        const eff = fn(chosen.level,{...DEFAULT_CTX,...ctx});
+        if (eff.panel.length > 0) {
+          applyBattleProps(result,eff.panel);
+        }
+        result.combatBonus.push(...eff.combat);
+      }
     }
     result.finalLevel = chosen.level;
   }
