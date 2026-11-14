@@ -4,6 +4,8 @@
  * round(单价 × 数量) ≤ 钱币 的最大整数数量；单价直接取 data.ts 的 MATERIAL_COST_PER_UNIT
  * (表内数值已是 ValueCost × (100−研究44 商店折扣)/100,不再二次打折).
  * 灵纹按天覆阵(阵法1)与鸟翔阵(阵法8)各算一条,9 个阵法里只取这两个,故共 13 条结果.
+ * 同材料多方法时「材料」列带中文后缀(强化石·单槽强化 / 灵纹·天覆阵 等),
+ * 但单价仍按 MATERIAL_COST_PER_UNIT 里的原材料名查,显示名不参与查表.
  * 13 条结果先按「攻击 atk」的数值降序排序,再按 DESIGN.md:89 的口径转成展示结果:
  * 数字用 readSave.ts 的 formatSuoXie(ToolClass.TranslateNumsToSuoXie:10 万以下整数,
  * 10 万起按 万/亿/兆/京... 每四位递进),字段名统一译成中文；
@@ -13,8 +15,8 @@
  * 字段名加 % 后缀但数值不改;PercentAddition 类字段已含「百分比」字样,保持不动.
  * 结果结构说明:10 个方法为 ToZhanliResult(18 项固定值 + 18 项百分比 + 过程量),
  * 寒铁为 HantieToZhanliResult,强化石两个方法为 AllProperties;缺失字段即源码不产出该属性.
- * 神兵火炼/水炼只投「想要的属性」数组指定的炼化轨(默认 命中、速度):水炼 23 条轨里
- * 没有命中与速度,故忘情水默认结果为 0;传 伤害加成、暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
+ * 神兵火炼/水炼只投「想要的属性」数组指定的炼化轨(默认 命中,速度):水炼 23 条轨里
+ * 没有命中与速度,故忘情水默认结果为 0;传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
  */
 import {
   hantieTozhanli,
@@ -98,10 +100,10 @@ const FIELD_NAMES: Record<string,string> = {
 
 /**
  * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 13 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
- * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中、速度,传 伤害加成、暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
+ * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中,速度,传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
  * 灵纹按天覆阵/鸟翔阵各算一条;mySpeed/enemySpeed 透传给鸟翔阵的速度差伤害加成,默认都是 0.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
- * @param wanted 想要的属性中文名数组(默认 命中、速度)
+ * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
  * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
  */
@@ -132,8 +134,14 @@ export function compareByCoin (
   };
 
   // 泛型保留各方法的原始返回类型,「结果」里所有字段都会被完整展示.
-  const make = <T extends {atk: number}>(材料: string,方法: string,run: (n: number) => T) => {
-    const 数量 = buyCount(材料);
+  // 材料 是展示名(同材料多方法时带中文后缀);单价材料 才是 MATERIAL_COST_PER_UNIT 的键,默认与展示名相同.
+  const make = <T extends {atk: number}>(
+    材料: string,
+    方法: string,
+    run: (n: number) => T,
+    单价材料 = 材料
+  ) => {
+    const 数量 = buyCount(单价材料);
     const 结果 = run(数量);
     return {攻击: 结果.atk,数量,方法,材料,结果};
   };
@@ -142,13 +150,13 @@ export function compareByCoin (
     make("五彩神石","wucaishenshiTozhanli",wucaishenshiTozhanli),
     make("历史本纪","lishibenjiTozhanli",lishibenjiTozhanli),
     make("寒铁","hantieTozhanli",n => hantieTozhanli(n,0,0)),
-    make("强化石","qianghuazhiTozhanli1",qianghuazhiTozhanli1),
-    make("强化石","qianghuazhiTozhanli2",qianghuazhiTozhanli2),
+    make("强化石·单槽强化","qianghuazhiTozhanli1",qianghuazhiTozhanli1,"强化石"),
+    make("强化石·平均强化","qianghuazhiTozhanli2",qianghuazhiTozhanli2,"强化石"),
     make("御灵宝典","yulingbaodianTozhanli",yulingbaodianTozhanli),
     make("忘情水","wangqingshuiTozhanli",n => wangqingshuiTozhanli(n,wanted)),
     make("灵晶","lingjingTozhanli",lingjingTozhanli),
-    make("灵纹","tianfuzhenTozhanli",tianfuzhenTozhanli),
-    make("灵纹","niaoxiangzhenTozhanli",n => niaoxiangzhenTozhanli(n,mySpeed,enemySpeed)),
+    make("灵纹·天覆阵","tianfuzhenTozhanli",tianfuzhenTozhanli,"灵纹"),
+    make("灵纹·鸟翔阵","niaoxiangzhenTozhanli",n => niaoxiangzhenTozhanli(n,mySpeed,enemySpeed),"灵纹"),
     make("破境石","pojingshiTozhanli",pojingshiTozhanli),
     make("神通卷轴","shentongjuanzhouTozhanli",shentongjuanzhouTozhanli)
   ].sort((a,b) => b.攻击 - a.攻击);
@@ -172,7 +180,7 @@ const KEY_PROPS = ["伤害加成%","命中%","幸运%","攻击","暴击%","暴�
  * 顶部先打印一行查询条件(想要的属性 + 我方/敌方速度),便于确认当前口径;compareByCoin 仍返回全量结果.
  * 直接执行本文件时只调用本方法,以大幅减少输出内容.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
- * @param wanted 想要的属性中文名数组(默认 命中、速度)
+ * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
  * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
  */
