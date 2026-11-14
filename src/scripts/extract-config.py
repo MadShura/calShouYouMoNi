@@ -399,7 +399,15 @@ def export_keji(game_dir: str) -> list[dict[str, Any]]:
 
 
 def export_jiban(game_dir: str) -> list[dict[str, Any]]:
-    """羁绊配置在 StreamingAssets/JiBan_Data_Json.txt 里（每行一个 JSON）。"""
+    """羁绊配置在 StreamingAssets/JiBan_Data_Json.txt 里（每行一个 JSON）。
+
+    每个档位(jibanData)的效果是完整 EffectRecoder:
+    - EffectNameEnum:0 = ChangeBattleProperty(直接加战斗属性,进面板);1 = EntryEffect(特殊机制,不进面板)
+    - Params_1:属性枚举(ChangeBattleProperty)或 EntryNameEnum(EntryEffect)
+    - Params_2:数值
+    - Params_3:副参数
+    - Bool_Value:是否百分比(仅 ChangeBattleProperty 用)
+    """
     path = os.path.join(game_dir, "MoNiShouYou_Data", "StreamingAssets", "JiBan_Data_Json.txt")
     out = []
     if not os.path.exists(path):
@@ -416,8 +424,11 @@ def export_jiban(game_dir: str) -> list[dict[str, Any]]:
                 levels.append(
                     {
                         "count": item.get("Count"),
+                        "effectName": effect.get("EffectNameEnum"),
                         "entry": effect.get("Params_1"),
                         "level": effect.get("Params_2"),
+                        "params3": effect.get("Params_3"),
+                        "boolValue": effect.get("Bool_Value"),
                     }
                 )
             out.append(
@@ -517,6 +528,40 @@ def export_shentong(game_dir: str) -> list[dict[str, Any]]:
     return out
 
 
+def export_skill_data(game_dir: str) -> list[dict[str, Any]]:
+    """导出技能配置（Skill_Data_Json.txt），用于算英灵技能/修炼的面板属性。
+
+    每个技能是一个 Skill 对象,含 effectRecoders[]:
+    - EffectNameEnum:0 = ChangeBattleProperty(直接加战斗属性,进面板);
+                      Params_1 = PropertyTypeEnum, Params_2 = 数值, Bool_Value = 是否百分比
+    - EffectNameEnum:1 = EntryEffect(特殊机制,如伤害公式/控制,不进面板)
+    源码 Skill.cs:AddSkill 遍历 effectRecoders 逐个 TrrigerDaily 落地。
+    """
+    path = os.path.join(game_dir, "MoNiShouYou_Data", "StreamingAssets", "Skill_Data_Json.txt")
+    out = []
+    if not os.path.exists(path):
+        return out
+    with open(path, encoding="utf-8-sig", errors="ignore") as handle:
+        for line in handle:
+            text = line.strip()
+            if not text.startswith("{"):
+                continue
+            raw = json.loads(text)
+            recoders = []
+            for rec in raw.get("effectRecoders", []):
+                recoders.append(
+                    {
+                        "effectName": rec.get("EffectNameEnum"),
+                        "params1": rec.get("Params_1"),
+                        "params2": rec.get("Params_2"),
+                        "params3": rec.get("Params_3"),
+                        "boolValue": rec.get("Bool_Value"),
+                    }
+                )
+            out.append({"skillID": raw.get("skill_ID"), "effectRecoders": recoders})
+    return out
+
+
 def load_language_names(game_dir: str) -> dict[str, str]:
     """读取简体中文语言文件里的 Key = Value，用于把 PropID 翻译成道具名。"""
     path = os.path.join(
@@ -576,64 +621,65 @@ def main() -> int:
     parser.add_argument("--out", default=CONFIG_DIR)
     args = parser.parse_args()
 
-    try:
-        import UnityPy
-    except ImportError:
-        print("缺少 UnityPy，请先执行：python -m pip install UnityPy", file=sys.stderr)
-        return 1
-
-    assets = os.path.join(args.game_dir, "MoNiShouYou_Data", "sharedassets0.assets")
-    if not os.path.exists(assets):
-        print(f"找不到资源文件：{assets}", file=sys.stderr)
-        return 1
-
-    env = UnityPy.load(assets)
-    raw_by_class: dict[str, bytes] = {}
-    for obj in env.objects:
-        if obj.type.name != "MonoBehaviour":
-            continue
-        try:
-            data = obj.read(check_read=False)
-            className = data.m_Script.read().m_ClassName
-        except Exception:
-            continue
-        if className in TARGETS and className not in raw_by_class:
-            raw_by_class[className] = obj.get_raw_data()
-
-    missing = [name for name in TARGETS if name not in raw_by_class]
-    if missing:
-        print(f"以下配置没有找到：{missing}", file=sys.stderr)
-        return 1
-
     os.makedirs(args.out, exist_ok=True)
-    for className, fileName in TARGETS.items():
-        parsed = PARSERS[className](raw_by_class[className])
-        path = os.path.join(args.out, f"{fileName}.json")
-        with open(path, "w", encoding="utf-8", newline="\n") as handle:
-            json.dump(parsed, handle, ensure_ascii=False, indent=2)
-            handle.write("\n")
-        print(f"已导出 {path}")
 
-    language = load_language_names(args.game_dir)
+    # ScriptableObject 解析依赖 UnityPy + 资源文件;缺失时跳过,只跑基于文本的配置导出
+    # (StreamingAssets 下的 *.txt 不依赖 UnityPy,始终可用)
+    try:
+        import UnityPy  # type: ignore
 
-    # 灵器补充中文名与 Entry 描述(Prop_Name_<Icon_DES_NameID> / Entry_Des_<EntryName>)
-    lingqi_path = os.path.join(args.out, "lingqi.json")
-    with open(lingqi_path, encoding="utf-8") as handle:
-        lingqi = json.load(handle)
-    for weapon in lingqi["weapons"]:
-        weapon["name"] = language.get(f"Prop_Name_{weapon['icon']}", "")
-        weapon["entryText"] = language.get(f"Entry_Des_{weapon['entry']}", "")
-    with open(lingqi_path, "w", encoding="utf-8", newline="\n") as handle:
-        json.dump(lingqi, handle, ensure_ascii=False, indent=2)
-        handle.write("\n")
-    print(f"已补充灵器中文名：{lingqi_path}（{len(lingqi['weapons'])} 把）")
+        assets = os.path.join(args.game_dir, "MoNiShouYou_Data", "sharedassets0.assets")
+        if not os.path.exists(assets):
+            print(f"找不到资源文件：{assets}，跳过 ScriptableObject 解析（仍导出文本配置）", file=sys.stderr)
+        else:
+            env = UnityPy.load(assets)
+            raw_by_class: dict[str, bytes] = {}
+            for obj in env.objects:
+                if obj.type.name != "MonoBehaviour":
+                    continue
+                try:
+                    data = obj.read(check_read=False)
+                    className = data.m_Script.read().m_ClassName
+                except Exception:
+                    continue
+                if className in TARGETS and className not in raw_by_class:
+                    raw_by_class[className] = obj.get_raw_data()
 
-    names = collect_names(language)
-    path = os.path.join(args.out, "names.json")
-    with open(path, "w", encoding="utf-8", newline="\n") as handle:
-        json.dump(names, handle, ensure_ascii=False, indent=2)
-        handle.write("\n")
-    print(f"已导出 {path}")
+            missing = [name for name in TARGETS if name not in raw_by_class]
+            if missing:
+                print(f"以下 ScriptableObject 配置没有找到：{missing}", file=sys.stderr)
+            else:
+                for className, fileName in TARGETS.items():
+                    parsed = PARSERS[className](raw_by_class[className])
+                    path = os.path.join(args.out, f"{fileName}.json")
+                    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+                        json.dump(parsed, handle, ensure_ascii=False, indent=2)
+                        handle.write("\n")
+                    print(f"已导出 {path}")
+
+                language = load_language_names(args.game_dir)
+
+                # 灵器补充中文名与 Entry 描述(Prop_Name_<Icon_DES_NameID> / Entry_Des_<EntryName>)
+                lingqi_path = os.path.join(args.out, "lingqi.json")
+                if os.path.exists(lingqi_path):
+                    with open(lingqi_path, encoding="utf-8") as handle:
+                        lingqi = json.load(handle)
+                    for weapon in lingqi["weapons"]:
+                        weapon["name"] = language.get(f"Prop_Name_{weapon['icon']}", "")
+                        weapon["entryText"] = language.get(f"Entry_Des_{weapon['entry']}", "")
+                    with open(lingqi_path, "w", encoding="utf-8", newline="\n") as handle:
+                        json.dump(lingqi, handle, ensure_ascii=False, indent=2)
+                        handle.write("\n")
+                    print(f"已补充灵器中文名：{lingqi_path}（{len(lingqi['weapons'])} 把）")
+
+                names = collect_names(language)
+                path = os.path.join(args.out, "names.json")
+                with open(path, "w", encoding="utf-8", newline="\n") as handle:
+                    json.dump(names, handle, ensure_ascii=False, indent=2)
+                    handle.write("\n")
+                print(f"已导出 {path}")
+    except ImportError:
+        print("缺少 UnityPy，跳过 ScriptableObject 解析（仍导出文本配置）", file=sys.stderr)
 
     ji_ban = export_jiban(args.game_dir)
     path = os.path.join(args.out, "jiban.json")
@@ -669,6 +715,13 @@ def main() -> int:
         json.dump(shentong, handle, ensure_ascii=False, indent=2)
         handle.write("\n")
     print(f"已导出 {path}（{len(shentong)} 个神通）")
+
+    skill_data = export_skill_data(args.game_dir)
+    path = os.path.join(args.out, "skill-data.json")
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        json.dump(skill_data, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    print(f"已导出 {path}（{len(skill_data)} 个技能）")
     return 0
 
 

@@ -19,7 +19,7 @@
  * - VIP 16；翅膀等级,万魂帆等级为参数,默认 0
  * - 5 图 × 3 品质的真实掉落表全部内联；幸运 50010 时所有条目都封顶 1000‰,必掉
  */
-import {BOOK_YULI_BASE,CRAFT_EXP_BASE,DEFAULT_WANTED_PROPERTIES,EMPTY_PERCENT_PROPERTIES,EMPTY_PROPERTIES,EQUIP_BASE,EQUIP_CI_TIAO_POOL,EQUIP_PER_LEVEL,EQUIP_PINZHI,EQUIP_PINZHI_FACTOR,EQUIP_PINZHI_PER_LEVEL,EQUIP_RANDOM_AVG,EQUIP_SLOT_COUNT,LIANQI_START_EXP,LIANQI_START_LEVEL,LUCKY,MAKE_EQUIP_COST_CAP,MAP_EFFECT,MAPS,MATERIAL_COST_PER_UNIT,NORMAL_SECONDS,PERCENT_BASE,POJING_COST_PER_100_LEVEL,POJING_MAX_LEVEL_STEP,POJING_STAR_DIVISOR,POJING_STAR_PCT_CAP,POJING_STAR_PCT_PER_STEP,POJING_START_MAX_LEVEL,POJING_START_STAR,POJING_YINGLING_COUNT,PROP_NAMES,PROPERTY_NAME_TO_KEY,PROPERTY_TO_KEY,QIDING_LEVEL_CAP,QIDING_START_LEVEL,QILU_COST_BASE,QILU_TIER_SIZE,RAGE_SECONDS,RESEARCH,RESEARCH_15_HANTIE_REDUCE,RESEARCH_16_EXP_ADD,RESEARCH_18_EQUIP_ADD,RESEARCH_20_WUCAI_REDUCE,RESEARCH_24_RONGLIAN_ADD,RESEARCH_25_STRENGTH_REDUCE,RESEARCH_26_LINGWEN_REDUCE,RESEARCH_34_POJING_REDUCE,RESEARCH_35_SHENTONG_REDUCE,RESEARCH_48_BOOK_EXP_ADD,RONGLIAN_LEVEL_DIVISOR,SAO_DANG_REMAIN_TIMER,SECONDS_PER_HOUR,SHEN_BING_COST_CAP,SHEN_BING_COST_PER_LEVEL,SHEN_BING_FIRE_TRACKS,SHEN_BING_MAX_LV,SHEN_BING_WATER_TRACKS,SHEN_TONG_COST_BY_PINZHI,SHEN_TONG_ENTRY_EFFECT,SHEN_TONG_NODES,SHEN_TONG_PROPERTY_EFFECT,SHENG_SHOU_ADD_BASE,SHENG_SHOU_ADD_PER_LEVEL,SHENG_SHOU_COST_BASE,SHENG_SHOU_COST_CAP,SHENG_SHOU_COST_PER_LEVEL,SHENG_SHOU_LEVEL_CAP,SHENG_SHOU_MAX_ROUND,SHENG_SHOU_SPECIAL_CYCLE,SHENG_SHOU_START_LEVEL,START_ROUND,STRENGTH_ADD_BASE,STRENGTH_ADD_PER_LEVEL,STRENGTH_COST_BASE,STRENGTH_COST_CAP,STRENGTH_COST_MIN,STRENGTH_COST_PER_LEVEL,STRENGTH_HIGH_MULTIPLIER,STRENGTH_HIGH_THRESHOLD,VIP_PERCENT_ADD_COUNT,VIP_SAO_DANG_SPEED,VIP_YU_LI_DROP,WAVE_COMPOSITION,WING_EXP_PER_LEVEL,WING_FLAT_BASE,WING_FLAT_PER_LEVEL,YULING_LEVEL_CAP,YULINGSHI_START_EXP,YULINGSHI_START_LEVEL,ZHENFA_ADD_BASE,ZHENFA_ADD_PER_LEVEL,ZHENFA_COST_PER_LEVEL,ZHENFA_LEVEL_CAP,ZHENFA_NIAOXIANG_DAMAGE_CAP,ZHENFA_NIAOXIANG_SPEED,ZHENFA_START_LEVEL,ZHENFA_TIANFU_ATK_PERCENT,ZHENFA_UNLOCK_COST,ZHENFA_UNLOCK_COUNT,ZHUANZHI_ADD_BASE,ZHUANZHI_ADD_PER_LEVEL,ZHUANZHI_COST_BASE,ZHUANZHI_COST_PER_LEVEL,ZHUANZHI_LEVEL_CAP,ZHUANZHI_SPEED_PER_LEVEL,ZHUANZHI_START_LEVEL,CANNIAN_RESEARCH_33_REDUCE,CANNIAN_STAR_BRANCH,CANNIAN_STAR_COST_BASE,CANNIAN_STAR_COST_CAP,CANNIAN_STAR_DIVISOR,CANNIAN_STAR_PCT_CAP,CANNIAN_STAR_PCT_PER_STEP,CANNIAN_YINGLING_COUNT,CHEST_DATA,YINGLING_STAR_ROTATE_PROPS} from "./data.ts";
+import {BOOK_YULI_BASE,CANNIAN_RESEARCH_33_REDUCE,CANNIAN_STAR_BRANCH,CANNIAN_STAR_COST_BASE,CANNIAN_STAR_COST_CAP,CANNIAN_STAR_DIVISOR,CANNIAN_STAR_PCT_CAP,CANNIAN_STAR_PCT_PER_STEP,CANNIAN_YINGLING_COUNT,CHEST_DATA,CRAFT_EXP_BASE,DEFAULT_WANTED_PROPERTIES,EMPTY_PERCENT_PROPERTIES,EMPTY_PROPERTIES,EQUIP_BASE,EQUIP_CI_TIAO_POOL,EQUIP_PER_LEVEL,EQUIP_PINZHI,EQUIP_PINZHI_FACTOR,EQUIP_PINZHI_PER_LEVEL,EQUIP_RANDOM_AVG,EQUIP_SLOT_COUNT,LIANQI_START_EXP,LIANQI_START_LEVEL,LUCKY,MAKE_EQUIP_COST_CAP,MAP_EFFECT,MAPS,MATERIAL_COST_PER_UNIT,NORMAL_SECONDS,PERCENT_BASE,POJING_COST_PER_100_LEVEL,POJING_MAX_LEVEL_STEP,POJING_STAR_DIVISOR,POJING_STAR_PCT_CAP,POJING_STAR_PCT_PER_STEP,POJING_START_MAX_LEVEL,POJING_START_STAR,POJING_YINGLING_COUNT,PROP_NAMES,PROPERTY_NAME_TO_KEY,PROPERTY_TO_KEY,QIDING_LEVEL_CAP,QIDING_START_LEVEL,QILU_COST_BASE,QILU_TIER_SIZE,RAGE_SECONDS,RESEARCH,RESEARCH_15_HANTIE_REDUCE,RESEARCH_16_EXP_ADD,RESEARCH_18_EQUIP_ADD,RESEARCH_20_WUCAI_REDUCE,RESEARCH_24_RONGLIAN_ADD,RESEARCH_25_STRENGTH_REDUCE,RESEARCH_26_LINGWEN_REDUCE,RESEARCH_34_POJING_REDUCE,RESEARCH_35_SHENTONG_REDUCE,RESEARCH_48_BOOK_EXP_ADD,RONGLIAN_LEVEL_DIVISOR,SAO_DANG_REMAIN_TIMER,SECONDS_PER_HOUR,SHEN_BING_COST_CAP,SHEN_BING_COST_PER_LEVEL,SHEN_BING_FIRE_TRACKS,SHEN_BING_MAX_LV,SHEN_BING_WATER_TRACKS,SHEN_TONG_COST_BY_PINZHI,SHEN_TONG_ENTRY_EFFECT,SHEN_TONG_NODES,SHEN_TONG_PROPERTY_EFFECT,SHENG_SHOU_ADD_BASE,SHENG_SHOU_ADD_PER_LEVEL,SHENG_SHOU_COST_BASE,SHENG_SHOU_COST_CAP,SHENG_SHOU_COST_PER_LEVEL,SHENG_SHOU_LEVEL_CAP,SHENG_SHOU_MAX_ROUND,SHENG_SHOU_SPECIAL_CYCLE,SHENG_SHOU_START_LEVEL,START_ROUND,STRENGTH_ADD_BASE,STRENGTH_ADD_PER_LEVEL,STRENGTH_COST_BASE,STRENGTH_COST_CAP,STRENGTH_COST_MIN,STRENGTH_COST_PER_LEVEL,STRENGTH_HIGH_MULTIPLIER,STRENGTH_HIGH_THRESHOLD,VIP_PERCENT_ADD_COUNT,VIP_SAO_DANG_SPEED,VIP_YU_LI_DROP,WAVE_COMPOSITION,WING_EXP_PER_LEVEL,WING_FLAT_BASE,WING_FLAT_PER_LEVEL,YINGLING_STAR_ROTATE_PROPS,YULING_LEVEL_CAP,YULINGSHI_START_EXP,YULINGSHI_START_LEVEL,ZHENFA_ADD_BASE,ZHENFA_ADD_PER_LEVEL,ZHENFA_COST_PER_LEVEL,ZHENFA_LEVEL_CAP,ZHENFA_NIAOXIANG_DAMAGE_CAP,ZHENFA_NIAOXIANG_SPEED,ZHENFA_START_LEVEL,ZHENFA_TIANFU_ATK_PERCENT,ZHENFA_UNLOCK_COST,ZHENFA_UNLOCK_COUNT,ZHUANZHI_ADD_BASE,ZHUANZHI_ADD_PER_LEVEL,ZHUANZHI_COST_BASE,ZHUANZHI_COST_PER_LEVEL,ZHUANZHI_LEVEL_CAP,ZHUANZHI_SPEED_PER_LEVEL,ZHUANZHI_START_LEVEL} from "./data.ts";
 import type {AllProperties,ChestDef,CiTiaoPercentKey,DropRow,EquipStrengthenResult,FarmModeResult,FarmResult,HantieToZhanliResult,MapConfig,MapID,ResearchReduce,SweepResult,SystemGain,ToZhanliResult} from "./data.ts";
 
 // 保持原有对外类型/常量可用(data.ts 是唯一依赖).
@@ -246,83 +246,6 @@ export function lingjingTozhanli (lingjing: number): ToZhanliResult {
   return result;
 }
 
-// ============================== 灵纹 → 阵法等级(天覆阵 / 鸟翔阵) ==============================
-/**
- * 灵纹升级阵法的共用模拟(ZhenFaRecorder.cs:22-40,82-91,93-129),两种阵法的四维增量完全一致.
- * 固定口径:阵法 Lv.1,四维初始各 500(初始态,不计入增量),只算 1 个上阵阵法,研究26 满 -50%.
- * 每级消耗 round(L×20×0.5)(CulMaxLevelUpTimes 的 clamp [1,2147483646]),
- * 每级 HP/ATK/DEF/穿透 各 +(200+35L) 固定值(:85-89),不给速度.
- * 研究 27/28/29 的攻/防/穿 +100% 属初始态 PercentAddition,不重复计入本次增量.
- * @param lingwen 投入的灵纹数量
- */
-function lingwenLevelUp (lingwen: number): ToZhanliResult {
-  const result = emptyToZhanli();
-  const material = assertMaterial(lingwen,"灵纹");
-  let level = ZHENFA_START_LEVEL;
-  let left = material;
-  let count = 0;
-  while (level < ZHENFA_LEVEL_CAP) {
-    const cost = Math.max(1,Math.min(ZHENFA_LEVEL_CAP,culPercentToInt(
-      Math.min(ZHENFA_LEVEL_CAP,level * ZHENFA_COST_PER_LEVEL),
-      -RESEARCH_26_LINGWEN_REDUCE)));
-    if (left < cost) {
-      break;
-    }
-    left -= cost;
-    const add = ZHENFA_ADD_BASE + ZHENFA_ADD_PER_LEVEL * level;
-    result.atk += add;
-    result.def += add;
-    result.hp += add;
-    result.ignoreDef += add;
-    level += 1;
-    count += 1;
-  }
-  result.count = count;
-  result.finalLevel = level;
-  result.left = left;
-  result.maxLevel = ZHENFA_LEVEL_CAP;
-  result.used = material - left;
-  return result;
-}
-
-/**
- * 灵纹升天覆阵(阵法1)的完整模拟:共用四维增量 + 面板攻击 +15%(ZhenFaData 的 ChangeBattleProperty,
- * DESIGN.md:35 / MoNiShouYou_伤害计算与加成上限.md:139).
- * Entry_ZhenFa_1.cs:18-26 战斗开始给全场最高攻单位 +阵法等级% 攻击,这是乘区而非固定值,
- * 按确认口径不伪造攻击基数,只把 Lv 记进 zhenFaAttackPercent 过程量,atk 仍是四维增量.
- * @param lingwen 投入的灵纹数量
- */
-export function tianfuzhenTozhanli (lingwen: number): ToZhanliResult {
-  const result = lingwenLevelUp(lingwen);
-  result.atkPercent = ZHENFA_TIANFU_ATK_PERCENT;
-  result.zhenFaAttackPercent = result.finalLevel;
-  return result;
-}
-
-/**
- * 灵纹升鸟翔阵(阵法8)的完整模拟:共用四维增量 + 面板速度 +15(ZhenFaData 的 ChangeBattleProperty,
- * MoNiShouYou_伤害计算与加成上限.md:146).
- * Entry_ZhenFa_8.cs:30-41 伤害% += (我方速度 − 敌方速度),为正才生效,超过 2147483646 夹到上限.
- * mySpeed 是战斗期我方速度最终值(需自行含阵法面板与其他来源),与本次灵纹升级的 speed 增量无关;
- * 两者默认都是 0,所以默认速度差为 0、伤害加成% 为 0,传了速度才体现该阵法的收益.
- * @param lingwen 投入的灵纹数量
- * @param mySpeed 我方速度(默认 0)
- * @param enemySpeed 敌方速度(默认 0)
- */
-export function niaoxiangzhenTozhanli (
-  lingwen: number,
-  mySpeed = 0,
-  enemySpeed = 0
-): ToZhanliResult {
-  assertWholeAtLeast(mySpeed,0,"我方速度");
-  assertWholeAtLeast(enemySpeed,0,"敌方速度");
-  const result = lingwenLevelUp(lingwen);
-  result.speed += ZHENFA_NIAOXIANG_SPEED;
-  const diff = mySpeed - enemySpeed;
-  result.damageAddition = diff > 0 ? Math.min(diff,ZHENFA_NIAOXIANG_DAMAGE_CAP) : 0;
-  return result;
-}
-
 // ============================== 历史本纪 → 转职强化 ==============================
 /**
  * 历史本纪投入转职强化(ZhuanZhiManager.cs:16-39,79-130)的完整模拟.
@@ -370,6 +293,30 @@ export function materialCost (quantity = 1): Record<string,number> {
   for (const [name,unitCost] of Object.entries(MATERIAL_COST_PER_UNIT)) {
     result[name] = unitCost * quantity;
   }
+  return result;
+}
+
+/**
+ * 灵纹升鸟翔阵(阵法8)的完整模拟:共用四维增量 + 面板速度 +15(ZhenFaData 的 ChangeBattleProperty,
+ * MoNiShouYou_伤害计算与加成上限.md:146).
+ * Entry_ZhenFa_8.cs:30-41 伤害% += (我方速度 − 敌方速度),为正才生效,超过 2147483646 夹到上限.
+ * mySpeed 是战斗期我方速度最终值(需自行含阵法面板与其他来源),与本次灵纹升级的 speed 增量无关;
+ * 两者默认都是 0,所以默认速度差为 0,伤害加成% 为 0,传了速度才体现该阵法的收益.
+ * @param lingwen 投入的灵纹数量
+ * @param mySpeed 我方速度(默认 0)
+ * @param enemySpeed 敌方速度(默认 0)
+ */
+export function niaoxiangzhenTozhanli (
+  lingwen: number,
+  mySpeed = 0,
+  enemySpeed = 0
+): ToZhanliResult {
+  assertWholeAtLeast(mySpeed,0,"我方速度");
+  assertWholeAtLeast(enemySpeed,0,"敌方速度");
+  const result = lingwenLevelUp(lingwen);
+  result.speed += ZHENFA_NIAOXIANG_SPEED;
+  const diff = mySpeed - enemySpeed;
+  result.damageAddition = diff > 0 ? Math.min(diff,ZHENFA_NIAOXIANG_DAMAGE_CAP) : 0;
   return result;
 }
 
@@ -467,7 +414,7 @@ export function research (): ResearchReduce {
  * 23 条轨的属性取自 config/lingqi.json weapons[].fire;只投 wanted 指定的属性,按「等级最低的轨优先」平均分配.
  * 默认 wanted=命中/速度 是 8 条命中轨 + 2 条速度轨;只传 命中 即复现 DESIGN.md:52 的 8 轨口径.
  * @param sanwei 投入的三味真火数量
- * @param wanted 想要的属性中文名数组(默认 命中、速度),可带 % 后缀
+ * @param wanted 想要的属性中文名数组(默认 命中,速度),可带 % 后缀
  */
 export function sanweizhenhuoTozhanli (
   sanwei: number,
@@ -624,6 +571,19 @@ export function simulateSweep (
   return {所得: drops,扫荡次数: ticks};
 }
 
+/**
+ * 灵纹升天覆阵(阵法1)的完整模拟:共用四维增量 + 面板攻击 +15%(ZhenFaData 的 ChangeBattleProperty,
+ * DESIGN.md:35 / MoNiShouYou_伤害计算与加成上限.md:139).
+ * Entry_ZhenFa_1.cs:18-26 战斗开始给全场最高攻单位 +阵法等级% 攻击,这是乘区而非固定值, 按确认口径不伪造攻击基数,只把 Lv 记进 zhenFaAttackPercent 过程量,atk 仍是四维增量.
+ * @param lingwen 投入的灵纹数量
+ */
+export function tianfuzhenTozhanli (lingwen: number): ToZhanliResult {
+  const result = lingwenLevelUp(lingwen);
+  result.atkPercent = ZHENFA_TIANFU_ATK_PERCENT;
+  result.zhenFaAttackPercent = result.finalLevel;
+  return result;
+}
+
 // ============================== 7. 图鉴(图鉴道具,4 维) ==============================
 // TuJianData_Record.cs:30-51 升级经验 Exp(L) = 10 + Σ_{i=0}^{L-1}(⌊i/10⌋+1)*10
 // 每个图鉴道具 = 200 经验(配置值,PropEffect_AddTuJianEXP.cs),故升级一次需 ⌈Exp(L)/200⌉ 个
@@ -652,9 +612,9 @@ export function tuJian (level: number): SystemGain {
  * 按 DESIGN.md 口径忘情水不用于突破重随;23 条轨的属性取自 config/lingqi.json weapons[].water,
  * 只投 wanted 指定的属性,按「等级最低的轨优先」平均分配.
  * 水炼轨里没有命中(4)与速度(3),故默认 wanted=命中/速度 时可用轨为 0,结果为全 0;
- * 传 伤害加成、暴伤 即选中 DESIGN.md:52 的 2 条伤害加成 + 6 条暴伤轨(仍按平均分配,与该文档的边际收益分配不同).
+ * 传 伤害加成,暴伤 即选中 DESIGN.md:52 的 2 条伤害加成 + 6 条暴伤轨(仍按平均分配,与该文档的边际收益分配不同).
  * @param water 投入的忘情水数量
- * @param wanted 想要的属性中文名数组(默认 命中、速度),可带 % 后缀
+ * @param wanted 想要的属性中文名数组(默认 命中,速度),可带 % 后缀
  */
 export function wangqingshuiTozhanli (
   water: number,
@@ -759,6 +719,7 @@ export function yulingbaodianTozhanli (
     result.ignoreDef += add;
     level += 1;
     count += 1;
+
     // 升满 10 级触发一次突破(第 level/10 次),方向固定选 tuPoDir
     if (level % 10 === 0 && level < YULING_LEVEL_CAP) {
       applyYuLingTuPo(result,tuPoDir,tuPoPinZhi,level / 10);
@@ -770,36 +731,6 @@ export function yulingbaodianTozhanli (
   result.maxLevel = YULING_LEVEL_CAP;
   result.used = material;
   return result;
-}
-
-// 御灵师突破方向加成(TuPoData.cs:14-50):每满 10 级一次,方向由 CharacterHelper.propertyTypeEnums 限定 6 种.
-// 速度/幸运为固定值 2 + ⌊4×k×品质系数⌋；其余四维为百分比 ⌊(8 + 4×(k−1))×品质系数⌋,记到 PercentAddition.
-function applyYuLingTuPo (
-  result: ToZhanliResult,
-  dir: number,
-  pinZhi: number,
-  k: number
-): void {
-  const factor = pinZhi >= 4 ? 1.75 : pinZhi === 3 ? 1.5 : pinZhi === 2 ? 1.25 : 1.0;
-  const fields = result as unknown as Record<string,number>;
-  if (dir === 9 || dir === 11) {
-    const gain = 2 + Math.floor(4 * k * factor);
-    if (dir === 9) {
-      fields.speed = (fields.speed ?? 0) + gain;
-    } else {
-      fields.lucky = (fields.lucky ?? 0) + gain;
-    }
-    return;
-  }
-  const gain = Math.floor((8 + 4 * (k - 1)) * factor);
-  const key = dir === 0 ? "atkPercent"
-    : dir === 1 ? "defPercent"
-    : dir === 2 ? "hpPercent"
-    : dir === 15 ? "ignoreDefPercent"
-    : undefined;
-  if (key !== undefined) {
-    fields[key] = (fields[key] ?? 0) + gain;
-  }
 }
 
 // ============================== 5. 阵法(灵纹,4 维) ==============================
@@ -862,6 +793,79 @@ export function zhizaoLevelUp (exp: number): number {
   return level;
 }
 
+// 御灵师突破方向加成(TuPoData.cs:14-50):每满 10 级一次,方向由 CharacterHelper.propertyTypeEnums 限定 6 种.
+// 速度/幸运为固定值 2 + ⌊4×k×品质系数⌋；其余四维为百分比 ⌊(8 + 4×(k−1))×品质系数⌋,记到 PercentAddition.
+function applyYuLingTuPo (
+  result: ToZhanliResult,
+  dir: number,
+  pinZhi: number,
+  k: number
+): void {
+  const factor = pinZhi >= 4 ? 1.75 : pinZhi === 3 ? 1.5 : pinZhi === 2 ? 1.25 : 1;
+  const fields = result as unknown as Record<string,number>;
+  if (dir === 9 || dir === 11) {
+    const gain = 2 + Math.floor(4 * k * factor);
+    if (dir === 9) {
+      fields.speed = (fields.speed ?? 0) + gain;
+    } else {
+      fields.lucky = (fields.lucky ?? 0) + gain;
+    }
+    return;
+  }
+  const gain = Math.floor((8 + 4 * (k - 1)) * factor);
+  const key = dir === 0
+? "atkPercent"
+    : dir === 1
+? "defPercent"
+    : dir === 2
+? "hpPercent"
+    : dir === 15
+? "ignoreDefPercent"
+    : undefined;
+  if (key !== undefined) {
+    fields[key] = (fields[key] ?? 0) + gain;
+  }
+}
+
+// ============================== 灵纹 → 阵法等级(天覆阵 / 鸟翔阵) ==============================
+/**
+ * 灵纹升级阵法的共用模拟(ZhenFaRecorder.cs:22-40,82-91,93-129),两种阵法的四维增量完全一致.
+ * 固定口径:阵法 Lv.1,四维初始各 500(初始态,不计入增量),只算 1 个上阵阵法,研究26 满 -50%.
+ * 每级消耗 round(L×20×0.5)(CulMaxLevelUpTimes 的 clamp [1,2147483646]),
+ * 每级 HP/ATK/DEF/穿透 各 +(200+35L) 固定值(:85-89),不给速度.
+ * 研究 27/28/29 的攻/防/穿 +100% 属初始态 PercentAddition,不重复计入本次增量.
+ * @param lingwen 投入的灵纹数量
+ */
+function lingwenLevelUp (lingwen: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  const material = assertMaterial(lingwen,"灵纹");
+  let level = ZHENFA_START_LEVEL;
+  let left = material;
+  let count = 0;
+  while (level < ZHENFA_LEVEL_CAP) {
+    const cost = Math.max(1,Math.min(ZHENFA_LEVEL_CAP,culPercentToInt(
+      Math.min(ZHENFA_LEVEL_CAP,level * ZHENFA_COST_PER_LEVEL),
+      -RESEARCH_26_LINGWEN_REDUCE)));
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    const add = ZHENFA_ADD_BASE + ZHENFA_ADD_PER_LEVEL * level;
+    result.atk += add;
+    result.def += add;
+    result.hp += add;
+    result.ignoreDef += add;
+    level += 1;
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = level;
+  result.left = left;
+  result.maxLevel = ZHENFA_LEVEL_CAP;
+  result.used = material - left;
+  return result;
+}
+
 // #endregion
 // #region 残念锦囊与宝箱 → 战力
 // 全部按「只算一个英灵」口径:残念升星与御灵装备在源码里都只写该英灵自己的 BattleData_Manager
@@ -889,77 +893,11 @@ const FIX_TARGET_METHODS: Record<number,(n: number) => object> = {
 };
 
 /**
- * 御力(4)投入御灵师等级的完整模拟,供御力宝箱(20-29)使用.
- * 与 yulingbaodianTozhanli 同一套 CulLevel_Up_Remand 与每级四维 +L×250(GameRecorder.cs:659-711),
- * 但御力宝箱直接给 AssetType.YuLi 的御力,不再按「每本宝典 200 御力」换算.
- * @param yuli 投入的御力数量
- */
-export function yuliTozhanli (yuli: number): ToZhanliResult {
-  const result = emptyToZhanli();
-  const material = assertMaterial(yuli,"御力");
-  let exp = YULINGSHI_START_EXP + material;
-  let level = YULINGSHI_START_LEVEL;
-  let count = 0;
-  while (level < YULING_LEVEL_CAP) {
-    const tens = Math.trunc(level / 10);
-    const need = 100 * tens * (tens + 1) + 20 * (tens + 1) * (level % 10);
-    if (exp < need) {
-      break;
-    }
-    exp -= need;
-    const add = level * 250;
-    result.atk += add;
-    result.def += add;
-    result.hp += add;
-    result.ignoreDef += add;
-    level += 1;
-    count += 1;
-  }
-  result.count = count;
-  result.finalLevel = level;
-  result.left = 0;
-  result.maxLevel = YULING_LEVEL_CAP;
-  result.used = material;
-  return result;
-}
-
-/**
- * 自选残念锦囊(19) → 单个英灵的专属残念 → 升星.
- * Prop_Chest_RandomSuiPian.GetOpen:26-29 在 ChooseProp!=0 时给 Count 个指定残念(600+英灵Index),
- * UIBlock_UseBaoXiang.LoadObject:74-97 对 ZiXuan=true 的宝箱默认选中第 1 个候选,
- * 所以 1 个锦囊 = 1 个该英灵专属残念;默认只算这一个英灵,乘区里没有英灵数量倍数.
- * @param count 自选残念锦囊个数
- * @param startStar 该英灵的起始星级(默认 0)
- */
-export function zixuancannianjinnangTozhanli (
-  count: number,
-  startStar = 0
-): ToZhanliResult {
-  return cannianToZhanli(assertMaterial(count,"自选残念锦囊"),startStar);
-}
-
-/**
- * 普通残念锦囊(18) → 29 种专属残念等概率(GetOpen:31-48).
- * 按「默认只算一个英灵」口径,只统计该英灵分到的期望残念 count/29,其余 28 个英灵不计.
- * @param count 残念锦囊个数
- * @param startStar 该英灵的起始星级(默认 0)
- */
-export function cannianjinnangTozhanli (
-  count: number,
-  startStar = 0
-): ToZhanliResult {
-  return cannianToZhanli(
-    assertMaterial(count,"残念锦囊") / CANNIAN_YINGLING_COUNT,
-    startStar
-  );
-}
-
-/**
  * 宝箱通用入口:按 config/chests.json 的源码类别确定开奖期望,再折算成 18 项属性 + 真百分比.
  * - fix:期望 (MinCount+MaxCount)/2 个 TargetPropID(Prop_Chest_FixProp.cs:28-44),投进已有 tozhanli;
  * - suiPian:自选全给一个英灵,非自选按 29 种等概率只取一个英灵的份额;
  * - type / mibao:每箱 1 件同品质装备,非自选按候选池均匀期望,自选取池内攻击增量最高的一件;
- * - taowa:每箱 1 件装备并以 50% 概率再给 1 个 NextPropID 宝箱(Prop_Chest_TaoWa.cs:24-51),按权重 1,1/2,1/4… 沿链累加.
+ * - taowa:每箱 1 件装备并以 50% 概率再给 1 个 NextPropID 宝箱(Prop_Chest_TaoWa.cs:24-51),按权重 1,1/2,1/4... 沿链累加.
  * 88「随机英灵宝箱」不属于任一 Prop_Chest_* 类(TaskData.cs:121-137 只是任务奖励标记),故不在表内.
  * @param propID 宝箱道具 ID
  * @param count 开启的宝箱个数
@@ -1002,64 +940,70 @@ export function baoxiangTozhanli (propID: number,count: number): ToZhanliResult 
   return result;
 }
 
-/** 按 ZiXuan 决定用候选池均匀期望还是玩家自选的一件(默认取攻击增量最高者). */
-function poolGain (def: ChestDef): Record<string,number> {
-  const pool = def.pool === undefined ? undefined : CHEST_DATA.pools[def.pool];
-  if (pool === undefined) {
-    throw new Error(`宝箱 ${String(def.id)} 找不到候选池 ${String(def.pool)}`);
-  }
-  return def.ziXuan === true ? pool.best.gain : pool.avg;
+/**
+ * 普通残念锦囊(18) → 29 种专属残念等概率(GetOpen:31-48).
+ * 按「默认只算一个英灵」口径,只统计该英灵分到的期望残念 count/29,其余 28 个英灵不计.
+ * @param count 残念锦囊个数
+ * @param startStar 该英灵的起始星级(默认 0)
+ */
+export function cannianjinnangTozhanli (
+  count: number,
+  startStar = 0
+): ToZhanliResult {
+  return cannianToZhanli(
+    assertMaterial(count,"残念锦囊") / CANNIAN_YINGLING_COUNT,
+    startStar
+  );
 }
 
-/** 把材料/装备换算出来的属性增量按倍率累加到结果,只收 GAIN_FIELDS 里的字段. */
-function addGain (result: ToZhanliResult,gain: object,scale = 1): void {
-  const fields = result as unknown as Record<string,number>;
-  for (const [key,value] of Object.entries(gain as Record<string,unknown>)) {
-    if (GAIN_FIELDS.has(key) && typeof value === "number" && Number.isFinite(value)) {
-      fields[key] = (fields[key] ?? 0) + value * scale;
-    }
-  }
-}
-
-/** 单个英灵逐级升星:先按当前 Star 结算 GetLevelUpStarEffect,再 Star++(Character_YingLing.cs:203-210). */
-function cannianToZhanli (cannian: number,startStar: number): ToZhanliResult {
+/**
+ * 御力(4)投入御灵师等级的完整模拟,供御力宝箱(20-29)使用.
+ * 与 yulingbaodianTozhanli 同一套 CulLevel_Up_Remand 与每级四维 +L×250(GameRecorder.cs:659-711),
+ * 但御力宝箱直接给 AssetType.YuLi 的御力,不再按「每本宝典 200 御力」换算.
+ * @param yuli 投入的御力数量
+ */
+export function yuliTozhanli (yuli: number): ToZhanliResult {
   const result = emptyToZhanli();
-  assertWholeAtLeast(startStar,0,"起始星级");
-  let star = startStar;
-  let left = cannian;
+  const material = assertMaterial(yuli,"御力");
+  let exp = YULINGSHI_START_EXP + material;
+  let level = YULINGSHI_START_LEVEL;
   let count = 0;
-  while (count < 100_0000) {
-    const base = star < CANNIAN_STAR_BRANCH
-      ? Math.trunc(CANNIAN_STAR_COST_BASE * 2 ** Math.trunc(star / CANNIAN_STAR_DIVISOR))
-      : 100 * (Math.trunc(star / 200) + 1) + Math.trunc((star - 14) / 5) * 40;
-    const cost = Math.max(1,Math.min(CANNIAN_STAR_COST_CAP,
-      culPercentToInt(base,-CANNIAN_RESEARCH_33_REDUCE)));
-    if (left < cost) {
+  while (level < YULING_LEVEL_CAP) {
+    const tens = Math.trunc(level / 10);
+    const need = 100 * tens * (tens + 1) + 20 * (tens + 1) * (level % 10);
+    if (exp < need) {
       break;
     }
-    left -= cost;
-    const pct = Math.min(Math.trunc(star / CANNIAN_STAR_DIVISOR) + 1,CANNIAN_STAR_PCT_CAP)
-      * CANNIAN_STAR_PCT_PER_STEP;
-    result.atkPercent += pct;
-    result.defPercent += pct;
-    result.hpPercent += pct;
-    result.ignoreDefPercent += pct;
-    result.speed += 1;
-    const rotate = YINGLING_STAR_ROTATE_PROPS[
-      Math.trunc(star / CANNIAN_STAR_DIVISOR) % YINGLING_STAR_ROTATE_PROPS.length];
-    const key = rotate === undefined ? undefined : PROPERTY_TO_KEY[rotate];
-    if (key !== undefined) {
-      result[key] += 1;
-    }
-    star += 1;
+    exp -= need;
+    const add = level * 250;
+    result.atk += add;
+    result.def += add;
+    result.hp += add;
+    result.ignoreDef += add;
+    level += 1;
     count += 1;
   }
   result.count = count;
-  result.finalLevel = star;
-  result.left = left;
-  result.maxLevel = CANNIAN_STAR_COST_CAP;
-  result.used = cannian - left;
+  result.finalLevel = level;
+  result.left = 0;
+  result.maxLevel = YULING_LEVEL_CAP;
+  result.used = material;
   return result;
+}
+
+/**
+ * 自选残念锦囊(19) → 单个英灵的专属残念 → 升星.
+ * Prop_Chest_RandomSuiPian.GetOpen:26-29 在 ChooseProp!=0 时给 Count 个指定残念(600+英灵 Index),
+ * UIBlock_UseBaoXiang.LoadObject:74-97 对 ZiXuan=true 的宝箱默认选中第 1 个候选,
+ * 所以 1 个锦囊 = 1 个该英灵专属残念;默认只算这一个英灵,乘区里没有英灵数量倍数.
+ * @param count 自选残念锦囊个数
+ * @param startStar 该英灵的起始星级(默认 0)
+ */
+export function zixuancannianjinnangTozhanli (
+  count: number,
+  startStar = 0
+): ToZhanliResult {
+  return cannianToZhanli(assertMaterial(count,"自选残念锦囊"),startStar);
 }
 
 // #endregion
@@ -1073,6 +1017,16 @@ function addDrop (drops: Record<string,number>,propID: number,amount: number): v
     throw new Error(`未知道具 ID：${propID}`);
   }
   drops[name] = (drops[name] ?? 0) + amount;
+}
+
+// 把材料/装备换算出来的属性增量按倍率累加到结果,只收 GAIN_FIELDS 里的字段.
+function addGain (result: ToZhanliResult,gain: object,scale = 1): void {
+  const fields = result as unknown as Record<string,number>;
+  for (const [key,value] of Object.entries(gain as Record<string,unknown>)) {
+    if (GAIN_FIELDS.has(key) && typeof value === "number" && Number.isFinite(value)) {
+      fields[key] = (fields[key] ?? 0) + value * scale;
+    }
+  }
 }
 function addMonsterDrops (
   drops: Record<string,number>,
@@ -1126,6 +1080,47 @@ function assertWholeAtLeast (value: number,min: number,label: string): number {
   return value;
 }
 
+// 单个英灵逐级升星:先按当前 Star 结算 GetLevelUpStarEffect,再 Star++(Character_YingLing.cs:203-210).
+function cannianToZhanli (cannian: number,startStar: number): ToZhanliResult {
+  const result = emptyToZhanli();
+  assertWholeAtLeast(startStar,0,"起始星级");
+  let star = startStar;
+  let left = cannian;
+  let count = 0;
+  while (count < 100_0000) {
+    const base = star < CANNIAN_STAR_BRANCH
+      ? Math.trunc(CANNIAN_STAR_COST_BASE * 2 ** Math.trunc(star / CANNIAN_STAR_DIVISOR))
+      : 100 * (Math.trunc(star / 200) + 1) + Math.trunc((star - 14) / 5) * 40;
+    const cost = Math.max(1,Math.min(CANNIAN_STAR_COST_CAP,
+      culPercentToInt(base,-CANNIAN_RESEARCH_33_REDUCE)));
+    if (left < cost) {
+      break;
+    }
+    left -= cost;
+    const pct = Math.min(Math.trunc(star / CANNIAN_STAR_DIVISOR) + 1,CANNIAN_STAR_PCT_CAP)
+      * CANNIAN_STAR_PCT_PER_STEP;
+    result.atkPercent += pct;
+    result.defPercent += pct;
+    result.hpPercent += pct;
+    result.ignoreDefPercent += pct;
+    result.speed += 1;
+    const rotate = YINGLING_STAR_ROTATE_PROPS[
+      Math.trunc(star / CANNIAN_STAR_DIVISOR) % YINGLING_STAR_ROTATE_PROPS.length];
+    const key = rotate === undefined ? undefined : PROPERTY_TO_KEY[rotate];
+    if (key !== undefined) {
+      result[key] += 1;
+    }
+    star += 1;
+    count += 1;
+  }
+  result.count = count;
+  result.finalLevel = star;
+  result.left = left;
+  result.maxLevel = CANNIAN_STAR_COST_CAP;
+  result.used = cannian - left;
+  return result;
+}
+
 // ToolClass.Cul_Percent_ToInt :107-117(正数四舍五入远离零);percentage 传负值即减免
 function culPercentToInt (baseValue: number,percentage: number): number {
   return Math.round(baseValue * (100 + percentage) / 100);
@@ -1136,13 +1131,13 @@ function emptyToZhanli (): ToZhanliResult {
   return {
     ...EMPTY_PROPERTIES,
     ...EMPTY_PERCENT_PROPERTIES,
-    count:              0,
-    finalLevel:         0,
-    left:               0,
-    maxLevel:           0,
-    specialPercent:     0,
-    used:               0,
-    zhanliPercent:      0,
+    count:               0,
+    finalLevel:          0,
+    left:                0,
+    maxLevel:            0,
+    specialPercent:      0,
+    used:                0,
+    zhanliPercent:       0,
     zhenFaAttackPercent: 0
   };
 }
@@ -1262,6 +1257,15 @@ function getZhanLiAddition (power: number): number {
   const upper = lower * 10;
   return 200 + exponent * 100 + Math.trunc((power - lower) * 100 / (upper - lower));
 }
+
+// 按 ZiXuan 决定用候选池均匀期望还是玩家自选的一件(默认取攻击增量最高者).
+function poolGain (def: ChestDef): Record<string,number> {
+  const pool = def.pool === undefined ? undefined : CHEST_DATA.pools[def.pool];
+  if (pool === undefined) {
+    throw new Error(`宝箱 ${String(def.id)} 找不到候选池 ${String(def.pool)}`);
+  }
+  return def.ziXuan === true ? pool.best.gain : pool.avg;
+}
 function simulateMode (
   hours: number,
   cycleSeconds: number,
@@ -1305,18 +1309,31 @@ function simulateMode (
 // 18 项里走「真百分比」的 5 项;其余 13 项按源码是固定值
 const isCiTiaoPercentKey = (key: keyof AllProperties): key is CiTiaoPercentKey => key === "atk" || key === "def" || key === "hp" || key === "speed" || key === "ignoreDef";
 
-// 「想要的属性」中文名数组 → AllProperties 字段名集合;允许带 % 后缀(与 FIELD_NAMES 中文名一致),
-// 未知名字直接报错而不是静默忽略,避免拼错属性名后误以为该材料没有收益.
-function wantedPropertyKeys (wanted: readonly string[]): Set<keyof AllProperties> {
-  const keys = new Set<keyof AllProperties>();
-  for (const name of wanted) {
-    const field = PROPERTY_NAME_TO_KEY[name.replace(/%$/,"")];
-    if (field === undefined) {
-      throw new Error(`不认识的属性「${name}」,可用:${Object.keys(PROPERTY_NAME_TO_KEY).join("、")}`);
+// 在神兵多轨平均分配里,挑当前等级最低且未达 MaxLv 的一条轨;全满返回 -1
+function lowestUpgradableTrack (levels: number[]): number {
+  let target = -1;
+  for (let index = 0; index < levels.length; index += 1) {
+    const level = levels[index] ?? 0;
+    if (level < SHEN_BING_MAX_LV && (target < 0 || level < (levels[target] ?? 0))) {
+      target = index;
     }
-    keys.add(field);
   }
-  return keys;
+  return target;
+}
+
+// 器鼎单级消耗(NPC_EquipManager.cs:250-256),与 hantieTozhanli ① 完全同一口径
+function qiluCost (level: number): number {
+  return Math.max(1,Math.round(QILU_COST_BASE * (Math.trunc((level - 1) / QILU_TIER_SIZE) + 1)
+    * (PERCENT_BASE - RESEARCH_20_WUCAI_REDUCE) / PERCENT_BASE));
+}
+
+// Mathf.RoundToInt(Drop_Recorder.cs:39)在正数区间是四舍六入五取偶
+function roundHalfToEven (value: number): number {
+  const lower = Math.floor(value);
+  if (value - lower === 0.5) {
+    return lower % 2 === 0 ? lower : lower + 1;
+  }
+  return Math.round(value);
 }
 
 // 按 wanted 从 23 条炼化轨里筛出可用轨,再按「等级最低的轨优先」平均分配材料,每级把该轨属性 +1 累加到 result.
@@ -1360,33 +1377,6 @@ function runShenBingTracks (
   result.left = left;
   result.maxLevel = SHEN_BING_MAX_LV;
   result.used = material - left;
-}
-
-// 在神兵多轨平均分配里,挑当前等级最低且未达 MaxLv 的一条轨;全满返回 -1
-function lowestUpgradableTrack (levels: number[]): number {
-  let target = -1;
-  for (let index = 0; index < levels.length; index += 1) {
-    const level = levels[index] ?? 0;
-    if (level < SHEN_BING_MAX_LV && (target < 0 || level < (levels[target] ?? 0))) {
-      target = index;
-    }
-  }
-  return target;
-}
-
-// 器鼎单级消耗(NPC_EquipManager.cs:250-256),与 hantieTozhanli ① 完全同一口径
-function qiluCost (level: number): number {
-  return Math.max(1,Math.round(QILU_COST_BASE * (Math.trunc((level - 1) / QILU_TIER_SIZE) + 1)
-    * (PERCENT_BASE - RESEARCH_20_WUCAI_REDUCE) / PERCENT_BASE));
-}
-
-// Mathf.RoundToInt(Drop_Recorder.cs:39)在正数区间是四舍六入五取偶
-function roundHalfToEven (value: number): number {
-  const lower = Math.floor(value);
-  if (value - lower === 0.5) {
-    return lower % 2 === 0 ? lower : lower + 1;
-  }
-  return Math.round(value);
 }
 
 // 神兵单级消耗(ShenBingRecorder.cs:28-36)
@@ -1456,8 +1446,22 @@ function strengthProps (add: number): AllProperties {
   };
 }
 
+// 「想要的属性」中文名数组 → AllProperties 字段名集合;允许带 % 后缀(与 FIELD_NAMES 中文名一致),
+// 未知名字直接报错而不是静默忽略,避免拼错属性名后误以为该材料没有收益.
+function wantedPropertyKeys (wanted: readonly string[]): Set<keyof AllProperties> {
+  const keys = new Set<keyof AllProperties>();
+  for (const name of wanted) {
+    const field = PROPERTY_NAME_TO_KEY[name.replace(/%$/,"")];
+    if (field === undefined) {
+      throw new Error(`不认识的属性「${name}」,可用:${Object.keys(PROPERTY_NAME_TO_KEY).join("、")}`);
+    }
+    keys.add(field);
+  }
+  return keys;
+}
+
 // #endregion
-// #region 系统换算(源码找到的非材料制造类:英灵/御灵师养成、转生、转职、羁绊、技能、修炼)
+// #region 系统换算(源码找到的非材料制造类:英灵/御灵师养成,转生,转职,羁绊,技能,修炼)
 // 这些系统的「消耗资源」各不相同(御力/孟婆汤/残念/疲劳/历史本纪,或阵容/等级无消耗),
 // 故统一以「投入次数/等级」为入参,返回与上面 tozhanli 一致的 ToZhanliResult.
 // 公式来源(均在 src/反编译/):
@@ -1470,47 +1474,186 @@ function strengthProps (add: number): AllProperties {
 // - 英灵技能/神转职:YingLing.SkillSystem/Skill.cs + config/yingling.json(skillShen=神转职技能 ID)
 // - 修炼:YingLing.KeJinSystem/ShiLian_Manger.cs(生成神魔分身,属性来自技能+双转职)
 // 属性枚举(PropertyTypeEnum.cs):0 atk,1 def,2 hp,3 speed,4 mingZhong,5 shanBi,6 baoJi,7 baoJiResist,
-//   8 baoJiDamage,9 lianJi,10 fanJi,11 recovery,12 xiXie,13 damageAddition,14 damageReduce,15 ignoreDef,16 returnDamage,17 lucky
-
-/* eslint-disable import/first */
+// 8 baoJiDamage,9 lianJi,10 fanJi,11 recovery,12 xiXie,13 damageAddition,14 damageReduce,15 ignoreDef,16 returnDamage,17 lucky
 import {readFileSync} from "node:fs";
 
-/** 通用:把一组「属性枚举+数值+是否百分比」落地为属性增量(同 PropEffect_ChangeBattleProperty.cs:84-88). */
-function applyBattleProps (
-  result: ToZhanliResult,
-  effects: readonly {prop: number; value: number; percent: boolean}[]
-): void {
-  const fieldOf: Record<number,string> = {
-    0:"atk",1:"def",2:"hp",3:"speed",4:"mingZhong",5:"shanBi",6:"baoJi",7:"baoJiResist",
-    8:"baoJiDamage",9:"lianJi",10:"fanJi",11:"recovery",12:"xiXie",13:"damageAddition",
-    14:"damageReduce",15:"ignoreDef",16:"returnDamage",17:"lucky"
-  };
-  const r = result as unknown as Record<string,number>;
-  for (const e of effects) {
-    const base = fieldOf[e.prop];
-    if (base === undefined) {
-      continue;
-    }
-    const key = e.percent ? `${base}Percent` : base;
-    r[key] = (r[key] ?? 0) + e.value;
-  }
+// EffectNameEnum.cs:0 ChangeBattleProperty(直接加战斗属性,进面板);1 EntryEffect(特殊机制,不进面板)
+const EFFECT_CHANGE_BATTLE_PROPERTY = 0;
+interface JiBanConfig {
+  id:     number;
+  levels: readonly JiBanLevel[];
+  type:   number;
 }
 
-/** 御灵师升级:投入 levels 个御灵师等级(消耗御力),每级 生命/攻击/防御/穿透 各 += 当前御灵师等级×250. */
-export function yuLingShiShengJiTozhanli (levels: number,startLevel = 1): ToZhanliResult {
-  assertWholeAtLeast(levels,0,"御灵师升级次数");
+// 系统换算读取的运行时配置(由 src/scripts/extract-config.py 从游戏 StreamingAssets 导出)
+interface JiBanLevel {
+  boolValue:  boolean;
+  count:      number;
+  effectName: number;
+  entry:      number;
+  level:      number;
+  params3:    number;
+}
+interface SkillData {
+  effectRecoders: readonly SkillRecoder[];
+  skillID:        number;
+}
+interface SkillRecoder {
+  boolValue:  boolean;
+  effectName: number;
+  params1:    number;
+  params2:    number;
+  params3:    number;
+}
+interface YingLingDef {
+  bonds:        readonly number[];
+  index:        number;
+  skillMo:      number;
+  skills:       readonly number[];
+  skillShen:    number;
+  yingLingType: number;
+}
+const JIBAN: readonly JiBanConfig[] = JSON.parse(
+  readFileSync(new URL("config/jiban.json",import.meta.url),"utf8")
+) as JiBanConfig[];
+const YINGLING: readonly YingLingDef[] = JSON.parse(
+  readFileSync(new URL("config/yingling.json",import.meta.url),"utf8")
+) as YingLingDef[];
+const SKILL_DATA: readonly SkillData[] = JSON.parse(
+  readFileSync(new URL("config/skill-data.json",import.meta.url),"utf8")
+) as SkillData[];
+
+/**
+ * 羁绊(按阵容聚合):传入上场英灵的 index 数组,按每个英灵的 bonds(=ZhenRongJiBanTypeEnum)归类,
+ * 统计每类人数后分别激活对应羁绊档位(羁绊 id = 类型 + 1),合并所有 ChangeBattleProperty 类面板属性.
+ * 注:当前 config 的羁绊全部是 EntryEffect(特殊机制),故面板通常为空,但过程量(各类激活档位)已正确聚合.
+ * @param zhenRong 上场英灵的 index 数组(如 [1,2,3,4,5])
+ * @returns 所有激活羁绊 ChangeBattleProperty 类面板属性之和(当前 config 羁绊均为 EntryEffect,面板通常为空)
+ */
+export function jiBanFromZhenRong (zhenRong: readonly number[]): ToZhanliResult {
   const result = emptyToZhanli();
-  let lv = startLevel;
-  for (let i = 0; i < levels; i++) {
-    const add = lv * 250;
-    result.atk += add; result.def += add; result.hp += add; result.ignoreDef += add;
-    lv += 1;
+  const countsByType = new Map<number,number>();
+  for (const idx of zhenRong) {
+    const def = YINGLING.find(y => y.index === idx);
+    if (def === undefined) {
+      continue;
+    }
+    for (const bt of def.bonds) {
+      countsByType.set(bt,(countsByType.get(bt) ?? 0) + 1);
+    }
   }
-  result.count = levels; result.finalLevel = lv - 1; result.used = 0; result.maxLevel = lv - 1;
+  for (const [bt,c] of countsByType) {
+    addGain(result,jiBanTozhanli(bt + 1,c));
+  }
+  result.count = zhenRong.length;
+  result.used = zhenRong.length;
+  result.maxLevel = countsByType.size;
   return result;
 }
 
-/** 英灵升级:投入 levels 级经验升级(消耗御力经验),每级 HP+225n/DEF+15n/ATK+24n/穿透+15n,n=等级/50+1,转生放大. */
+/**
+ * 羁绊:给定羁绊 id 与上场人数 count,取「满足 count」的最高档,把可直接加属性的效果
+ * (EffectNameEnum=0 ChangeBattleProperty)经 applyBattleProps 落面板;
+ * EntryEffect(=1,如三国群英伤害公式)为特殊机制,不进面板(由 src/scripts/jiban-value.ts 单独按阵容类型处理).
+ * 配置来源 config/jiban.json(StreamingAssets/JiBan_Data_Json.txt 导出).
+ * @param bondId 羁绊 id(1-12,id = ZhenRongJiBanTypeEnum + 1)
+ * @param count 上场阵容中属于该羁绊类型的英灵人数
+ * @returns 各档位 ChangeBattleProperty 类效果的面板属性(EntryEffect 不计入);过程量记录激活档位等级
+ */
+export function jiBanTozhanli (bondId: number,count: number): ToZhanliResult {
+  assertWholeAtLeast(count,0,"上场人数");
+  const bond = JIBAN.find(b => b.id === bondId);
+  if (bond === undefined) {
+    throw new Error(`羁绊 id ${String(bondId)} 不存在于 config/jiban.json`);
+  }
+  const result = emptyToZhanli();
+  let chosen: JiBanLevel | null = null;
+  for (const lv of bond.levels) {
+    if (lv.count <= count && (chosen === null || lv.level > chosen.level)) {
+      chosen = lv;
+    }
+  }
+  if (chosen !== null) {
+    if (chosen.effectName === EFFECT_CHANGE_BATTLE_PROPERTY) {
+      applyBattleProps(result,[{percent: chosen.boolValue,prop: chosen.entry,value: chosen.level}]);
+    }
+    result.finalLevel = chosen.level;
+  }
+  result.count = count;
+  result.used = count;
+  result.maxLevel = bond.levels.length;
+  return result;
+}
+
+/**
+ * 修炼:生成神魔分身,属性 = 主技能(3 主动)+ 魔/神转职技能落地 + 双转职强化 + 分身等级公式.
+ * - 分身等级 = 10000 + (层-1)*250*(层/10+1)(ShiLian_Manger.cs:154-158)
+ * - 技能落地:复用 yingLingJiNengTozhanli 的 panel(只含 ChangeBattleProperty 类)
+ * - 双转职:魔 + 神 各按 zhuanZhiLevel 级强化落地(默认 1 级;源码转职强化 lv.0→1 给四维 +(20+50*0),速度+1)
+ * @param cengShu 修炼层数(≥0)
+ * @param index 英灵 index(提供则叠加技能与双转职落地)
+ * @param zhuanZhiLevel 双转职强化等级(默认 1)
+ * @returns 神魔分身属性(技能落地 + 双转职 + 分身等级公式)
+ */
+export function xiuLianTozhanli (
+  cengShu: number,
+  index?: number,
+  zhuanZhiLevel = 1
+): ToZhanliResult {
+  assertWholeAtLeast(cengShu,0,"修炼层数");
+  assertWholeAtLeast(zhuanZhiLevel,0,"转职强化等级");
+  const result = emptyToZhanli();
+  result.finalLevel = 10000 + (cengShu - 1) * 250 * (Math.trunc(cengShu / 10) + 1);
+  result.count = cengShu;
+  result.used = cengShu;
+  result.maxLevel = cengShu;
+  if (index !== undefined) {
+    addGain(result,yingLingJiNengTozhanli(index).panel);
+    const zz = zhuanZhiQiangHuaTozhanli(zhuanZhiLevel);
+    addGain(result,zz); // 魔转职
+    addGain(result,zz); // 神转职
+  }
+  return result;
+}
+
+/**
+ * 英灵技能/神转职:返回该英灵 3 个主动技能 + 魔/神转职技能 ID(来自 config/yingling.json),
+ * 并把每个技能里「可直接加面板属性」的效果(EffectNameEnum=0 ChangeBattleProperty:
+ * Params_1=PropertyTypeEnum,Params_2=数值,Bool_Value=是否百分比)经 applyBattleProps 落地.
+ * EntryEffect(=1,如伤害公式/控制/特殊机制)不进面板,由 jiban-value.ts 等单独处理.
+ * 技能数值来源 config/skill-data.json(StreamingAssets/Skill_Data_Json.txt 导出,
+ * Skill.cs:AddSkill 遍历 effectRecoders 逐个 TrrigerDaily 落地).
+ * 注:源码没有「幸运→命中」的通用转换;命中来自技能自身的 ChangeBattleProperty(MingZhong,...)(如 skill 76/77).
+ * @param index 英灵 index(1 起)
+ * @returns 技能 ID(skillIds/skillMo/skillShen)与可直接落地的面板属性(panel,仅 ChangeBattleProperty 类)
+ */
+export function yingLingJiNengTozhanli (
+  index: number
+): {panel: ToZhanliResult; skillIds: number[]; skillMo: number; skillShen: number} {
+  const def = YINGLING.find(y => y.index === index);
+  if (def === undefined) {
+    throw new Error(`英灵 index ${String(index)} 不存在于 config/yingling.json`);
+  }
+  const result = emptyToZhanli();
+  const allSkillIds = [...def.skills,def.skillMo,def.skillShen];
+  for (const sid of allSkillIds) {
+    const sk = SKILL_DATA.find(s => s.skillID === sid);
+    if (sk === undefined) {
+      continue;
+    }
+    for (const rec of sk.effectRecoders) {
+      if (rec.effectName === EFFECT_CHANGE_BATTLE_PROPERTY) {
+        applyBattleProps(result,[{percent: rec.boolValue,prop: rec.params1,value: rec.params2}]);
+      }
+    }
+  }
+  result.count = allSkillIds.length;
+  result.used = allSkillIds.length;
+  result.maxLevel = allSkillIds.length;
+  return {panel: result,skillIds: [...def.skills],skillMo: def.skillMo,skillShen: def.skillShen};
+}
+
+// 英灵升级:投入 levels 级经验升级(消耗御力经验),每级 HP+225n/DEF+15n/ATK+24n/穿透+15n,n=等级/50+1,转生放大.
 export function yingLingShengJiTozhanli (levels: number,startLevel = 1,zhuanShengCount = 0): ToZhanliResult {
   assertWholeAtLeast(levels,0,"英灵升级次数");
   const result = emptyToZhanli();
@@ -1528,7 +1671,7 @@ export function yingLingShengJiTozhanli (levels: number,startLevel = 1,zhuanShen
   return result;
 }
 
-/** 英灵升星:投入 stars 次升星,每星 四维% += (星/5+1)*5、速度+1、轮换属性% +1. */
+// 英灵升星:投入 stars 次升星,每星 四维% += (星/5+1)*5,速度+1,轮换属性% +1.
 export function yingLingShengXingTozhanli (stars: number,startStar = 0): ToZhanliResult {
   assertWholeAtLeast(stars,0,"英灵升星次数");
   const result = emptyToZhanli();
@@ -1538,6 +1681,7 @@ export function yingLingShengXingTozhanli (stars: number,startStar = 0): ToZhanl
     result.atkPercent += num * 5; result.defPercent += num * 5;
     result.hpPercent += num * 5; result.ignoreDefPercent += num * 5;
     result.speed += 1;
+
     // 轮换属性之一(源码 LevelUpStartEffect.GetOrder) % 8:暴击/伤害加成/连击/反击/减伤/命中/闪避/抗暴;默认取命中
     result.mingZhongPercent += 1;
     st += 1;
@@ -1546,7 +1690,21 @@ export function yingLingShengXingTozhanli (stars: number,startStar = 0): ToZhanl
   return result;
 }
 
-/** 转生:投入 count 次转生(消耗孟婆汤 (次+1)*2),每次 命/闪/暴/抗暴/暴伤 % += 15×(次数+1). */
+// 御灵师升级:投入 levels 个御灵师等级(消耗御力),每级 生命/攻击/防御/穿透 各 += 当前御灵师等级×250.
+export function yuLingShiShengJiTozhanli (levels: number,startLevel = 1): ToZhanliResult {
+  assertWholeAtLeast(levels,0,"御灵师升级次数");
+  const result = emptyToZhanli();
+  let lv = startLevel;
+  for (let i = 0; i < levels; i++) {
+    const add = lv * 250;
+    result.atk += add; result.def += add; result.hp += add; result.ignoreDef += add;
+    lv += 1;
+  }
+  result.count = levels; result.finalLevel = lv - 1; result.used = 0; result.maxLevel = lv - 1;
+  return result;
+}
+
+// 转生:投入 count 次转生(消耗孟婆汤 (次+1)*2),每次 命/闪/暴/抗暴/暴伤 % += 15×(次数+1).
 export function zhuanShengTozhanli (count: number): ToZhanliResult {
   assertWholeAtLeast(count,0,"转生次数");
   const result = emptyToZhanli();
@@ -1562,7 +1720,7 @@ export function zhuanShengTozhanli (count: number): ToZhanliResult {
   return result;
 }
 
-/** 转职强化:投入 levels 级强化(消耗历史本纪 10+10L),每级 四维 +(20+50L)、速度+1. */
+// 转职强化:投入 levels 级强化(消耗历史本纪 10+10L),每级 四维 +(20+50L),速度+1.
 export function zhuanZhiQiangHuaTozhanli (levels: number): ToZhanliResult {
   assertWholeAtLeast(levels,0,"转职强化次数");
   const result = emptyToZhanli();
@@ -1577,50 +1735,40 @@ export function zhuanZhiQiangHuaTozhanli (levels: number): ToZhanliResult {
   return result;
 }
 
-/**
- * 羁绊:给定激活的羁绊档位(每个档位给出属性枚举+数值+是否百分比),落地为属性增量.
- * 源码 ZhenRong_JiBan.cs 按上场同类型英灵人数取对应档位,羁绊效果经 PropEffect_ChangeBattleProperty
- * (ChangeBattleProperty 类直接加属性)或 PropEffect_EntryEffect(EntryEffect 类为特殊机制,不进面板,由调用方自行处理).
- * 这里只处理 ChangeBattleProperty 类;调用方负责把阵容解析成激活的 effects 列表
- * (档位表来自 config/jiban.json:每个 id 的 levels[] 含 count/entry/level).
- */
-export function jiBanTozhanli (effects: readonly {prop: number; value: number; percent: boolean}[]): ToZhanliResult {
-  const result = emptyToZhanli();
-  applyBattleProps(result,effects);
-  result.count = effects.length;
-  result.maxLevel = effects.length;
-  return result;
-}
-
-/**
- * 英灵技能/神转职:返回该英灵 3 个技能 + 魔/神转职技能 ID(来自 config/yingling.json).
- * 技能本体是配置驱动——Skill_Data_Json 里每个技能是一组 EffectRecoder,经 PropEffect_ChangeBattleProperty
- * 落地为属性(孙悟空的 skillShen 即「神转职」,其命中加成来自该技能配置里的 ChangeBattleProperty(MingZhong,...);
- * 源码没有「幸运→命中」的通用转换逻辑,命中是技能配置直接给的固定值).
- * 注:当前 config/ 只有 skill-text.json(文本),Skill_Data_Json 数值表缺失,故这里只返回 ID;
- * 待补充数值表后,可在此调用 applyBattleProps 把技能 EffectRecoder 落地.
- */
-export function yingLingJiNengTozhanli (index: number): {skillIds:number[]; skillMo:number; skillShen:number} {
-  const data = JSON.parse(readFileSync(new URL("./config/yingling.json",import.meta.url),"utf8")) as
-    {index:number; skills:number[]; bonds:number[]; skillMo:number; skillShen:number}[];
-  const def = data.find(y => y.index === index);
-  if (def === undefined) {
-    throw new Error(`英灵 index ${String(index)} 不存在于 config/yingling.json`);
+// 通用:把一组「属性枚举+数值+是否百分比」落地为属性增量(同 PropEffect_ChangeBattleProperty.cs:84-88).
+function applyBattleProps (
+  result: ToZhanliResult,
+  effects: readonly {percent: boolean; prop: number; value: number}[]
+): void {
+  const fieldOf: Record<number,string> = {
+    0:  "atk",
+1:  "def",
+10: "fanJi",
+11: "recovery",
+12: "xiXie",
+13: "damageAddition",
+14: "damageReduce",
+15: "ignoreDef",
+    16: "returnDamage",
+17: "lucky",
+2:  "hp",
+3:  "speed",
+4:  "mingZhong",
+5:  "shanBi",
+    6:  "baoJi",
+7:  "baoJiResist",
+8:  "baoJiDamage",
+9:  "lianJi"
+  };
+  const r = result as unknown as Record<string,number>;
+  for (const e of effects) {
+    const base = fieldOf[e.prop];
+    if (base === undefined) {
+      continue;
+    }
+    const key = e.percent ? `${base}Percent` : base;
+    r[key] = (r[key] ?? 0) + e.value;
   }
-  return {skillIds: def.skills, skillMo: def.skillMo, skillShen: def.skillShen};
-}
-
-/**
- * 修炼:生成神魔分身,属性来自技能(3 技能全解锁)+ 双转职,组合上面逻辑.
- * 分身等级 = 10000 + (层-1)*250*(层/10+1)(ShiLian_Manger.cs:154-158);
- * 具体属性产出依赖技能/转职配置(同 yingLingJiNengTozhanli,待 Skill_Data_Json 补全).
- */
-export function xiuLianTozhanli (cengShu: number): ToZhanliResult {
-  assertWholeAtLeast(cengShu,0,"修炼层数");
-  const result = emptyToZhanli();
-  result.finalLevel = 10000 + (cengShu - 1) * 250 * (Math.trunc(cengShu / 10) + 1);
-  result.count = cengShu; result.maxLevel = cengShu;
-  return result;
 }
 
 // #endregion

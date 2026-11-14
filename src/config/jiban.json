@@ -5,23 +5,35 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 1,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 1,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 1,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 5,
+        "effectName": 1,
         "entry": 1,
-        "level": 4
+        "level": 4,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -31,23 +43,35 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 2,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 2,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 2,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 5,
+        "effectName": 1,
         "entry": 2,
-        "level": 4
+        "level": 4,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -57,23 +81,35 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 3,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 3,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 3,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 5,
+        "effectName": 1,
         "entry": 3,
-        "level": 4
+        "level": 4,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -83,23 +119,35 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 4,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 4,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 4,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 5,
+        "effectName": 1,
         "entry": 4,
-        "level": 4
+        "level": 4,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -109,23 +157,35 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 5,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 5,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 5,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 5,
+        "effectName": 1,
         "entry": 5,
-        "level": 4
+        "level": 4,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -135,18 +195,27 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 6,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 6,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 6,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -156,13 +225,19 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 7,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 7,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -172,8 +247,11 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 8,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -183,23 +261,35 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 9,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 9,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 9,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 5,
+        "effectName": 1,
         "entry": 9,
-        "level": 4
+        "level": 4,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -209,18 +299,27 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 10,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 10,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 10,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -230,13 +329,19 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 11,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 11,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   },
@@ -246,18 +351,27 @@
     "levels": [
       {
         "count": 2,
+        "effectName": 1,
         "entry": 275,
-        "level": 1
+        "level": 1,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 3,
+        "effectName": 1,
         "entry": 275,
-        "level": 2
+        "level": 2,
+        "params3": 0,
+        "boolValue": true
       },
       {
         "count": 4,
+        "effectName": 1,
         "entry": 275,
-        "level": 3
+        "level": 3,
+        "params3": 0,
+        "boolValue": true
       }
     ]
   }

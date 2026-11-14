@@ -1,0 +1,1798 @@
+[
+  {
+    "skillID": 1,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 48,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 2,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 49,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 3,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 50,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 4,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 51,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 5,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 52,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 6,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 53,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 7,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 54,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 8,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 55,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 9,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 56,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 10,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 57,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 11,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 58,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 12,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 59,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 13,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 60,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 14,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 61,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 15,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 62,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 16,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 63,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 17,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 64,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 18,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 65,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 19,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 66,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 20,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 67,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 21,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 68,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 22,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 69,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 23,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 70,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 24,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 71,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 25,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 72,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 26,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 73,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 27,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 74,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 28,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 75,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 29,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 76,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 30,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 10,
+        "params2": 5,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 77,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 31,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 78,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 32,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 79,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 33,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 80,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 34,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 81,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 35,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 82,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 36,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 83,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 37,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 84,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 38,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 85,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 39,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 86,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 40,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 87,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 41,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 88,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 42,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 89,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 43,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 90,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 44,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 91,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 45,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 92,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 46,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 93,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 47,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 94,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 48,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 95,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 49,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 96,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 50,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 97,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 51,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 98,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 52,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 99,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 53,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 100,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 54,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 101,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 55,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 102,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 56,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 103,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 57,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 104,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 58,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 105,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 59,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 16,
+        "params2": 20,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 106,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 60,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 107,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 61,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 108,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 62,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 109,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 63,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 110,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 64,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 111,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 65,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 5,
+        "params2": 5,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 112,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 66,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 5,
+        "params2": 10,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 113,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 67,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 114,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 68,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 115,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 69,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 116,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 70,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 117,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 71,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 118,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 72,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 119,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 73,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 120,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 74,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 121,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 75,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 14,
+        "params2": 10,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 122,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 76,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 4,
+        "params2": 5,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 255,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 77,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 4,
+        "params2": 10,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 256,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 78,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 257,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 79,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 258,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 80,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 259,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 81,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 260,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 82,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 261,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 83,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 262,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 84,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 263,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 85,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 264,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 86,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 265,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 87,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 266,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1000,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 192,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1001,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 193,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1002,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 194,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1003,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 195,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1004,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 196,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1005,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 197,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1006,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 198,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1007,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 199,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1008,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 200,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1009,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 201,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1010,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 202,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1011,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 203,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1012,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 204,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1013,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 205,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1014,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 206,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1015,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 207,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1016,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 208,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1017,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 209,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1018,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 210,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1019,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 211,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1020,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 212,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1021,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 213,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1022,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 214,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1023,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 215,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1024,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 216,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1025,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 217,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1026,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 218,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1027,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 219,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1028,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 220,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1029,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 221,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1030,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 222,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1031,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 223,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1032,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 224,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1033,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 225,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1034,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 226,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1035,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 227,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1036,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 228,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1037,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 229,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1038,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 230,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1039,
+    "effectRecoders": [
+      {
+        "effectName": 0,
+        "params1": 16,
+        "params2": 20,
+        "params3": 0,
+        "boolValue": true
+      },
+      {
+        "effectName": 1,
+        "params1": 231,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1040,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 232,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1041,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 233,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1042,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 234,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1043,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 235,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1044,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 236,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1045,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 237,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1046,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 238,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1047,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 239,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1048,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 240,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1049,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 241,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1050,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 267,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1051,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 268,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1052,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 269,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1053,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 270,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1054,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 271,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1055,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 272,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1056,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 273,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  },
+  {
+    "skillID": 1057,
+    "effectRecoders": [
+      {
+        "effectName": 1,
+        "params1": 274,
+        "params2": 1,
+        "params3": 0,
+        "boolValue": false
+      }
+    ]
+  }
+]
