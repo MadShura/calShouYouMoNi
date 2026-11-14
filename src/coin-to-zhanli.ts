@@ -17,7 +17,13 @@
  * 寒铁为 HantieToZhanliResult,强化石两个方法为 AllProperties;缺失字段即源码不产出该属性.
  * 神兵火炼/水炼只投「想要的属性」数组指定的炼化轨(默认 命中,速度):水炼 23 条轨里
  * 没有命中与速度,故忘情水默认结果为 0;传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
+ * 打印时额外以存档主角(Cha_Data.Save,默认 Save_1,可用 --save=N / --dir 指定)的 BattleData_Manager
+ * 面板为基准,把每条材料增量叠加到 Base_Value 层,再以终局第 5 层(tiaoZhanID=5)敌人为目标算单次输出:
+ * 敌人属性与 K 分别 import enemy-stats.ts 与 game-formulas.ts(DESIGN.md:90,96),不另写常量;
+ * 命中率固定 1(默认能打中),不算敌方 HP;暴击率按 (暴击−敌抗暴+1)/101 计算,
+ * 只有 ≥100% 必暴时才乘暴伤,否则按非暴击,不做暴击率期望.
  */
+import {readFileSync} from "node:fs";
 import {
   hantieTozhanli,
   lingjingTozhanli,
@@ -33,9 +39,12 @@ import {
   wucaishenshiTozhanli,
   yulingbaodianTozhanli
 } from "./calzhanli.ts";
-import {DEFAULT_WANTED_PROPERTIES,MATERIAL_COST_PER_UNIT} from "./data.ts";
-import {formatSuoXie} from "./readSave.ts";
+import {DEFAULT_WANTED_PROPERTIES,MATERIAL_COST_PER_UNIT,PROPERTY_TO_KEY} from "./data.ts";
+import {formatSuoXie,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {ZHONG_JU} from "./scripts/enemy-stats.ts";
+import {oneShotDamage} from "./scripts/game-formulas.ts";
 
+// #region 字段中文映射
 // 英文字段名 → 中文:覆盖 3 种返回类型的全部数值字段(18 项固定值,18 项百分比,8 个过程量,
 // 寒铁特有的 10 个过程量);行级的 攻击/数量/方法/材料/结果 已是中文,不在表内.按字母序排列.
 // 13 项 percent=1 属性的数值是百分比点数(源码 GetFinal 不乘,GetZhanLi 进乘区数组),字段名加 % 后缀;
@@ -97,22 +106,129 @@ const FIELD_NAMES: Record<string,string> = {
   zhanliPercent:         "战力百分比",
   zhenFaAttackPercent:   "阵法最高攻加成百分比"
 };
+// #endregion
+
+// #region 存档主角面板 → 终局第 5 层输出
+const PROP_COUNT = 18;
+const PROPERTY_CONFIG = JSON.parse(
+  readFileSync(new URL("./config/property.json",import.meta.url),"utf8")
+) as {percent: number; type: number}[];
+const PERCENT_PROPS = new Set(PROPERTY_CONFIG.filter(item => item.percent === 1).map(item => item.type));
+const KEY_TO_PROP: Record<string,number> = Object.fromEntries(
+  Object.entries(PROPERTY_TO_KEY).map(([prop,key]) => [key,Number(prop)])
+);
+
+// 终局第 5 层 = config/zhongju.json 的 tiaoZhanID=5;属性由 enemy-stats.ts 按反编译口径算好(DESIGN.md:90).
+function getZhongJu5 (): (typeof ZHONG_JU)[number] {
+  const enemy = ZHONG_JU.find(item => item.tiaoZhanID === 5);
+  if (enemy === undefined) {
+    throw new Error("config/zhongju.json 里没有 tiaoZhanID=5 的终局敌人");
+  }
+  return enemy;
+}
+const ENEMY_5 = getZhongJu5();
+
+interface MasterPanel {
+  base:     number[];
+  dir:      string;
+  pct:      number[];
+  zhenFaID: number;
+}
 
 /**
- * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 13 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
- * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中,速度,传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
- * 灵纹按天覆阵/鸟翔阵各算一条;mySpeed/enemySpeed 透传给鸟翔阵的速度差伤害加成,默认都是 0.
- * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
+ * 只读存档(默认 Save_1,支持 --save=N / --dir),把主角 Cha_Data 的 BattleData_Manager
+ * 摊成 18 项 Base_Value / PercentAddition 两层;不写游戏目录(DESIGN.md:80,83).
+ */
+function loadMasterPanel (): MasterPanel {
+  const args = parseArgs(process.argv.slice(2));
+  const dir = resolveSaveDir(args);
+  const save = loadSave(dir);
+  const base = new Array<number>(PROP_COUNT).fill(0);
+  const pct = new Array<number>(PROP_COUNT).fill(0);
+  for (const item of save.cha.BattleData_Manager?.battleData_Recorders_List ?? []) {
+    const prop = item.PropertyTypeEnum;
+    if (prop < 0 || prop >= PROP_COUNT) {
+      continue;
+    }
+    base[prop] = item.Base_Value;
+    pct[prop] = item.PercentAddition;
+  }
+  return {base,dir,pct,zhenFaID: save.cha.CurZhenFa ?? 0};
+}
+
+/**
+ * BattleData_Recorder.GetFinal + BattleData_Manager.GetFinalValue(power-value.ts:341-351 同口径):
+ * percent=1 的属性直接取 Base_Value,其余取 Base×(100+PercentAddition)/100.
+ */
+function finalValue (panel: MasterPanel,prop: number): number {
+  const base = panel.base[prop] ?? 0;
+  const pct = panel.pct[prop] ?? 0;
+  return PERCENT_PROPS.has(prop) ? Math.max(0,base) : Math.round(base * (100 + pct) / 100);
+}
+
+/**
+ * 把 tozhanli 返回的 18 项增量叠加到 base 层:字段名经 PROPERTY_TO_KEY 反查枚举,
+ * 百分比点数(命中/暴击/伤害加成等)与固定值(攻/防/血/速/穿透)都加在 Base_Value 上,
+ * 再由 finalValue 统一乘 PercentAddition,避免把固定值增量当成最终值直接相加.
+ */
+function panelWithResult (panel: MasterPanel,result: object): MasterPanel {
+  const base = [...panel.base];
+  for (const [key,value] of Object.entries(result)) {
+    const prop = KEY_TO_PROP[key];
+    if (prop !== undefined && typeof value === "number" && Number.isFinite(value)) {
+      base[prop] = (base[prop] ?? 0) + value;
+    }
+  }
+  return {base,dir: panel.dir,pct: panel.pct,zhenFaID: panel.zhenFaID};
+}
+
+/**
+ * 单次输出:命中率固定 1、不算敌方 HP;暴击率按 power-value.ts:292 的 (暴击−敌抗暴+1)/101
+ * (阵法6 同 :289-291 另给 +30),只有 ≥100% 必暴时才把 暴伤/100 放进百分比乘区,否则按非暴击.
+ * atk 已是 final 值,所以 atkPct=100、skillMult=1;K 由 oneShotDamage 内部按实际攻击与敌防御算(DESIGN.md:96).
+ */
+function calcOutput (panel: MasterPanel): {damage: number; mustCrit: boolean} {
+  const atk = finalValue(panel,0);
+  const pen = finalValue(panel,15);
+  const baoJi = finalValue(panel,6);
+  const baoJiDamage = finalValue(panel,8);
+  const dmgAdd = finalValue(panel,13);
+  const critAdd = panel.zhenFaID === 6 ? 30 : 0;
+  const critRate = Math.max(0,Math.min(1,(baoJi - ENEMY_5.critResist + critAdd + 1) / 101));
+  const mustCrit = critRate >= 1;
+  const damage = oneShotDamage(atk,ENEMY_5,{
+    atkPct:    100,
+    dmgAdd,
+    pctBucket: mustCrit ? baoJiDamage / 100 : 1,
+    skillMult: 1,
+    pen
+  });
+  return {damage,mustCrit};
+}
+// #endregion
+
+// #region 固定钱币 → 13 条结果
+interface CoinRow {
+  攻击: number;
+  数量: number;
+  方法: string;
+  材料: string;
+  结果: object;
+}
+
+/**
+ * 构造 13 条未格式化的原始结果(数值仍是 number),按攻击降序;展示格式化与输出计算都复用它.
+ * @param money 投入的钱币总数(默认 1 亿)
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
  * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
  */
-export function compareByCoin (
+function buildRows (
   money = 1_0000_0000,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
   mySpeed = 0,
   enemySpeed = 0
-) {
+): CoinRow[] {
 
   // 整批一次取整:求最大 N 使 Math.round(单价×N) ≤ money(二分避免浮点边界与逐个试算).
   const buyCount = (name: string): number => {
@@ -140,12 +256,12 @@ export function compareByCoin (
     方法: string,
     run: (n: number) => T,
     单价材料 = 材料
-  ) => {
+  ): CoinRow => {
     const 数量 = buyCount(单价材料);
     const 结果 = run(数量);
     return {攻击: 结果.atk,数量,方法,材料,结果};
   };
-  const rows = [
+  return [
     make("三味真火","sanweizhenhuoTozhanli",n => sanweizhenhuoTozhanli(n,wanted)),
     make("五彩神石","wucaishenshiTozhanli",wucaishenshiTozhanli),
     make("历史本纪","lishibenjiTozhanli",lishibenjiTozhanli),
@@ -160,25 +276,49 @@ export function compareByCoin (
     make("破境石","pojingshiTozhanli",pojingshiTozhanli),
     make("神通卷轴","shentongjuanzhouTozhanli",shentongjuanzhouTozhanli)
   ].sort((a,b) => b.攻击 - a.攻击);
+}
 
-  // 先按数值排好序,再统一格式化;结果里的值全是 number,只需两层即可覆盖.
-  return rows.map(row => ({
+/** 把一条原始结果转成中文展示结果:数值经 formatSuoXie 变成带单位字符串,字段名译成中文. */
+function formatRow (row: CoinRow) {
+  return {
     攻击: formatSuoXie(row.攻击),
     数量: formatSuoXie(row.数量),
     方法: row.方法,
     材料: row.材料,
     结果: Object.fromEntries(Object.entries(row.结果)
       .map(([key,value]) => [FIELD_NAMES[key] ?? key,formatSuoXie(value as number)]))
-  }));
+  };
 }
 
+/**
+ * 给定固定钱币数,把 11 种材料各自能买到的数量投进对应的 13 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
+ * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中,速度,传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
+ * 灵纹按天覆阵/鸟翔阵各算一条;mySpeed/enemySpeed 透传给鸟翔阵的速度差伤害加成,默认都是 0.
+ * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
+ * @param wanted 想要的属性中文名数组(默认 命中,速度)
+ * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
+ * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
+ */
+export function compareByCoin (
+  money = 1_0000_0000,
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
+  mySpeed = 0,
+  enemySpeed = 0
+) {
+
+  // 先按数值排好序,再统一格式化;结果里的值全是 number,只需两层即可覆盖.
+  return buildRows(money,wanted,mySpeed,enemySpeed).map(formatRow);
+}
+// #endregion
+
+// #region 精简打印与执行入口
 // 精简打印只保留这 9 项属性;后 5 项带 % 后缀,是 config/property.json 里 percent=1 的百分比显示属性.
 const KEY_PROPS = ["伤害加成%","命中%","幸运%","攻击","暴击%","暴击伤害%","穿透","速度","闪避%"] as const;
 
 /**
- * 辅助方法:按攻击降序打印 13 条精简结果,每条一行中文文本,只列 KEY_PROPS 的 9 项属性(值为 0 也显示).
- * 顶部先打印一行查询条件(想要的属性 + 我方/敌方速度),便于确认当前口径;compareByCoin 仍返回全量结果.
- * 直接执行本文件时只调用本方法,以大幅减少输出内容.
+ * 辅助方法:按攻击降序打印 13 条精简结果,每条一行中文文本,先列 KEY_PROPS 的 9 项属性,
+ * 再追加「输出」与「相对存档基准的提升率」;顶部打印查询条件、存档路径、敌人档位与基准输出.
+ * 输出按存档主角面板 + 终局第 5 层敌人计算,命中率固定 1,只有暴击率 100% 时才按暴击伤害算.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
@@ -190,12 +330,19 @@ export function printKeyProps (
   mySpeed = 0,
   enemySpeed = 0
 ): void {
+  const panel = loadMasterPanel();
+  const baseline = calcOutput(panel);
   console.log(`想要的属性:${wanted.join("、")} 我方速度:${String(mySpeed)} 敌方速度:${String(enemySpeed)}`);
-  for (const row of compareByCoin(money,wanted,mySpeed,enemySpeed)) {
-    const props = KEY_PROPS.map(key => `${key}=${row.结果[key] ?? "0"}`).join(" ");
-    console.log(`${row.材料} ${row.方法} ${props}`);
+  console.log(`存档:${panel.dir} 敌人:终局第5层(抗暴=${formatSuoXie(ENEMY_5.critResist)} 减伤=${formatSuoXie(ENEMY_5.damageReduce)}→${String(Math.min(ENEMY_5.damageReduce,80))}封顶) 必暴=${String(baseline.mustCrit)} 基准输出=${formatSuoXie(baseline.damage)}`);
+  for (const row of buildRows(money,wanted,mySpeed,enemySpeed)) {
+    const shown = formatRow(row);
+    const out = calcOutput(panelWithResult(panel,row.结果));
+    const gain = baseline.damage > 0 ? (out.damage - baseline.damage) / baseline.damage : 0;
+    const props = KEY_PROPS.map(key => `${key}=${shown.结果[key] ?? "0"}`).join(" ");
+    console.log(`${shown.材料} ${shown.方法} ${props} 输出=${formatSuoXie(out.damage)} 提升=${(gain * 100).toFixed(4)}%`);
   }
 }
 
-// 直接执行本文件时只打印精简结果:1 行查询条件 + 13 行,每行一条中文文本.
+// 直接执行本文件时只打印精简结果:2 行说明 + 13 行,每行一条中文文本.
 printKeyProps();
+// #endregion
