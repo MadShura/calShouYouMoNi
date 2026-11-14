@@ -577,7 +577,7 @@ export const YULINGSHI_START_LEVEL = 1;
 export const YULINGSHI_START_EXP = 0;
 export const BOOK_YULI_BASE = 100;
 export const RESEARCH_48_BOOK_EXP_ADD = 100;
-export const YULING_TUPO_COST = 500; // 每 10 级一次突破,每次 500 个 prop81(视为已有,不扣本方法材料)
+export const YULING_TUPO_COST = 500; // 旧口径每 10 级突破需 500 个 prop81;实际 prop81=忘情水仅用于刷新突破选项(UILevelUp_TuPo.cs:223),不计入御灵宝典换算
 export const YULING_LEVEL_CAP = 21_4748_3646;
 
 // ---- 灵晶(8) → 解锁阵法 + 圣兽3(青龙):ZhenFaRecorder.cs:29-32 / ShengShou_Record.cs:33-57,65-95 ----

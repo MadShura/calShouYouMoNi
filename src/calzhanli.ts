@@ -727,11 +727,18 @@ export function yuLing (level: number): SystemGain {
  * 固定口径:御灵师 Lv.1 / 经验 0；每本 100 御力经研究48 满 +100% 变 200 御力(ChanYuLi :645).
  * 升级门槛 CulLevel_Up_Remand = 100×⌊L/10⌋×(⌊L/10⌋+1) + 20×(⌊L/10⌋+1)×(L%10),源码无研究减免;
  * 每级 HP/ATK/DEF/穿透 各 +L×250 固定值(:700-703).
- * 每 10 级一次突破需 500 个 prop81(视为已有,不扣本方法材料),突破不消耗经验(PinJing :680-687),
- * 突破属性按 DESIGN.md 属另一套金色品质选择,本方法只统计等级带来的四维增量.
+ * 每满 10 级触发一次突破(PinJing :680-687):突破方向由 tuPoDir 指定(默认攻击),加成按 TuPoData.cs:44-48
+ * 记入对应属性的 PercentAddition(攻/防/血/穿透)或固定值(速度/幸运),再乘品质系数 1.0/1.25/1.5/1.75;
+ * prop81=忘情水 仅用于刷新突破选项(UILevelUp_TuPo.cs:223-234),本方法按用户口径忽略其消耗.
  * @param books 投入的御灵宝典本数
+ * @param tuPoDir 突破方向(PropertyTypeEnum):0 攻击 / 1 防御 / 2 生命 / 15 穿透 / 9 速度 / 11 幸运(默认 0)
+ * @param tuPoPinZhi 突破品质:1 白 / 2 蓝 / 3 紫 / 4 金,金加成 1.75(默认 4)
  */
-export function yulingbaodianTozhanli (books: number): ToZhanliResult {
+export function yulingbaodianTozhanli (
+  books: number,
+  tuPoDir = 0,
+  tuPoPinZhi = 4
+): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(books,"御灵宝典");
   const expPerBook = BOOK_YULI_BASE * (PERCENT_BASE + RESEARCH_48_BOOK_EXP_ADD) / PERCENT_BASE;
@@ -752,6 +759,10 @@ export function yulingbaodianTozhanli (books: number): ToZhanliResult {
     result.ignoreDef += add;
     level += 1;
     count += 1;
+    // 升满 10 级触发一次突破(第 level/10 次),方向固定选 tuPoDir
+    if (level % 10 === 0 && level < YULING_LEVEL_CAP) {
+      applyYuLingTuPo(result,tuPoDir,tuPoPinZhi,level / 10);
+    }
   }
   result.count = count;
   result.finalLevel = level;
@@ -759,6 +770,36 @@ export function yulingbaodianTozhanli (books: number): ToZhanliResult {
   result.maxLevel = YULING_LEVEL_CAP;
   result.used = material;
   return result;
+}
+
+// 御灵师突破方向加成(TuPoData.cs:14-50):每满 10 级一次,方向由 CharacterHelper.propertyTypeEnums 限定 6 种.
+// 速度/幸运为固定值 2 + ⌊4×k×品质系数⌋；其余四维为百分比 ⌊(8 + 4×(k−1))×品质系数⌋,记到 PercentAddition.
+function applyYuLingTuPo (
+  result: ToZhanliResult,
+  dir: number,
+  pinZhi: number,
+  k: number
+): void {
+  const factor = pinZhi >= 4 ? 1.75 : pinZhi === 3 ? 1.5 : pinZhi === 2 ? 1.25 : 1.0;
+  const fields = result as unknown as Record<string,number>;
+  if (dir === 9 || dir === 11) {
+    const gain = 2 + Math.floor(4 * k * factor);
+    if (dir === 9) {
+      fields.speed = (fields.speed ?? 0) + gain;
+    } else {
+      fields.lucky = (fields.lucky ?? 0) + gain;
+    }
+    return;
+  }
+  const gain = Math.floor((8 + 4 * (k - 1)) * factor);
+  const key = dir === 0 ? "atkPercent"
+    : dir === 1 ? "defPercent"
+    : dir === 2 ? "hpPercent"
+    : dir === 15 ? "ignoreDefPercent"
+    : undefined;
+  if (key !== undefined) {
+    fields[key] = (fields[key] ?? 0) + gain;
+  }
 }
 
 // ============================== 5. 阵法(灵纹,4 维) ==============================
