@@ -8,7 +8,7 @@
  * 另加 1 行自选残念锦囊(19)与 6 行固定材料宝箱(11-16,不含无法购买的御力宝箱 20-29):开奖期望来自 config/chests.json
  * (游戏 Prop_Data_Json.txt + Prop_Chest_*.cs 导出),折算方法在 calzhanli.ts 的
  * baoxiangTozhanli / zixuancannianjinnangTozhanli,默认只算一个英灵.
- * 随机残念锦囊(18)、御力宝箱(20-29)、宝石匣/灵宝匣(30-69)、套娃宝箱(70-79)、试炼秘宝(96)的换算方法仍保留在
+ * 随机残念锦囊(18),御力宝箱(20-29),宝石匣/灵宝匣(30-69),套娃宝箱(70-79),试炼秘宝(96)的换算方法仍保留在
  * calzhanli.ts,按用户口径不在本对比表使用.
  * 同材料多方法时「材料」列带中文后缀(强化石·单槽强化 / 灵纹·天覆阵 等),
  * 但单价仍按 MATERIAL_COST_PER_UNIT 里的原材料名查,显示名不参与查表.
@@ -113,8 +113,8 @@ const FIELD_NAMES: Record<string,string> = {
   zhanliPercent:         "战力百分比",
   zhenFaAttackPercent:   "阵法最高攻加成百分比"
 };
-// #endregion
 
+// #endregion
 // #region 固定钱币 → 20 条结果
 interface CoinRow {
   攻击: number;
@@ -122,6 +122,26 @@ interface CoinRow {
   方法: string;
   材料: string;
   结果: object;
+}
+
+/**
+ * 给定固定钱币数,把 11 种材料,自选残念锦囊与 6 个固定材料宝箱各自能买到的数量投进对应的 20 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
+ * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中,速度,传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
+ * 灵纹按天覆阵/鸟翔阵各算一条;mySpeed/enemySpeed 透传给鸟翔阵的速度差伤害加成,默认都是 0.
+ * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
+ * @param wanted 想要的属性中文名数组(默认 命中,速度)
+ * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
+ * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
+ */
+export function compareByCoin (
+  money = 1_0000_0000,
+  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
+  mySpeed = 0,
+  enemySpeed = 0
+) {
+
+  // 先按数值排好序,再统一格式化;结果里的值全是 number,只需两层即可覆盖.
+  return buildRows(money,wanted,mySpeed,enemySpeed).map(formatRow);
 }
 
 /**
@@ -173,7 +193,7 @@ function buildRows (
     材料: string,
     方法: string,
     run: (n: number) => T,
-    单价材料: string | number = 材料
+    单价材料: number | string = 材料
   ): CoinRow => {
     const 数量 = typeof 单价材料 === "number" ? buyCount(单价材料) : buyByName(单价材料);
     const 结果 = run(数量);
@@ -195,6 +215,7 @@ function buildRows (
     make("神通卷轴","shentongjuanzhouTozhanli",shentongjuanzhouTozhanli),
     make("自选残念锦囊","zixuancannianjinnangTozhanli",zixuancannianjinnangTozhanli,chestUnit(19)),
     ...CHEST_DATA.chests
+
       // 只保留固定材料箱(11-16):御力宝箱(20-29)不在商店售卖无法购买,随机锦囊/宝石匣/灵宝匣/套娃/试炼秘宝不纳入本表
       .filter(item => item.kind === "fix" && item.target !== 4)
       .map(item => make(
@@ -206,7 +227,7 @@ function buildRows (
   ].sort((a,b) => b.攻击 - a.攻击);
 }
 
-/** 把一条原始结果转成中文展示结果:数值经 formatSuoXie 变成带单位字符串,字段名译成中文. */
+// 把一条原始结果转成中文展示结果:数值经 formatSuoXie 变成带单位字符串,字段名译成中文.
 function formatRow (row: CoinRow) {
   return {
     攻击: formatSuoXie(row.攻击),
@@ -218,34 +239,13 @@ function formatRow (row: CoinRow) {
   };
 }
 
-/**
- * 给定固定钱币数,把 11 种材料、自选残念锦囊与 6 个固定材料宝箱各自能买到的数量投进对应的 20 条结果,按攻击降序返回中文展示结果:所有数值经 formatSuoXie 转成带单位字符串,字段名全部中文.
- * 神兵火炼/水炼额外按 wanted 筛选炼化轨;默认只投 命中,速度,传 伤害加成,暴伤 则选中该文档的 2 条伤害加成 + 6 条暴伤轨.
- * 灵纹按天覆阵/鸟翔阵各算一条;mySpeed/enemySpeed 透传给鸟翔阵的速度差伤害加成,默认都是 0.
- * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
- * @param wanted 想要的属性中文名数组(默认 命中,速度)
- * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
- * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
- */
-export function compareByCoin (
-  money = 1_0000_0000,
-  wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
-  mySpeed = 0,
-  enemySpeed = 0
-) {
-
-  // 先按数值排好序,再统一格式化;结果里的值全是 number,只需两层即可覆盖.
-  return buildRows(money,wanted,mySpeed,enemySpeed).map(formatRow);
-}
 // #endregion
-
 // #region 精简打印与执行入口
 // 精简打印只保留这 9 项属性;后 5 项带 % 后缀,是 config/property.json 里 percent=1 的百分比显示属性.
 const KEY_PROPS = ["伤害加成%","命中%","幸运%","攻击","暴击%","暴击伤害%","穿透","速度","闪避%"] as const;
 
 /**
- * 辅助方法:按攻击降序打印 20 条精简结果,每条一行中文文本,先列 KEY_PROPS 的 9 项属性,
- * 再追加「输出」与「相对存档基准的提升率」;顶部打印查询条件、存档路径、敌人档位与基准输出.
+ * 辅助方法:按攻击降序打印 20 条精简结果,每条一行中文文本,先列 KEY_PROPS 的 9 项属性, 再追加「输出」与「相对存档基准的提升率」;顶部打印查询条件,存档路径,敌人档位与基准输出.
  * 输出按存档主角面板 + 终局第 5 层敌人计算,命中率固定 1,只有暴击率 100% 时才按暴击伤害算.
  * @param money 投入的钱币总数(默认 1 亿,可自行改默认值或调用时传入)
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
@@ -273,4 +273,5 @@ export function printKeyProps (
 
 // 直接执行本文件时只打印精简结果:2 行说明 + 20 行,每行一条中文文本.
 printKeyProps();
+
 // #endregion

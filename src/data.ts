@@ -694,7 +694,7 @@ export interface ChestPool {
   count: number;
 }
 export const CHEST_DATA: ChestData = JSON.parse(
-  readFileSync(new URL("./config/chests.json",import.meta.url),"utf8")
+  readFileSync(new URL("config/chests.json",import.meta.url),"utf8")
 ) as ChestData;
 
 // #endregion
