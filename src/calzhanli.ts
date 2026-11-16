@@ -1014,7 +1014,7 @@ function addDrop (drops: Record<string,number>,propID: number,amount: number): v
   }
   const name = PROP_NAMES[propID];
   if (name === undefined) {
-    throw new Error(`未知道具 ID：${propID}`);
+    throw new Error(`未知道具 ID：${String(propID)}`);
   }
   drops[name] = (drops[name] ?? 0) + amount;
 }
@@ -1079,7 +1079,7 @@ function assertMaterial (amount: number,name: string): number {
 }
 function assertWholeAtLeast (value: number,min: number,label: string): number {
   if (!Number.isInteger(value) || value < min) {
-    throw new Error(`${label}必须是 ≥${min} 的整数，收到 ${String(value)}`);
+    throw new Error(`${label}必须是 ≥${String(min)} 的整数，收到 ${String(value)}`);
   }
   return value;
 }
@@ -1135,6 +1135,7 @@ function emptyToZhanli (): ToZhanliResult {
   return {
     ...EMPTY_PROPERTIES,
     ...EMPTY_PERCENT_PROPERTIES,
+    combatBonus:         [],
     count:               0,
     finalLevel:          0,
     left:                0,
@@ -1142,8 +1143,7 @@ function emptyToZhanli (): ToZhanliResult {
     specialPercent:      0,
     used:                0,
     zhanliPercent:       0,
-    zhenFaAttackPercent: 0,
-    combatBonus:         []
+    zhenFaAttackPercent: 0
   };
 }
 
@@ -1534,7 +1534,7 @@ const SKILL_DATA: readonly SkillData[] = JSON.parse(
 // 注意:羁绊效果按 ZhenRongJiBanTypeEnum(bond.type,0-11) 取,不用 EffectRecoder.Params_1(=entry);
 // 西行取经 的 Params_1 在配置里是 275,并非 EntryNameEnum,反例见 jiban.json id 12.
 interface CombatCtx {
-  enemyAlive:            number; // 敌方存活数(一波 5);万人敌用
+  enemyAlive:           number; // 敌方存活数(一波 5);万人敌用
   hitMinusDodge:        number; // 己命中-敌闪避;西行取经用
   shanBiMinusMingZhong: number; // 己闪避-敌命中;神鬼之翼用
   targetHpPercent:      number; // 目标当前血量%(0-100);三国群英用
@@ -1544,22 +1544,23 @@ interface BondEffect {
   combat: {name: string; percent: number}[];
   panel:  {percent: boolean; prop: number; value: number}[];
 }
+
 // 键 = ZhenRongJiBanTypeEnum(bond.type);lv = 羁绊档位等级(EffectRecoder.Level).
 // 仅 万人敌/西行取经/三国群英/神鬼之翼 进战斗乘区(combatBonus),其余为触发型机制/控制/团队 buff,静态不计.
-// 乱世谋臣(type6)→暴伤% +20×lv、忠肝义胆(type8)→反击% +4×lv 是面板属性(prop 8/10),落面板不重复进乘区.
+// 乱世谋臣(type6)→暴伤% +20×lv,忠肝义胆(type8)→反击% +4×lv 是面板属性(prop 8/10),落面板不重复进乘区.
 const ENTRY_BOND_TABLE: Record<number,(lv: number,ctx: CombatCtx) => BondEffect> = {
   0:  (lv,ctx) => ({combat: [{name: "三国群英",percent: (100 - ctx.targetHpPercent) / (4 - 0.5 * lv)}],panel: []}),
   1:  () => ({combat: [],panel: []}),         // 梁山群雄:仅反击时 +20×lv% 伤,静态不计
+  10: () => ({combat: [],panel: []}),         // 义无反顾:攻击后自身 +3×lv 怒气(resource)
+  11: (lv,ctx) => ({combat: [{name: "西行取经",percent: ctx.hitMinusDodge * (0.25 + 0.25 * lv)}],panel: []}),
   2:  () => ({combat: [],panel: []}),         // 倾国倾城:命中后概率魅惑(控制)
   3:  () => ({combat: [],panel: []}),         // 千古流芳:命中后概率流血(控制/debuff)
   4:  (lv,ctx) => ({combat: [{name: "神鬼之翼",percent: ctx.shanBiMinusMingZhong * (0.2 + 0.2 * lv)}],panel: []}),
   5:  (lv,ctx) => ({combat: [{name: "万人敌",percent: lv * ctx.enemyAlive}],panel: []}),
-  6:  (lv) => ({combat: [],panel: [{percent: true,prop: 8,value: 20 * lv}]}),  // 乱世谋臣:暴伤 +20×lv%(Base=20)
+  6:  lv => ({combat: [],panel: [{percent: true,prop: 8,value: 20 * lv}]}),  // 乱世谋臣:暴伤 +20×lv%(Base=20)
   7:  () => ({combat: [],panel: []}),         // 济世名医:治疗时给友方 +10×lv 攻击(team buff)
-  8:  (lv) => ({combat: [],panel: [{percent: true,prop: 10,value: 4 * lv}]}),  // 忠肝义胆:反击率 +4×lv%(Base=4)
-  9:  () => ({combat: [],panel: []}),         // 桀骜不驯:命中后概率随机 debuff(控制)
-  10: () => ({combat: [],panel: []}),         // 义无反顾:攻击后自身 +3×lv 怒气(resource)
-  11: (lv,ctx) => ({combat: [{name: "西行取经",percent: ctx.hitMinusDodge * (0.25 + 0.25 * lv)}],panel: []})
+  8:  lv => ({combat: [],panel: [{percent: true,prop: 10,value: 4 * lv}]}),  // 忠肝义胆:反击率 +4×lv%(Base=4)
+  9:  () => ({combat: [],panel: []})         // 桀骜不驯:命中后概率随机 debuff(控制)
 };
 
 /**
@@ -1567,7 +1568,7 @@ const ENTRY_BOND_TABLE: Record<number,(lv: number,ctx: CombatCtx) => BondEffect>
  * 统计每类人数后分别激活对应羁绊档位(羁绊 id = 类型 + 1),合并所有面板属性与伤害乘区贡献.
  * 注:当前 config 的羁绊全部是 EntryEffect(特殊机制),按 bond.type 查 ENTRY_BOND_TABLE 折算战斗价值;
  * 其中乱世谋臣(暴伤%)/忠肝义胆(反击%) 落面板,万人敌/西行取经/三国群英/神鬼之翼 进 combatBonus 乘区,
- * 其余为触发型机制(反击/控制/团队buff/回怒)静态不计入.
+ * 其余为触发型机制(反击/控制/团队 buff/回怒)静态不计入.
  * @param zhenRong 上场英灵的 index 数组(如 [1,2,3,4,5])
  * @param ctx 战斗上下文(敌人数/命中差/血量等),用于折算条件型乘区,缺省用代表性假设
  * @returns 所有激活羁绊的面板属性之和 + 伤害乘区来源(combatBonus);过程量记录激活档位等级
@@ -1597,8 +1598,8 @@ export function jiBanFromZhenRong (zhenRong: readonly number[],ctx: Partial<Comb
  * 羁绊:给定羁绊 id 与上场人数 count,取「满足 count」的最高档.
  * - EffectNameEnum=0 ChangeBattleProperty:经 applyBattleProps 落面板(当前 config 无此类羁绊).
  * - EntryEffect(=1,如三国群英/万人敌伤害机制):按 bond.type 查 ENTRY_BOND_TABLE 折算战斗价值:
- *   乱世谋臣(暴伤%)/忠肝义胆(反击%) 落面板;万人敌/西行取经/三国群英/神鬼之翼 进 combatBonus 乘区;
- *   其余触发型机制(反击/控制/团队buff/回怒)静态不计入.
+ * 乱世谋臣(暴伤%)/忠肝义胆(反击%) 落面板;万人敌/西行取经/三国群英/神鬼之翼 进 combatBonus 乘区;
+ * 其余触发型机制(反击/控制/团队 buff/回怒)静态不计入.
  * 配置来源 config/jiban.json(StreamingAssets/JiBan_Data_Json.txt 导出).
  * @param bondId 羁绊 id(1-12,id = ZhenRongJiBanTypeEnum + 1)
  * @param count 上场阵容中属于该羁绊类型的英灵人数

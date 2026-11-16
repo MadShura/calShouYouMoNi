@@ -107,7 +107,7 @@ function main (): void {
   ];
   console.log("寻宝期望体力（入口格免费，每层付费 15 格）");
   console.log(
-    `参数：前 ${ADVANCE_LAYERS} 层走到下层，第 10 层${isLastFull ? "跑满" : "只走到下层"}；体力上限 ${cap}；${seconds} 秒/点`
+    `参数：前 ${String(ADVANCE_LAYERS)} 层走到下层，第 10 层${isLastFull ? "跑满" : "只走到下层"}；体力上限 ${String(cap)}；${String(seconds)} 秒/点`
   );
   console.log("");
   console.log("模型                    前9层    第10层   合计     +上限   满管数  耗时(小时)");
@@ -123,13 +123,13 @@ function main (): void {
   }
   console.log("");
   console.log(
-    `你记的“400 多 + 150”：已知大奖最短路径 = ${format(knownFirst + knownLater * (firstSum - 1) + full * LAYERS)} + ${cap}；`
+    `你记的“400 多 + 150”：已知大奖最短路径 = ${format(knownFirst + knownLater * (firstSum - 1) + full * LAYERS)} + ${String(cap)}；`
   );
   console.log(
-    `或按 50% 且把入口格也算进去 = ${format(probability * firstSum + (full + 1) * LAYERS)} + ${cap}。`
+    `或按 50% 且把入口格也算进去 = ${format(probability * firstSum + (full + 1) * LAYERS)} + ${String(cap)}。`
   );
   console.log(
-    `按代码隐藏大奖、固定顺序开：${format(hidden * firstSum + full * LAYERS)} + ${cap}，这是不提前知道大奖位置的实际期望。`
+    `按代码隐藏大奖、固定顺序开：${format(hidden * firstSum + full * LAYERS)} + ${String(cap)}，这是不提前知道大奖位置的实际期望。`
   );
   console.log("");
   console.log("代码依据：XunBaoManager.MaxTiLi=150；GetOpenReward 扣 Cur_CengShu_Index；第 10 层跑满 15 个付费格。");

@@ -96,8 +96,8 @@ const PROP_NAME: Record<number,string> = {
 95:  "元宝",
 96:  "道具"
 };
-for (let p = 901; p <= 915; p += 1) {PROP_NAME[p] = `图鉴卡片${p}`;}
-const propName = (p: number): string => RES_NAME[p] ?? PROP_NAME[p] ?? `Prop${p}`;
+for (let p = 901; p <= 915; p += 1) {PROP_NAME[p] = `图鉴卡片${String(p)}`;}
+const propName = (p: number): string => RES_NAME[p] ?? PROP_NAME[p] ?? `Prop${String(p)}`;
 
 // ---------------- 商店单价 ----------------
 const STORE_PROPS = new Set<number>([1,2,5,6,7,8,81,84,85,86,9,92]);
@@ -450,7 +450,7 @@ function panelOf (final: Map<number,number>,property: Map<number,number>): Panel
   const yuliBookExp = 100 * e.expYuli;
   const yuli = get(4) + get(21) * 20_0000 + get(29) * 100_0000 + get(84) * yuliBookExp;
   const yuliFactor = (100 - e.yuLi) / 100;
-  const yls = curve(`yls-${e.yuLi}`,1,l => yuLingLevelCost(l) * yuliFactor,
+  const yls = curve(`yls-${String(e.yuLi)}`,1,l => yuLingLevelCost(l) * yuliFactor,
     yulingshiSumFor(yuliFactor)).solve(yuli);
   const yulingshiAtk = (yls.level - 1) * yls.level / 2 * 250;
   const breakthroughCount = Math.trunc(yls.level / 10);
@@ -464,15 +464,15 @@ function panelOf (final: Map<number,number>,property: Map<number,number>): Panel
   const breakpointSpeed = breakthroughCount > luckyCount
     ? sumBreakthrough(breakthroughCount) - sumBreakthrough(luckyCount)
     : 0;
-  push("御力",`御灵师 Lv.${yls.level} / 突破 ${breakthroughCount} 次`,yls.level,yuli,
+  push("御力",`御灵师 Lv.${String(yls.level)} / 突破 ${String(breakthroughCount)} 次`,yls.level,yuli,
     `四维各 +${fmtShort(yulingshiAtk)}，突破速度 +${fmtShort(breakpointSpeed)}`);
 
   // 五彩神石 → 器鼎(研究20 -50% 消耗)
   const wucaiFactor = (100 - e.wucai) / 100;
-  const qilu = curve(`qilu-${e.wucai}`,1,l => qiDingCost(l) * wucaiFactor,
+  const qilu = curve(`qilu-${String(e.wucai)}`,1,l => qiDingCost(l) * wucaiFactor,
     qiluSumFor(wucaiFactor)).solve(get(2));
   const pinzhi = expectedPinZhi(qilu.level);
-  push("五彩神石",`器鼎 Lv.${qilu.level} → 品质期望 ${pinzhi.toFixed(2)}`,qilu.level,get(2),
+  push("五彩神石",`器鼎 Lv.${String(qilu.level)} → 品质期望 ${pinzhi.toFixed(2)}`,qilu.level,get(2),
     `装备品质 ${pinzhi.toFixed(2)}`);
 
   // 寒铁打造(研究15 -50% 消耗,研究16 炼器经验 ×1.5,研究22/23 器鼎/炼器等级计入装备属性)
@@ -510,7 +510,7 @@ iron = get(1);
   const equipEntryScale = (4 + e.equipEntryPct / 100) / 4;
   const equipAtkPct = pinzhi * 7 * equipEntryScale + e.equipAtkPctBonus;
   const equipDamageAddition = pinzhi * 2 * equipEntryScale;
-  push("寒铁",`打造 ${fmtShort(crafts)} 件 → 炼器 Lv.${lianqiLevel}`,lianqiLevel,get(1),
+  push("寒铁",`打造 ${fmtShort(crafts)} 件 → 炼器 Lv.${String(lianqiLevel)}`,lianqiLevel,get(1),
     `10 槽主属性攻击 +${fmtShort(equipAtkFlat)}，攻击% +${equipAtkPct.toFixed(2)}，伤害加成 +${equipDamageAddition.toFixed(2)}`);
 
   // 强化石(研究25 -50% 消耗)
@@ -518,19 +518,19 @@ iron = get(1);
   const qhScale = (100 - e.qiangHua) / 100;
   while (10 * ((strengthLevel + 1) ** 2 + 4 * (strengthLevel + 1)) * qhScale <= get(5)) {strengthLevel += 1;}
   const strengthAtk = 10 * (5 * strengthLevel ** 2 + 15 * strengthLevel);
-  push("强化石",`10 槽强化 Lv.${strengthLevel}`,strengthLevel,get(5),`攻击 +${fmtShort(strengthAtk)}`);
+  push("强化石",`10 槽强化 Lv.${String(strengthLevel)}`,strengthLevel,get(5),`攻击 +${fmtShort(strengthAtk)}`);
 
   // 灵纹 → 阵法(研究26 -50% 消耗,研究27/29 阵法攻击/穿透 +100%)
   const lingwen = get(7) + Math.floor(get(80) / shopPrice(2,isResearchOn));
   const zhenfaCostC = 20 * (100 - e.zhenwen) / 100;
-  const zhenfa = curve(`zf-${e.zhenwen}`,1,l => zhenFaCost(l) * (100 - e.zhenwen) / 100,
+  const zhenfa = curve(`zf-${String(e.zhenwen)}`,1,l => zhenFaCost(l) * (100 - e.zhenwen) / 100,
     zhenFaSum(zhenfaCostC)).solve(lingwen);
   const zhenfaRaw = sumLinear(1,zhenfa.level,200,35);
   void zhenFaStat;
   const zhenfaAtkFlat = Math.trunc(zhenfaRaw * (100 + e.zhenFaAtkPct) / 100);
   const zhenfaPenFlat = Math.trunc(zhenfaRaw * (100 + e.zhenFaPenPct) / 100);
-  push("灵纹",`阵法 Lv.${zhenfa.level}`,zhenfa.level,lingwen,
-    `攻击 +${fmtShort(zhenfaAtkFlat)}、穿透 +${fmtShort(zhenfaPenFlat)}，最高攻再 +${zhenfa.level}%`);
+  push("灵纹",`阵法 Lv.${String(zhenfa.level)}`,zhenfa.level,lingwen,
+    `攻击 +${fmtShort(zhenfaAtkFlat)}、穿透 +${fmtShort(zhenfaPenFlat)}，最高攻再 +${String(zhenfa.level)}%`);
 
   // 灵晶/神速符 → 圣兽(无对应研究减免)
   const sheng3 = curve("ss3",0,shengShouCost,shengShouSum).solve(Math.max(0,get(8) - 900));
@@ -538,8 +538,8 @@ iron = get(1);
   const sheng3Atk = sumLinear(0,sheng3.level,20,50);
   const sheng4Atk = sumLinear(0,sheng4.level,20,50);
   void shengShouStat;
-  push("灵晶",`圣兽3(青龙) Lv.${sheng3.level}`,sheng3.level,get(8),`攻击 +${fmtShort(sheng3Atk)}`);
-  push("神速符",`圣兽4(白虎) Lv.${sheng4.level}`,sheng4.level,get(92),`攻击/穿透 +${fmtShort(sheng4Atk)}`);
+  push("灵晶",`圣兽3(青龙) Lv.${String(sheng3.level)}`,sheng3.level,get(8),`攻击 +${fmtShort(sheng3Atk)}`);
+  push("神速符",`圣兽4(白虎) Lv.${String(sheng4.level)}`,sheng4.level,get(92),`攻击/穿透 +${fmtShort(sheng4Atk)}`);
 
   // 图鉴卡片 901-915 商店不售 → 锁定初始 5 张；研究49 经验 ×2,研究50/52 属性 +100%,研究54 增伤 +5/级
   let tuJianAtk = 0,
@@ -556,8 +556,8 @@ tuJianPen = 0;
     void tuJianStat;
   }
   const tuJianDamagePct = tuJianLevelMax * e.tuJianDamagePerLevel;
-  push("图鉴卡片",`仅初始 ${tuJianCards} 张 → 最高 Lv.${tuJianLevelMax}（商店不售，锁定）`,tuJianLevelMax,tuJianCards,
-    `攻击 +${fmtShort(tuJianAtk)}、穿透 +${fmtShort(tuJianPen)}，通天塔增伤 +${tuJianDamagePct}%`);
+  push("图鉴卡片",`仅初始 ${String(tuJianCards)} 张 → 最高 Lv.${String(tuJianLevelMax)}（商店不售，锁定）`,tuJianLevelMax,tuJianCards,
+    `攻击 +${fmtShort(tuJianAtk)}、穿透 +${fmtShort(tuJianPen)}，通天塔增伤 +${String(tuJianDamagePct)}%`);
 
   // 历史本纪 → 研究点满 → 转职强化(研究加成已在 e 中体现)
   const historyMaterial = Math.max(0,get(9) - (isResearchOn ? RESEARCH.cost : 0));
@@ -565,15 +565,15 @@ tuJianPen = 0;
   const historyAtk = sumLinear(0,history.level,20,50);
   const historySpeed = history.level;
   void zhuanZhiStat;
-  push("历史本纪",`研究 ${isResearchOn ? "点满" : "未点满"} → 转职强化 Lv.${history.level}`,history.level,get(9),
+  push("历史本纪",`研究 ${isResearchOn ? "点满" : "未点满"} → 转职强化 Lv.${String(history.level)}`,history.level,get(9),
     `转职攻击/穿透 +${fmtShort(historyAtk)}、速度 +${fmtShort(historySpeed)}`);
 
   // 神兵:忘情水先付突破 500/次,余量水炼；三味真火 → 火炼命中
   const waterBudget = Math.max(0,get(81) - breakthroughCount * 500);
   const waterLevel = curve("sb",0,shenBingCost,shenBingSum).solve(waterBudget).level;
   const fireLevel = curve("sb",0,shenBingCost,shenBingSum).solve(get(85)).level;
-  push("忘情水",`突破 ${breakthroughCount} 次 + 神兵水炼 Lv.${waterLevel}`,waterLevel,get(81),`伤害加成 +${waterLevel}%`);
-  push("三味真火",`神兵火炼 Lv.${fireLevel}`,fireLevel,get(85),`命中 +${fmtShort(fireLevel)}`);
+  push("忘情水",`突破 ${String(breakthroughCount)} 次 + 神兵水炼 Lv.${String(waterLevel)}`,waterLevel,get(81),`伤害加成 +${String(waterLevel)}%`);
+  push("三味真火",`神兵火炼 Lv.${String(fireLevel)}`,fireLevel,get(85),`命中 +${fmtShort(fireLevel)}`);
   const isShenTongOk = get(6) >= 38200;
   push("神通卷轴",isShenTongOk ? "点满 30 神通" : "未点满",get(6),get(6),
     "神通9 +10 命中 / 神通25 +15 伤害加成（点满需 38,200）");
@@ -588,7 +588,7 @@ vipSpent = 0;
     vipLevel += 1;
   }
   const vipHit = Math.trunc(vipLevel / 2);
-  push("元宝",`VIP Lv.${vipLevel}（商店不售，锁定）`,vipLevel,get(95),`命中 +${vipHit}`);
+  push("元宝",`VIP Lv.${String(vipLevel)}（商店不售，锁定）`,vipLevel,get(95),`命中 +${String(vipHit)}`);
   const tgAtkPct = property.get(0) ?? 0;
   const tgHit = property.get(4) ?? 0;
   const tgPenPct = property.get(15) ?? 0;
@@ -678,7 +678,7 @@ function computePrerequisites (base: Map<number,number>,property: Map<number,num
 
   // ① 研究点满:所有消耗减免/经验倍率/面板加成的前提
   push("研究点满","俭以养德逐级 -1%，其余 54 节点全部收益的前提",9,RESEARCH.cost,
-    `攻击+${RESEARCH.atkPct}% 命中+${RESEARCH.hit} 阵法攻击+${RESEARCH.zhenFaAtkPct}% 装备属性+${RESEARCH.equipPropertyPct}%；商店-30%、四类材料-50%、御力-30%`);
+    `攻击+${String(RESEARCH.atkPct)}% 命中+${String(RESEARCH.hit)} 阵法攻击+${String(RESEARCH.zhenFaAtkPct)}% 装备属性+${String(RESEARCH.equipPropertyPct)}%；商店-30%、四类材料-50%、御力-30%`);
 
   // ② 神通点满 38,200 卷轴
   push("神通点满","神通9 +10 命中、神通25 +15 伤害加成",6,
@@ -694,16 +694,16 @@ function computePrerequisites (base: Map<number,number>,property: Map<number,num
   const yuliInit =
     (final.get(4) ?? 0) + (final.get(21) ?? 0) * 20_0000 + (final.get(29) ?? 0) * 100_0000;
   const books = Math.max(0,Math.ceil((yuliNeed - yuliInit) / (100 * RESEARCH.yuLingExpMult)));
-  push(`御灵宝典 → 御灵师 Lv.${needLevel}`,
-    `前 ${luckyN} 次突破堆幸运到 50000（必须），第 ${luckyN + 1}~${totalBt} 次全给速度以超过 ${fmtShort(speedTarget)}`,
-    84,books,`御灵师 Lv.${needLevel} / 突破 ${totalBt} 次；四维各 +${fmtShort((needLevel - 1) * needLevel / 2 * 250)}、速度 +${fmtShort(speedTarget)}`);
+  push(`御灵宝典 → 御灵师 Lv.${String(needLevel)}`,
+    `前 ${String(luckyN)} 次突破堆幸运到 50000（必须），第 ${String(luckyN + 1)}~${String(totalBt)} 次全给速度以超过 ${fmtShort(speedTarget)}`,
+    84,books,`御灵师 Lv.${String(needLevel)} / 突破 ${String(totalBt)} 次；四维各 +${fmtShort((needLevel - 1) * needLevel / 2 * 250)}、速度 +${fmtShort(speedTarget)}`);
 
   // ④ 三味真火 → 神兵火炼命中(研究/神通/VIP/通关点数的命中是固定的,缺口只能靠火炼)
   const fixedHit = 10 + tgHit + 8 + RESEARCH.hit + 10; // 基础10 + 通关点数 + VIP(初始元宝 Lv.16→8) + 研究 + 神通9
   const fireNeed = Math.max(0,hitTarget - fixedHit);
   const fireCost = shenBingSum(fireNeed);
   push("三味真火 → 神兵火炼","命中是硬门槛，缺口只能靠火炼等级补",85,fireCost,
-    `火炼 Lv.${fireNeed} → 命中 +${fireNeed}（固定命中 ${fixedHit}，目标 ${hitTarget}）`);
+    `火炼 Lv.${String(fireNeed)} → 命中 +${String(fireNeed)}（固定命中 ${String(fixedHit)}，目标 ${String(hitTarget)}）`);
   return {final,reqs};
 }
 
@@ -912,7 +912,7 @@ function main (): void {
   console.log("目标：终局第5关 与 试炼1000层 同时满足 先手 / 100%命中 / 一击必杀（共 6 项约束）");
   for (const t of targets) {
     const e = t.enemy;
-    console.log(`  ${t.name}：HP=${fmtShort(e.hp)} 防御=${fmtShort(e.def)} 速度=${fmtShort(e.speed)} 闪避=${fmtShort(e.dodge)} 减伤=${Math.min(e.damageReduce,80)}%（原始${e.damageReduce}）`);
+    console.log(`  ${t.name}：HP=${fmtShort(e.hp)} 防御=${fmtShort(e.def)} 速度=${fmtShort(e.speed)} 闪避=${fmtShort(e.dodge)} 减伤=${String(Math.min(e.damageReduce,80))}%（原始${String(e.damageReduce)}）`);
   }
   console.log(`单价来源：${priceSource}`);
   console.log(`\n--- 一、初始资源池（仅有 23 兑换码 + 35 项通关点数，总价 ${fmtShort(pointPrice)} 点）---`);
@@ -921,13 +921,13 @@ function main (): void {
   }
   console.log("  通关点数永久属性：攻击/防御/穿透/生命 +30%，命中/暴击/暴伤等按 exchange.json property 项计入");
   console.log("\n--- 二、研究增加的具体收入（借鉴 yingling-output.buildResearchPlan，节点来自 config/keji.json）---");
-  console.log(`  点满 ${RESEARCH.steps} 节点，共耗 ${fmtShort(RESEARCH.cost)} 历史本纪（俭以养德逐级 -1%）`);
+  console.log(`  点满 ${String(RESEARCH.steps)} 节点，共耗 ${fmtShort(RESEARCH.cost)} 历史本纪（俭以养德逐级 -1%）`);
   console.log(`  御灵石经验(48) +100% → 御灵宝典每本 100 → ${fmtShort(100 * RESEARCH.yuLingExpMult)} 御力（DESIGN.md 的 200 由此而来）`);
-  console.log(`  图鉴经验(49) ×${RESEARCH.tuJianExpMult}  炼器经验(16) ×${RESEARCH.lianQiExpMult}  商店买价(44) -${RESEARCH.shopReduce}%`);
-  console.log(`  消耗减免：寒铁 -${RESEARCH.hanTieReduce}%  五彩神石 -${RESEARCH.wucaiReduce}%  强化石 -${RESEARCH.qiangHuaReduce}%  灵纹 -${RESEARCH.zhenwenReduce}%  御力升级 -${RESEARCH.yuLiReduce}%`);
-  console.log(`  面板加成：攻击 +${RESEARCH.atkPct}%  命中 +${RESEARCH.hit}  伤害加成 +${RESEARCH.damageAddition}  阵法攻击 +${RESEARCH.zhenFaAtkPct}%  装备属性 +${RESEARCH.equipPropertyPct}%  图鉴增伤 +${RESEARCH.tuJianDamagePerLevel}/级`);
-  console.log(`  另点满 ${RESEARCH.dropNodes.length} 个掉落/扫荡类节点（静态模型不模拟挂机掉落，不计入）：`);
-  console.log(`    ${RESEARCH.dropNodes.map(d => `${d.label}(${d.id}) Lv.${d.level}`).join("、")}`);
+  console.log(`  图鉴经验(49) ×${String(RESEARCH.tuJianExpMult)}  炼器经验(16) ×${String(RESEARCH.lianQiExpMult)}  商店买价(44) -${String(RESEARCH.shopReduce)}%`);
+  console.log(`  消耗减免：寒铁 -${String(RESEARCH.hanTieReduce)}%  五彩神石 -${String(RESEARCH.wucaiReduce)}%  强化石 -${String(RESEARCH.qiangHuaReduce)}%  灵纹 -${String(RESEARCH.zhenwenReduce)}%  御力升级 -${String(RESEARCH.yuLiReduce)}%`);
+  console.log(`  面板加成：攻击 +${String(RESEARCH.atkPct)}%  命中 +${String(RESEARCH.hit)}  伤害加成 +${String(RESEARCH.damageAddition)}  阵法攻击 +${String(RESEARCH.zhenFaAtkPct)}%  装备属性 +${String(RESEARCH.equipPropertyPct)}%  图鉴增伤 +${String(RESEARCH.tuJianDamagePerLevel)}/级`);
+  console.log(`  另点满 ${String(RESEARCH.dropNodes.length)} 个掉落/扫荡类节点（静态模型不模拟挂机掉落，不计入）：`);
+  console.log(`    ${RESEARCH.dropNodes.map(d => `${d.label}(${String(d.id)}) Lv.${String(d.level)}`).join("、")}`);
   console.log("\n--- 三、商店可买项与单价（仅这些可追加）---");
   for (const a of alloc) {
     console.log(`  Prop${String(a.prop).padEnd(4)} ${a.name.padEnd(10)} 原价 ${String(a.baseCost).padStart(5)} → 研究后 ${String(shopPrice(a.baseCost,true)).padStart(5)} 钱币/个  →  ${a.dest}`);
@@ -942,7 +942,7 @@ function main (): void {
     console.log(`  ${t.name}：伤害比 ${r[0].toExponential(3)}  速度比 ${r[1].toExponential(3)}  命中比 ${r[2].toExponential(3)}`);
   }
   const result = solve(base,property,targets,alloc);
-  console.log(`\n--- 五、还需追加的资源分配（贪心 ${result.iterations} 轮，总花费 ${fmtShort(result.cost)} 钱币）---`);
+  console.log(`\n--- 五、还需追加的资源分配（贪心 ${String(result.iterations)} 轮，总花费 ${fmtShort(result.cost)} 钱币）---`);
   console.log(`  研究状态：${result.panel.researchOn ? "已点满（收入倍率与减免已生效）" : "仍未点满"}`);
   let isAny = false;
   for (const a of alloc) {
@@ -960,7 +960,7 @@ function main (): void {
   }
   console.log("\n--- 七、最终面板 ---");
   const p = result.panel;
-  console.log(`  攻击 ${fmtShort(p.finalAtk)}（攻击% ${p.atkPct}）  命中 ${fmtShort(p.hit + TANG_SAN_ZANG_HIT)}  速度 ${fmtShort(p.speed)}  穿透 ${fmtShort(p.penetration)}  伤害加成 ${p.damageAddition}`);
+  console.log(`  攻击 ${fmtShort(p.finalAtk)}（攻击% ${String(p.atkPct)}）  命中 ${fmtShort(p.hit + TANG_SAN_ZANG_HIT)}  速度 ${fmtShort(p.speed)}  穿透 ${fmtShort(p.penetration)}  伤害加成 ${String(p.damageAddition)}`);
   console.log("  图鉴增伤不计入（研究54 仅通天塔生效，终局/试炼都不走该入口）");
   console.log("\n--- 八、双敌人达标判定（必须全部 ✓）---");
   for (const t of targets) {
@@ -1012,10 +1012,10 @@ function printAnalysis (): void {
   console.log("  k = culDamagePercent(finalAtk, max(1, 敌防御 - 穿透))");
   console.log("  finalAtk = atkFlat × (100+攻击%)/100 × (1 + 阵法等级/100)");
   console.log("  ⇒ 加 最终攻击/穿透 是平方级杠杆（既进基础伤害，又抬 k）；加 伤害加成 只是线性乘区。");
-  console.log(`  单价来源：${priceSource}；起点资源池仅 ${pool.length} 项兑换码+通关点数（总价 ${fmtShort(pointPrice)} 点）`);
+  console.log(`  单价来源：${priceSource}；起点资源池仅 ${String(pool.length)} 项兑换码+通关点数（总价 ${fmtShort(pointPrice)} 点）`);
   for (const t of targets) {
     const e = t.enemy;
-    console.log(`  ${t.name}：HP=${fmtShort(e.hp)} (${e.hp.toExponential(4)}) 防御=${fmtShort(e.def)} (${e.def.toExponential(4)}) 速度=${fmtShort(e.speed)} 闪避=${fmtShort(e.dodge)} 减伤原始=${fmtShort(e.damageReduce)}→结算=${Math.min(e.damageReduce,80)}%`);
+    console.log(`  ${t.name}：HP=${fmtShort(e.hp)} (${e.hp.toExponential(4)}) 防御=${fmtShort(e.def)} (${e.def.toExponential(4)}) 速度=${fmtShort(e.speed)} 闪避=${fmtShort(e.dodge)} 减伤原始=${fmtShort(e.damageReduce)}→结算=${String(Math.min(e.damageReduce,80))}%`);
   }
   const {final,reqs} = computePrerequisites(base,property,prices,targets);
   console.log("\n--- 一、硬前置（必须先做，无法省；已按「达到该等级所需累计资源」反解）---");
@@ -1024,13 +1024,13 @@ function printAnalysis (): void {
     preCoins += r.coins;
     console.log(`  ${r.name}`);
     console.log(`    为什么：${r.why}`);
-    console.log(`    买 ${r.prop} ${fmtShort(r.count)} 个 × ${r.unitCost} 钱币 = ${fmtShort(r.coins)} 钱币`);
+    console.log(`    买 ${String(r.prop)} ${fmtShort(r.count)} 个 × ${String(r.unitCost)} 钱币 = ${fmtShort(r.coins)} 钱币`);
     console.log(`    加的属性：${r.effect}`);
   }
   console.log(`  前置合计 ${fmtShort(preCoins)} 钱币`);
   const prePanel = panelOf(final,property);
   console.log("\n--- 二、前置完成后的基线面板 ---");
-  console.log(`  研究 ${prePanel.researchOn ? "已点满" : "未点满"}  最终攻击 ${fmtShort(prePanel.finalAtk)}  穿透 ${fmtShort(prePanel.penetration)}  命中 ${fmtShort(prePanel.hit + TANG_SAN_ZANG_HIT)}  速度 ${fmtShort(prePanel.speed)}  伤害加成 ${prePanel.damageAddition}`);
+  console.log(`  研究 ${prePanel.researchOn ? "已点满" : "未点满"}  最终攻击 ${fmtShort(prePanel.finalAtk)}  穿透 ${fmtShort(prePanel.penetration)}  命中 ${fmtShort(prePanel.hit + TANG_SAN_ZANG_HIT)}  速度 ${fmtShort(prePanel.speed)}  伤害加成 ${String(prePanel.damageAddition)}`);
   for (const t of targets) {
     const r = ratiosOf(prePanel,t.enemy);
     console.log(`  ${t.name}：伤害比 ${r[0].toExponential(3)}  速度比 ${r[1].toExponential(3)}  命中比 ${r[2].toExponential(3)}`);
@@ -1047,7 +1047,7 @@ function printAnalysis (): void {
     const penToLeave2 = Math.max(0,e.def - 3 * prePanel.finalAtk); // 或靠穿透压低 DEF'
     console.log(`  ${t.name}：`);
     console.log(`    DEF'=max(1, 敌防御 − 穿透) = ${defEff.toExponential(4)}（敌防御 ${e.def.toExponential(4)} − 我方穿透 ${fmtShort(prePanel.penetration)}）`);
-    console.log(`    当前 k = culDamagePercent(我方攻击 ${prePanel.finalAtk.toExponential(4)}, DEF') = ${kNow}`);
+    console.log(`    当前 k = culDamagePercent(我方攻击 ${prePanel.finalAtk.toExponential(4)}, DEF') = ${String(kNow)}`);
     console.log(`    把 k 拉出最低档需：最终攻击 > ${atkToLeave2.toExponential(4)}（现为 ${prePanel.finalAtk.toExponential(4)}，差 ${(atkToLeave2 / Math.max(1,prePanel.finalAtk)).toExponential(3)} 倍）`);
     console.log(`             或 穿透 ≥ ${fmtShort(penToLeave2)}；k 拉满 100 需最终攻击 ≥ ${atkToReach100.toExponential(4)}`);
   }
@@ -1080,7 +1080,7 @@ function printAnalysis (): void {
   console.log(`  注①：两批敌人当前 k = [${allK.join(", ")}]、结算减伤 = [${allReduce.join(", ")}]%，${isSameDamage ? "故单点伤害相同" : "单点伤害不同"}；但 HP 相差 ${hpOrder.toFixed(2)} 个数量级，达标难度看「伤害比」。`);
   for (const t of targets) {
     const defEff = Math.max(1,t.enemy.def - prePanel.penetration);
-    console.log(`  注②：${t.name} 防御 ${t.enemy.def.toExponential(4)}，扣穿透后 DEF'=${defEff.toExponential(4)}；我方最终攻击 ${prePanel.finalAtk.toExponential(4)}，k=${culDamagePercent(prePanel.finalAtk,defEff)}。`);
+    console.log(`  注②：${t.name} 防御 ${t.enemy.def.toExponential(4)}，扣穿透后 DEF'=${defEff.toExponential(4)}；我方最终攻击 ${prePanel.finalAtk.toExponential(4)}，k=${String(culDamagePercent(prePanel.finalAtk,defEff))}。`);
   }
   console.log("       只加「伤害加成/命中」等线性或门槛属性不改变 DEF' 与我方攻击，抬不起 k；");
   console.log("       必须靠「最终攻击 + 穿透」把 k 拉出最低档（见二·补的实算门槛）。");

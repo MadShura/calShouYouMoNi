@@ -121,7 +121,7 @@ export function yuLingStatPerLevel (L: number): number {
 // ============================== 战斗伤害结算 ==============================
 // 源码:反编译/YingLing.BattleSystem/Damage_Recorder.cs
 function assertFinite (value: number,label: string): number {
-  if (!Number.isFinite(value)) {throw new TypeError(`${label} 不是有限数：${value}`);}
+  if (!Number.isFinite(value)) {throw new TypeError(`${label} 不是有限数：${String(value)}`);}
   return value;
 }
 
@@ -296,7 +296,7 @@ export const RES_NAME: Record<number,string> = {
 85: "三味真火",
 9:  "历史本纪"
 };
-export const coin = (propId: number,amount: number): string => `${amount.toFixed(0)} ${RES_NAME[propId] ?? propId} ≈ ${(amount * (COIN_COST[propId] ?? 0)).toLocaleString("en-US")} 钱币(兑换)`;
+export const coin = (propId: number,amount: number): string => `${amount.toFixed(0)} ${String(RES_NAME[propId] ?? propId)} ≈ ${(amount * (COIN_COST[propId] ?? 0)).toLocaleString("en-US")} 钱币(兑换)`;
 
 // 缩短单位:万亿/亿/万(本项目展示工具,非游戏机制)
 export const fmtShort = (n: number): string => {
@@ -351,12 +351,12 @@ function main (): void {
     ["第1616→1617阶",fmt(shengShouCost(1616))],
     ["第5000→5001阶",`${fmt(shengShouCost(5000))} (上限)`],
     ["每阶两基础增益",`各 +${fmt(shengShouStat(100))} (20+50L)`],
-    ["特殊属性",`第500阶 +${shengShouSpecialPct(500)}%`]
+    ["特殊属性",`第500阶 +${String(shengShouSpecialPct(500))}%`]
   ]);
   table("7. 图鉴（图鉴道具=200经验/个，配置值；四维各+50+15L）",[
-    ["Lv.1→2",`${tuJianItems(1)} 个`],
-    ["Lv.50→51",`${tuJianItems(50)} 个`],
-    ["Lv.63→64",`${tuJianItems(63)} 个`],
+    ["Lv.1→2",`${String(tuJianItems(1))} 个`],
+    ["Lv.50→51",`${String(tuJianItems(50))} 个`],
+    ["Lv.63→64",`${String(tuJianItems(63))} 个`],
     ["Lv.1000→1001",`${fmt(tuJianItems(1000))} 个`],
     ["每级四维增益",`各 +${fmt(tuJianStat(100))} (50+15L)`]
   ]);
@@ -377,7 +377,7 @@ function main (): void {
     ["上限20000→+500",`${fmt(poJingCost(20000))} 破境石`]
   ]);
   table("11/14/15. 固定/枢纽项",[
-    ["御灵装备15级合计",`三围+${fmt(YULING_EQUIP_15_TOTAL.三围)} 三围%+${YULING_EQUIP_15_TOTAL.三围Pct} 暴伤+${YULING_EQUIP_15_TOTAL.暴伤}`],
+    ["御灵装备15级合计",`三围+${fmt(YULING_EQUIP_15_TOTAL.三围)} 三围%+${String(YULING_EQUIP_15_TOTAL.三围Pct)} 暴伤+${String(YULING_EQUIP_15_TOTAL.暴伤)}`],
     ["神通满级总计","38200 神通卷轴(6)"],
     ["科技研究","节点累计历史本纪(9)；俭以养德后整体-85%"],
     ["寻宝第10层产出",`各资源 ${fmt(XUNBAO_LAYER10_YIELD)} 期望（仙葫药155→元宝95）`],

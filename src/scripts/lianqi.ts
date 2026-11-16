@@ -26,7 +26,7 @@ function main (): void {
   const targetArg = process.argv.slice(2).find(item => !item.startsWith("--"));
   const target = targetArg === undefined ? DEFAULT_TARGET : Number(targetArg);
   if (!Number.isInteger(target) || target < 1) {
-    throw new Error(`第一个参数应为目标等级，收到：${targetArg}`);
+    throw new Error(`第一个参数应为目标等级，收到：${String(targetArg)}`);
   }
   const dir = resolveSaveDir(args);
   const save = loadSave(dir);
@@ -40,7 +40,7 @@ function main (): void {
     throw new Error("存档里没有器鼎等级（QiLu_Level），可能存档未初始化");
   }
   if (target <= curLevel) {
-    console.log(`当前器鼎 Lv.${curLevel} 已达到目标 Lv.${target}，够了`);
+    console.log(`当前器鼎 Lv.${String(curLevel)} 已达到目标 Lv.${String(target)}，够了`);
     return;
   }
 
@@ -51,7 +51,7 @@ function main (): void {
   const stoneForCurrent = qiLuTotalStone(1,curLevel,reducePercent);
   const needStones = Math.max(0,stoneForTarget - stoneForCurrent - heldStones);
   if (needStones <= 0) {
-    console.log(`够了（持有五彩神石 ${formatSuoXie(heldStones)} 已够升到器鼎 Lv.${target}）`);
+    console.log(`够了（持有五彩神石 ${formatSuoXie(heldStones)} 已够升到器鼎 Lv.${String(target)}）`);
     return;
   }
   const lines: string[] = [];
@@ -59,9 +59,9 @@ function main (): void {
     "=== 器鼎升级计算 ===",
     `结论：还差 ${formatSuoXie(needStones)} 个五彩神石（持有 ${formatSuoXie(heldStones)}）`,
     `存档：${dir}`,
-    `当前：器鼎 Lv.${curLevel}；目标：Lv.${target}（需升 ${target - curLevel} 级）`,"",
+    `当前：器鼎 Lv.${String(curLevel)}；目标：Lv.${String(target)}（需升 ${String(target - curLevel)} 级）`,"",
     "--- 五彩神石 ---",
-    `升到 Lv.${target} 共需 ${formatSuoXie(stoneForTarget)} 石（研究20 满 -50%）`,
+    `升到 Lv.${String(target)} 共需 ${formatSuoXie(stoneForTarget)} 石（研究20 满 -50%）`,
     `已投入到当前等级的石头折合 ${formatSuoXie(stoneForCurrent)}，扣除后还需 ${formatSuoXie(stoneForTarget - stoneForCurrent)}`,
     `持有 ${formatSuoXie(heldStones)}，最终还差 ${formatSuoXie(needStones)}`,"",
     "说明：器鼎每 5 级一档，升档消耗翻倍；研究20 按项目分析口径点满（50 级）。"

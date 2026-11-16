@@ -368,7 +368,7 @@ function formatRatio (ratio: number): string {
     return "∞ 倍";
   }
   if (ratio >= 1e6) {
-    return `10^${Math.round(Math.log10(ratio))} 倍`;
+    return `10^${String(Math.round(Math.log10(ratio)))} 倍`;
   }
   if (ratio >= 100) {
     return `${formatNumber(ratio)} 倍`;
@@ -381,7 +381,7 @@ function gainText (gains: Gain[],percentProps: Set<number>): string {
     if (gain.value === 0) {
       continue;
     }
-    const name = PROP_NAMES[gain.prop] ?? `属性${gain.prop}`;
+    const name = PROP_NAMES[gain.prop] ?? `属性${String(gain.prop)}`;
     const isPercent = gain.percent && !percentProps.has(gain.prop);
     parts.push(`${name}+${formatScore(gain.value)}${isPercent ? "%" : ""}`);
   }
@@ -506,14 +506,14 @@ function main (): void {
     console.log(
       [
         "[debug]",
-        `atk=${atk}`,
-        `defEff=${defEff}`,
-        `k=${culDamagePercent(atk,defEff)}`,
-        `命中=${final(P.MingZhong)}`,
-        `暴击=${final(P.BaoJi)}`,
-        `暴伤=${final(P.BaoJiDamage)}`,
-        `伤害加成=${final(P.DamageAddition)}`,
-        `减伤=${final(P.DamageReduce)}`
+        `atk=${String(atk)}`,
+        `defEff=${String(defEff)}`,
+        `k=${String(culDamagePercent(atk,defEff))}`,
+        `命中=${String(final(P.MingZhong))}`,
+        `暴击=${String(final(P.BaoJi))}`,
+        `暴伤=${String(final(P.BaoJiDamage))}`,
+        `伤害加成=${String(final(P.DamageAddition))}`,
+        `减伤=${String(final(P.DamageReduce))}`
       ].join(" ")
     );
   }
@@ -550,7 +550,7 @@ function main (): void {
     note:   "只强化一个英灵；生命/防御不计入伤害",
     propID: 9,
     target: "unit",
-    use:    `转职强化（英灵最低 Lv.${zhuanZhiLevel}）`
+    use:    `转职强化（英灵最低 Lv.${String(zhuanZhiLevel)}）`
   });
 
   // ---- 装备强化(强化石):加主角 ----
@@ -573,7 +573,7 @@ function main (): void {
     note:   "自动强化先升最低部位；生命/防御不计入",
     propID: 5,
     target: "master",
-    use:    `装备强化（最低部位 Lv.${equipLevel}）`
+    use:    `装备强化（最低部位 Lv.${String(equipLevel)}）`
   });
 
   // ---- 阵法(灵纹):加主角 ----
@@ -593,11 +593,11 @@ function main (): void {
     gains:  zhenFaGains,
     note:
       zhenFa.id === 1
-        ? `另有战斗期效果：最高攻单位 +${zhenFa.level}% 攻击（不体现在面板）`
+        ? `另有战斗期效果：最高攻单位 +${String(zhenFa.level)}% 攻击（不体现在面板）`
         : "只升级当前佩戴的阵法；生命/防御不计入",
     propID: 7,
     target: "master",
-    use:    `阵法升级（${curZhenFaID} 号阵 Lv.${zhenFaLevel}）`
+    use:    `阵法升级（${String(curZhenFaID)} 号阵 Lv.${String(zhenFaLevel)}）`
   });
 
   // ---- 圣兽(5 张地图):加主角 ----
@@ -612,8 +612,8 @@ function main (): void {
     if (stage % 250 === 0) {
       gains.push({percent: true,prop: map.shengShou.property3,value: 1});
     }
-    const mapName = names.maps[String(map.mapID)] ?? `地图${map.mapID}`;
-    const beastName = names.shengShou[String(map.shengShou.index)] ?? `圣兽${map.shengShou.index}`;
+    const mapName = names.maps[String(map.mapID)] ?? `地图${String(map.mapID)}`;
+    const beastName = names.shengShou[String(map.shengShou.index)] ?? `圣兽${String(map.shengShou.index)}`;
     routes.push({
       cost:   Math.min(10 + 10 * stage,50000),
       detail: gainText(gains,percentProps),
@@ -621,7 +621,7 @@ function main (): void {
       note:   stage % 250 === 0 ? "本阶额外 +1 点特殊属性（按百分比属性处理）" : undefined,
       propID: map.shengShou.remandProp,
       target: "master",
-      use:    `圣兽·${beastName}（${mapName} 第 ${stage} 阶）`
+      use:    `圣兽·${beastName}（${mapName} 第 ${String(stage)} 阶）`
     });
   }
 
@@ -677,7 +677,7 @@ function main (): void {
         continue;
       }
       craftGains.push({percent: true,prop,value: points});
-      const name = PROP_NAMES[prop] ?? `属性${prop}`;
+      const name = PROP_NAMES[prop] ?? `属性${String(prop)}`;
       ciTiaoDetail.push(`${name}+${points.toFixed(2)}${percentProps.has(prop) ? "" : "%"}`);
     }
   }
@@ -688,7 +688,7 @@ function main (): void {
     note:   "毛收益：装备随机、要替换旧装备，真实提升取决于当前装备与运气",
     propID: 1,
     target: "master",
-    use:    `制作装备（炼器 Lv.${lianQiLevel} / 器鼎 Lv.${qiLuLevel}）`
+    use:    `制作装备（炼器 Lv.${String(lianQiLevel)} / 器鼎 Lv.${String(qiLuLevel)}）`
   });
 
   // ---- 图鉴道具:加主角 ----
@@ -715,10 +715,10 @@ function main (): void {
       cost:   1,
       detail: gainText(gains,percentProps),
       gains,
-      note:   `图鉴每级四维 +${50 + 15 * tuJianLevel}，本级还需 ${formatNumber(needExp)} 经验`,
+      note:   `图鉴每级四维 +${String(50 + 15 * tuJianLevel)}，本级还需 ${formatNumber(needExp)} 经验`,
       propID,
       target: "master",
-      use:    `图鉴升级（当前 Lv.${tuJianLevel}）`
+      use:    `图鉴升级（当前 Lv.${String(tuJianLevel)}）`
     });
   }
 
@@ -825,7 +825,7 @@ function main (): void {
   lines.push("=== 物资性价比（按期望伤害计算）===",`存档：${save.dir}`,"","--- 我方最高输出单位 ---",`英灵 ID：${unitRecord._id}（Master_ID=1）`,`攻击 ${formatNumber(unitStats.ATK)}｜穿透 ${formatNumber(unitStats.穿透)}｜速度 ${formatNumber(unitStats.速度)}｜暴击 ${unitStats.暴击}｜暴伤 ${unitStats.暴伤}｜命中 ${unitStats.命中}｜连击 ${unitStats.连击}｜伤害加成 ${unitStats.伤害加成}%`,`佩戴阵法：${curZhenFaID || "无"} 号（Lv.${zhenFa.level}）${zhenFa.id === 1 ? ` → 战斗开始最高攻单位 +${zhenFa.level}% 攻击` : ""}`,`目标参数：防御 ${formatNumber(target.def)}｜速度 ${formatNumber(target.speed)}｜闪避 ${target.shanBi}｜命中 ${target.mingZhong}｜抗暴 ${target.baoJiResist}｜减伤 ${target.damageReduce}%｜血量 ${target.hpPercent}%｜人数 ${target.count}`,`生效羁绊：西行取经 Lv.${bond.xiXing}｜神鬼志异 Lv.${bond.shenGui}｜万人敌 Lv.${bond.wanRen}｜神谋鬼算 Lv.${bond.shenMou}｜三国群英 Lv.${bond.sanGuo}（0=未激活）`,`基准期望伤害：${formatScore(baseDamage)}`,"","--- 冥商属性药（加成是百分比点，收益按当前属性算）---");
   for (const pill of pillReports) {
     const name = propName(names,pill.propID);
-    const label = PROP_NAMES[pill.propType] ?? `属性${pill.propType}`;
+    const label = PROP_NAMES[pill.propType] ?? `属性${String(pill.propType)}`;
     const isOutput = OUTPUT_PROPS.has(pill.propType);
     const suffix = isOutput
       ? pill.deltaPercent === 0
@@ -833,7 +833,7 @@ function main (): void {
         : ""
       : "（防御/辅助类，不计入输出）";
     lines.push(
-      `  · ${name}：+${pill.amount} ${label}，${formatNumber(pill.price)} 元宝 → 伤害 +${formatPercent(pill.deltaPercent)}%${suffix}`
+      `  · ${name}：+${String(pill.amount)} ${label}，${formatNumber(pill.price)} 元宝 → 伤害 +${formatPercent(pill.deltaPercent)}%${suffix}`
     );
   }
   lines.push(
@@ -871,7 +871,7 @@ function main (): void {
   lines.push("");
   for (const summary of summaries) {
     const name = propName(names,summary.propID);
-    lines.push(`--- ${name}（PropID ${summary.propID}，持有 ${formatNumber(summary.owned)}）---`);
+    lines.push(`--- ${name}（PropID ${String(summary.propID)}，持有 ${formatNumber(summary.owned)}）---`);
     if (summary.sellPerUnit > 0) {
       lines.push(
         `冥商收购：${summary.sellPerUnit.toFixed(6)} 元宝/个 → 换药后 ${formatPercent(summary.sellDeltaPercent)} %伤害/个`
@@ -943,7 +943,7 @@ function pinZhiDistribution (qiLuLevel: number,table: EquipPercentEntry[]): numb
   return percent;
 }
 function propName (names: NamesConfig,propID: number): string {
-  return names.props[String(propID)] ?? `道具${propID}`;
+  return names.props[String(propID)] ?? `道具${String(propID)}`;
 }
 function rawFromBattleData (list: BattleDataRecorder[] | undefined): RawStats {
   const raw = emptyRaw();

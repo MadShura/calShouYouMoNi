@@ -21,7 +21,8 @@ import type {GameRecord} from "../readSave.ts";
 import {trialEnemy} from "./enemy-stats.ts";
 import type {EnemyStats} from "./enemy-stats.ts";
 import {fmtShort,oneShotDamage,requiredAtk} from "./game-formulas.ts";
-import {runMain,type ShiLianSave} from "../tools.ts";
+import {runMain} from "../tools.ts";
+import type {ShiLianSave} from "../tools.ts";
 import {buildResourcePanel} from "./yingling-output.ts";
 import type {ResourcePanel} from "./yingling-output.ts";
 
@@ -46,18 +47,18 @@ function diagnose (from: number,panel: ResourcePanel): void {
   const isFirst = panel.speed > enemy.speed;
   const isHit100 = carryHit >= enemy.dodge;
   const isOneshot = os >= enemy.hp;
-  console.log(`\n=== 当前试炼层 ${from} 的敌人属性（trialEnemy 公式）===`);
+  console.log(`\n=== 当前试炼层 ${String(from)} 的敌人属性（trialEnemy 公式）===`);
   console.log(`  HP        = ${fmtShort(enemy.hp)}`);
   console.log(`  防御      = ${fmtShort(enemy.def)}（穿透后参与伤害系数）`);
   console.log(`  速度      = ${fmtShort(enemy.speed)}`);
   console.log(`  闪避      = ${fmtShort(enemy.dodge)}（我方需 命中+30 >= 此值才 100% 命中）`);
-  console.log(`  减伤      = ${enemy.damageReduce}%（封顶 80，实际按 ${reduce}% 计算伤害）`);
+  console.log(`  减伤      = ${String(enemy.damageReduce)}%（封顶 80，实际按 ${String(reduce)}% 计算伤害）`);
   console.log("\n=== 你的面板（按 resource 预算估算；若与游戏内不符请用 --resource=N 校准）===");
   console.log(`  攻击 finalAtk     = ${fmtShort(panel.finalAtk)}`);
   console.log(`  速度 speed        = ${fmtShort(panel.speed)}`);
-  console.log(`  命中 hit(+唐三藏) = ${fmtShort(panel.hit)} + ${TANG_SAN_ZANG_HIT} = ${fmtShort(carryHit)}`);
-  console.log(`  伤害加成          = ${panel.damageAddition}%   穿透 = ${fmtShort(panel.penetration)}`);
-  console.log(`  御灵师 Lv.${panel.yulingshiLevel}  突破 ${panel.breakthroughCount} 次  阵法 Lv.${panel.zhenfaLevel}  图鉴 Lv.${panel.tuJianLevel}`);
+  console.log(`  命中 hit(+唐三藏) = ${fmtShort(panel.hit)} + ${String(TANG_SAN_ZANG_HIT)} = ${fmtShort(carryHit)}`);
+  console.log(`  伤害加成          = ${String(panel.damageAddition)}%   穿透 = ${fmtShort(panel.penetration)}`);
+  console.log(`  御灵师 Lv.${String(panel.yulingshiLevel)}  突破 ${String(panel.breakthroughCount)} 次  阵法 Lv.${String(panel.zhenfaLevel)}  图鉴 Lv.${String(panel.tuJianLevel)}`);
   console.log("\n=== 首击三件套判定 ===");
   console.log(`  [${isFirst ? "✓" : "✗"}] 先手    : 我方速度 ${fmtShort(panel.speed)} ${isFirst ? ">" : "<= 需 >"} 敌方速度 ${fmtShort(enemy.speed)}`);
   console.log(`  [${isHit100 ? "✓" : "✗"}] 100%命中: 我方命中 ${fmtShort(carryHit)} ${isHit100 ? ">=" : "< 需 >="} 敌方闪避 ${fmtShort(enemy.dodge)}`);
@@ -85,11 +86,11 @@ function diagnose (from: number,panel: ResourcePanel): void {
     const need = requiredAtk(enemy,panel.finalAtk,opt);
     const mult = need / Math.max(1,panel.finalAtk);
     reasons.push(
-      `一击伤害不足：单点非暴击 ${fmtShort(os)} < 敌HP ${fmtShort(enemy.hp)}（且敌减伤封顶 ${reduce}% 已大幅削减你的伤害）。` +
+      `一击伤害不足：单点非暴击 ${fmtShort(os)} < 敌HP ${fmtShort(enemy.hp)}（且敌减伤封顶 ${String(reduce)}% 已大幅削减你的伤害）。` +
       `要一击必杀，基础攻击需从 ${fmtShort(panel.finalAtk)} 提到约 ${fmtShort(need)}（约 ${mult.toFixed(2)} 倍）。`
     );
   }
-  for (const [i,r] of reasons.entries()) {console.log(`  ${i + 1}. ${r}`);}
+  for (const [i,r] of reasons.entries()) {console.log(`  ${String(i + 1)}. ${r}`);}
   console.log("  → 任一 ✗ 都会导致「首攻击杀失败」；多个 ✗ 同时存在时按先手 > 命中 > 伤害 的战斗顺序依次卡住。");
 }
 function main (): void {
@@ -124,12 +125,12 @@ lo = 0;
   })();
   console.log("=== gen-diagnose-trial：当前存档首击试炼诊断 ===");
   console.log(`存档：${save.dir}`);
-  console.log(`试炼当前层 = ${from}；御灵师等级 = Lv.${curLevel}`);
+  console.log(`试炼当前层 = ${String(from)}；御灵师等级 = Lv.${String(curLevel)}`);
   console.log("养成资源快照（保守预算取最小值）：");
   for (const id of CULTIVATE_PROPS) {
     console.log(`  Prop ${String(id).padStart(3)} = ${fmtShort(getPropNums(game,id))}`);
   }
-  console.log(`→ 默认预算 resource（每项初始资源，使御灵师≈Lv.${curLevel}）= ${fmtShort(resource)}${argNumber(args,"resource") === undefined ? "（二分逼近真实等级；若想看满配用 --resource=1e12）" : "（--resource 覆盖）"}`);
+  console.log(`→ 默认预算 resource（每项初始资源，使御灵师≈Lv.${String(curLevel)}）= ${fmtShort(resource)}${argNumber(args,"resource") === undefined ? "（二分逼近真实等级；若想看满配用 --resource=1e12）" : "（--resource 覆盖）"}`);
   const panel = buildPanel(resource);
   if (panel === null) {
     console.log(`⚠ 资源预算 ${fmtShort(resource)} 下无法构建面板（面板构建异常）。`);

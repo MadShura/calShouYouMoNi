@@ -5,7 +5,8 @@ import {argNumber,argString,parseArgs} from "../readSave.ts";
 import {hitRate,TOWER_ENEMY_10000,TRIAL_ENEMY_100,ZHONG_JU} from "./enemy-stats.ts";
 import type {CliArgs} from "../readSave.ts";
 import {culDamagePercent,sceneDamage} from "./game-formulas.ts";
-import {loadConfig,runMain,type YingLingConfig} from "../tools.ts";
+import {loadConfig,runMain} from "../tools.ts";
+import type {YingLingConfig} from "../tools.ts";
 
 /**
  * 英灵输出潜力排名(不读存档)
@@ -1065,12 +1066,12 @@ function buildResearchPlan (): ResearchResult {
   }
   const levelOf = (id: number): number => levels.get(id) ?? 0;
   const per = (id: number): number => (byId.get(id)?.perLevel ?? 0) * levelOf(id);
-  const nameOf = (id: number): string => names.keJiName[String(id)] ?? `研究${id}`;
+  const nameOf = (id: number): string => names.keJiName[String(id)] ?? `研究${String(id)}`;
   const planned = new Set(RESEARCH_STEPS.map(step => step.id));
   const unresearched: string[] = [];
   const partial: string[] = [];
   for (const config of [...configs].sort((left,right) => left.id - right.id)) {
-    const effect = RESEARCH_EFFECT[config.id] ?? `效果 ${config.effectName}/${config.property}`;
+    const effect = RESEARCH_EFFECT[config.id] ?? `效果 ${String(config.effectName)}/${String(config.property)}`;
     if (!planned.has(config.id)) {
       unresearched.push(
         `  - ${nameOf(config.id)}（${effect}）：${RESEARCH_SKIP_REASON[config.id] ?? "对首回合第一下攻击无收益"}`
@@ -1080,7 +1081,7 @@ function buildResearchPlan (): ResearchResult {
     const level = levelOf(config.id);
     if (level < config.maxLevel) {
       partial.push(
-        `  - ${nameOf(config.id)} Lv.${level}/${config.maxLevel}（${effect}）：${RESEARCH_PARTIAL_REASON[config.id] ?? "已满足需求，继续点无收益"}`
+        `  - ${nameOf(config.id)} Lv.${String(level)}/${String(config.maxLevel)}（${effect}）：${RESEARCH_PARTIAL_REASON[config.id] ?? "已满足需求，继续点无收益"}`
       );
     }
   }
@@ -1192,7 +1193,7 @@ function main (): void {
   for (const config of yingLingConfig) {
     bondOf.set(config.index,config.bonds);
   }
-  const nameOf = (index: number): string => names.yingLing[String(index)] ?? `英灵${index}`;
+  const nameOf = (index: number): string => names.yingLing[String(index)] ?? `英灵${String(index)}`;
 
   // 队友转职要求:只标模型实际依赖的转职；没列出的队友不需要转职
   // 关羽神/鲁智深神给开战威慑/怯懦,司马懿神/公孙胜神给全队光环,
@@ -1219,22 +1220,22 @@ function main (): void {
   for (const config of yingLingConfig) {
     const owner = nameOf(config.index);
     for (const [slot,id] of config.skills.entries()) {
-      skillSlots.set(`${config.index}:${id}`,{
-        name: `${owner}${slot + 1}技能`,
+      skillSlots.set(`${String(config.index)}:${String(id)}`,{
+        name: `${owner}${String(slot + 1)}技能`,
         text: skillTexts[String(id)] ?? "无描述"
       });
     }
-    skillSlots.set(`${config.index}:${config.skillMo}`,{
+    skillSlots.set(`${String(config.index)}:${String(config.skillMo)}`,{
       name: `${owner}魔转职`,
       text: skillTexts[String(config.skillMo)] ?? "无描述"
     });
-    skillSlots.set(`${config.index}:${config.skillShen}`,{
+    skillSlots.set(`${String(config.index)}:${String(config.skillShen)}`,{
       name: `${owner}神转职`,
       text: skillTexts[String(config.skillShen)] ?? "无描述"
     });
   }
-  const skillSlotOf = (ownerIndex: number,skill: number): {name: string; text: string} => skillSlots.get(`${ownerIndex}:${skill}`) ?? {
-      name: `英灵${ownerIndex}技能${skill}`,
+  const skillSlotOf = (ownerIndex: number,skill: number): {name: string; text: string} => skillSlots.get(`${String(ownerIndex)}:${String(skill)}`) ?? {
+      name: `英灵${String(ownerIndex)}技能${String(skill)}`,
       text: skillTexts[String(skill)] ?? "无描述"
     };
 
@@ -1445,49 +1446,49 @@ function main (): void {
     };
 
     // 魅惑:每层使受到伤害 +3%,对所有攻击者生效
-    addSource("魅惑增伤",3 * meiHuo,`每层受到伤害 +3% × ${meiHuo} 层`);
+    addSource("魅惑增伤",3 * meiHuo,`每层受到伤害 +3% × ${String(meiHuo)} 层`);
 
     // 司马懿:神转职 全队每层威慑 +10%；3技能 自身每层威慑 +10%
     if (isSiMaAura) {
-      addSource("司马懿神转职增伤",10 * zhenShe,`每层威慑 +10% × ${zhenShe} 层`);
+      addSource("司马懿神转职增伤",10 * zhenShe,`每层威慑 +10% × ${String(zhenShe)} 层`);
     }
     if (isSiMaSelf) {
-      addSource("司马懿3技能增伤",10 * zhenShe,`自身每层威慑 +10% × ${zhenShe} 层`);
+      addSource("司马懿3技能增伤",10 * zhenShe,`自身每层威慑 +10% × ${String(zhenShe)} 层`);
     }
 
     // 公孙胜:神转职 全队每层怯懦 +15%；3技能 自身每层怯懦 +15%(两形态都有)
     if (has(Y.GONG_SUN_SHENG) && carry.index !== Y.GONG_SUN_SHENG) {
-      addSource("公孙胜神转职增伤",15 * qieNuo,`每层怯懦 +15% × ${qieNuo} 层`);
+      addSource("公孙胜神转职增伤",15 * qieNuo,`每层怯懦 +15% × ${String(qieNuo)} 层`);
     }
     if (carry.index === Y.GONG_SUN_SHENG) {
-      addSource("公孙胜3技能增伤",15 * qieNuo,`自身每层怯懦 +15% × ${qieNuo} 层`);
+      addSource("公孙胜3技能增伤",15 * qieNuo,`自身每层怯懦 +15% × ${String(qieNuo)} 层`);
     }
 
     // 张良:魔转职 每层流血 +20%
     if (carry.index === Y.ZHANG_LIANG && carry.form === "mo") {
-      addSource("张良魔转职增伤",20 * liuXue,`每层流血 +20% × ${liuXue} 层`);
+      addSource("张良魔转职增伤",20 * liuXue,`每层流血 +20% × ${String(liuXue)} 层`);
     }
 
     // 红拂女:2技能 每层魅惑 +10%
     if (carry.index === Y.HONG_FU_NV) {
-      addSource("红拂女2技能增伤",10 * meiHuo,`每层魅惑 +10% × ${meiHuo} 层`);
+      addSource("红拂女2技能增伤",10 * meiHuo,`每层魅惑 +10% × ${String(meiHuo)} 层`);
     }
 
     // 白素贞:魔转职 每层魅惑 +3%
     if (carry.index === Y.BAI_SU_ZHEN && carry.form === "mo") {
-      addSource("白素贞魔转职增伤",3 * meiHuo,`每层魅惑 +3% × ${meiHuo} 层`);
+      addSource("白素贞魔转职增伤",3 * meiHuo,`每层魅惑 +3% × ${String(meiHuo)} 层`);
     }
 
     // 神通27:目标身上全部负面层数之和,每层 +1%
     addSource(
       "神通27增伤",
       zhenShe + liuXue + meiHuo + qieNuo,
-      `负面 ${zhenShe + liuXue + meiHuo + qieNuo} 层 × 1%`
+      `负面 ${String(zhenShe + liuXue + meiHuo + qieNuo)} 层 × 1%`
     );
 
     // 神通15:命中 × Base(1) × 等级 / 10；点满 10 级就是 +命中值%
     const shenTong15 = Math.min(carryHit,21_4748_3637);
-    addSource("神通15增伤",shenTong15,`命中面板 ${shenTong15} → +${shenTong15}%`);
+    addSource("神通15增伤",shenTong15,`命中面板 ${String(shenTong15)} → +${String(shenTong15)}%`);
 
     // 西行取经:伤害% += max(0, 命中 - 敌闪避) × (0.25 + 0.25×等级)
     const xiXingLevel = comboBondLevel(combo,11);
@@ -1499,7 +1500,7 @@ function main (): void {
     addSource(
       "西行取经增伤",
       xiXingPct,
-      `(命中 ${carryHit} - 敌闪避 ${towerDodge}) × ${xiXingRate.toFixed(2)}`
+      `(命中 ${String(carryHit)} - 敌闪避 ${String(towerDodge)}) × ${xiXingRate.toFixed(2)}`
     );
 
     // 神通19:技能动作 +20×等级(5 级满 = +100)；神通20:当前怒气 ×0.2×等级(普攻开局 30,5 级满 = +30)
@@ -1515,7 +1516,7 @@ function main (): void {
       addSource(
         "伏羲琴增伤",
         2 * WEAPON_LEVEL * badTypes,
-        `每种负面 +${2 * WEAPON_LEVEL}% × ${badTypes} 种`
+        `每种负面 +${String(2 * WEAPON_LEVEL)}% × ${String(badTypes)} 种`
       );
     }
 
@@ -1525,7 +1526,7 @@ function main (): void {
     for (const source of skillSources) {
       skillFactor *= 1 + source.value / 100;
       skillParts.push(
-        `${skillSlotOf(carry.index,source.skill).name} ${source.value >= 0 ? "+" : ""}${source.value}→×${(1 + source.value / 100).toFixed(3)}`
+        `${skillSlotOf(carry.index,source.skill).name} ${source.value >= 0 ? "+" : ""}${String(source.value)}→×${(1 + source.value / 100).toFixed(3)}`
       );
     }
 
@@ -1565,7 +1566,7 @@ function main (): void {
     }
     const weaponNote =
       weapon.entry === "HeTu"
-? `防御 ${Math.trunc(heTuDef)} ×8×15% = +${heTuAttack}` :
+? `防御 ${String(Math.trunc(heTuDef))} ×8×15% = +${String(heTuAttack)}` :
       weapon.entry === "FuXiQin"
 ? "每种负面 +30%" :
       weapon.entry === "RenHuangYin"
@@ -1588,16 +1589,16 @@ function main (): void {
 ? "仅连击/反击（首击不计）" :
       "首击无增伤";
     const formula = [
-      `攻击桶(基础100+资源${panel.atkPct.toFixed(3)}${isHpZhenfa ? "-阵法1面板15" : ""}+武松${has(Y.WU_SONG) ? 20 : 0})/100=${atkFactor.toFixed(3)}`,
+      `攻击桶(基础100+资源${panel.atkPct.toFixed(3)}${isHpZhenfa ? "-阵法1面板15" : ""}+武松${String(has(Y.WU_SONG) ? 20 : 0)})/100=${atkFactor.toFixed(3)}`,
       `技能来源[${skillParts.length > 0 ? `${skillParts.join("，")}，小计=${skillFactor.toFixed(3)}` : "无来源，100%=1.000"}]`,
       `武器=${weapon.name}（${weaponNote}）`,
       bowFactor === 1 ? "后羿弓不触发(命中100%)" : `后羿弓(100-20)/100=${bowFactor.toFixed(3)}`,
-      ...heTuAttack > 0 ? [`河图+${heTuAttack}`] : [],
-      ...hpBaseAttack > 0 ? [`生命基础伤害+${hpBaseAttack}`] : [],
-      isHpZhenfa ? "阵法7(最高生命+等级%生命)" : `阵法1最高攻+${panel.zhenfaLevel}%→×${zhenFaFactor.toFixed(3)}`,
-      ...sources.map(source => `${source.name}+${source.percent}%→×${source.value.toFixed(3)}`),
+      ...heTuAttack > 0 ? [`河图+${String(heTuAttack)}`] : [],
+      ...hpBaseAttack > 0 ? [`生命基础伤害+${String(hpBaseAttack)}`] : [],
+      isHpZhenfa ? "阵法7(最高生命+等级%生命)" : `阵法1最高攻+${String(panel.zhenfaLevel)}%→×${zhenFaFactor.toFixed(3)}`,
+      ...sources.map(source => `${source.name}+${String(source.percent)}%→×${source.value.toFixed(3)}`),
       `羁绊×${bond.toFixed(3)}`,
-      `伤害加成桶(基础100+资源${panel.damageAddition.toFixed(3)}+武松${damageAddition - panel.damageAddition})/100=${damageAdditionFactor.toFixed(3)}`,
+      `伤害加成桶(基础100+资源${panel.damageAddition.toFixed(3)}+武松${String(damageAddition - panel.damageAddition)})/100=${damageAdditionFactor.toFixed(3)}`,
       `乘区倍率=${total.toFixed(3)}`
     ].join(" × ");
     return {
@@ -1719,21 +1720,21 @@ function main (): void {
                     zhenfaMode
                   };
                   if (hitRateTower > 0) {
-                    const carryKey = `${index}:${carry.form}`;
+                    const carryKey = `${String(index)}:${carry.form}`;
                     const currentTower = bestByCarryTower.get(carryKey);
                     if (!currentTower || result.total > currentTower.total) {
                       bestByCarryTower.set(carryKey,result);
                     }
                   }
                   if (hasMengPo && hitRateShilian > 0) {
-                    const carryKey = `${index}:${carry.form}`;
+                    const carryKey = `${String(index)}:${carry.form}`;
                     const currentShilian = bestByCarryShilian.get(carryKey);
                     if (!currentShilian || result.total > currentShilian.total) {
                       bestByCarryShilian.set(carryKey,result);
                     }
                   }
                   if (hitRateTower > 0) {
-                    const formKey = `${index}:${carry.form}`;
+                    const formKey = `${String(index)}:${carry.form}`;
                     const formCurrent = bestByForm.get(formKey);
                     if (!formCurrent || result.total > formCurrent.total) {
                       bestByForm.set(formKey,result);
@@ -1753,14 +1754,14 @@ function main (): void {
                     continue;
                   }
                   if (hitRateTower > 0) {
-                    const weaponKey = `${weapon.index}:${weapon.entry}`;
+                    const weaponKey = `${String(weapon.index)}:${weapon.entry}`;
                     const weaponTower = bestByWeaponTower.get(weaponKey);
                     if (!weaponTower || result.total > weaponTower.total) {
                       bestByWeaponTower.set(weaponKey,result);
                     }
                   }
                   if (hasMengPo && hitRateShilian > 0) {
-                    const weaponKey = `${weapon.index}:${weapon.entry}`;
+                    const weaponKey = `${String(weapon.index)}:${weapon.entry}`;
                     const weaponShilian = bestByWeaponShilian.get(weaponKey);
                     if (!weaponShilian || result.total > weaponShilian.total) {
                       bestByWeaponShilian.set(weaponKey,result);
@@ -1788,8 +1789,8 @@ function main (): void {
 
   // 阵法:1=天覆阵(面板攻击 +15%,最高攻 +等级%),7=法相阵(面板生命 +30%,最高生命 +等级%)
   const zhenFaIdOf = (result: ComboResult): 1 | 7 => (result.zhenfaMode === "hp" ? 7 : 1);
-  const zhenFaName = (result: ComboResult): string => `${ZHEN_FA_NAMES[zhenFaIdOf(result)]}（阵法${zhenFaIdOf(result)}）Lv.${panel.zhenfaLevel}`;
-  const zhenFaText = (result: ComboResult): string => `${zhenFaName(result)}（${zhenFaIdOf(result) === 7 ? `面板生命 +30%、最高生命 +${panel.zhenfaLevel}%` : `面板攻击 +15%、最高攻 +${panel.zhenfaLevel}%`}）`;
+  const zhenFaName = (result: ComboResult): string => `${ZHEN_FA_NAMES[zhenFaIdOf(result)]}（阵法${String(zhenFaIdOf(result))}）Lv.${String(panel.zhenfaLevel)}`;
+  const zhenFaText = (result: ComboResult): string => `${zhenFaName(result)}（${zhenFaIdOf(result) === 7 ? `面板生命 +30%、最高生命 +${String(panel.zhenfaLevel)}%` : `面板攻击 +15%、最高攻 +${String(panel.zhenfaLevel)}%`}）`;
 
   // 队伍:输出位自己标转职(基础转职不标),队友按模型依赖标
   const teamText = (result: ComboResult): string => result.combo
@@ -1815,18 +1816,18 @@ function main (): void {
       `// [${result.combo.join(",")}] ${nameOf(result.carry.index)} ${formName[result.carry.form]}·${result.carry.label}`,
       `// 队友：${comboText(result.combo,result.carry.index,true)}`,
       `// 武器：${result.weapon.name}（${result.weaponNote}）`,
-     `// 资源面板：御灵师 Lv.${panel.yulingshiLevel}（幸运 ${panel.lucky} / 速度 ${panel.speed}）、器鼎 Lv.${panel.qiluLevel}（品质 ${panel.pinzhi.toFixed(3)}）、炼器 Lv.${panel.lianqiLevel}、阵法 ${zhenFaName(result)}、VIP ${panel.vipLevel}`,`let 基础攻击 = ${panel.atkFlat} // 御灵师 ${panel.yulingshiAtk} + 阵法 ${panel.zhenfaAtkFlat} + 装备 ${panel.equipAtkFlat} + 御灵装备 2,500,000 + 强化 ${panel.strengthAtkFlat} + 图鉴 ${panel.tuJianAtkFlat} + 神通 20`,"let 御灵装备攻击百分比 = 600",`let 装备攻击百分比 = ${round3(panel.equipAtkPct)}`,"let 阵法面板攻击百分比 = 15",`let 通关攻击百分比 = ${panel.tongGuanAtkPct}`,`let 武松攻击加成 = ${wusongAtk}`,`let 攻击桶 = (100 + 御灵装备攻击百分比 + 装备攻击百分比 + 阵法面板攻击百分比 + 通关攻击百分比 + 武松攻击加成) / 100 // ${result.atkFactor.toFixed(3)}`);
+     `// 资源面板：御灵师 Lv.${String(panel.yulingshiLevel)}（幸运 ${String(panel.lucky)} / 速度 ${String(panel.speed)}）、器鼎 Lv.${String(panel.qiluLevel)}（品质 ${panel.pinzhi.toFixed(3)}）、炼器 Lv.${String(panel.lianqiLevel)}、阵法 ${zhenFaName(result)}、VIP ${String(panel.vipLevel)}`,`let 基础攻击 = ${String(panel.atkFlat)} // 御灵师 ${String(panel.yulingshiAtk)} + 阵法 ${String(panel.zhenfaAtkFlat)} + 装备 ${String(panel.equipAtkFlat)} + 御灵装备 2,500,000 + 强化 ${String(panel.strengthAtkFlat)} + 图鉴 ${String(panel.tuJianAtkFlat)} + 神通 20`,"let 御灵装备攻击百分比 = 600",`let 装备攻击百分比 = ${round3(panel.equipAtkPct)}`,"let 阵法面板攻击百分比 = 15",`let 通关攻击百分比 = ${String(panel.tongGuanAtkPct)}`,`let 武松攻击加成 = ${String(wusongAtk)}`,`let 攻击桶 = (100 + 御灵装备攻击百分比 + 装备攻击百分比 + 阵法面板攻击百分比 + 通关攻击百分比 + 武松攻击加成) / 100 // ${result.atkFactor.toFixed(3)}`);
     if (result.skillSources.length > 0) {
       out.push(
         `// 技能描述：${result.skillSources
           .map(source => {
             const slot = skillSlotOf(result.carry.index,source.skill);
-            return `${slot.name}「${slot.text}」→ ${source.value}`;
+            return `${slot.name}「${slot.text}」→ ${String(source.value)}`;
           })
           .join("；")}`
       );
       for (const source of result.skillSources) {
-        out.push(`let ${skillSlotOf(result.carry.index,source.skill).name} = ${source.value}`);
+        out.push(`let ${skillSlotOf(result.carry.index,source.skill).name} = ${String(source.value)}`);
       }
       const expr = result.skillSources
         .map(source => `((100 + ${skillSlotOf(result.carry.index,source.skill).name}) / 100)`)
@@ -1834,7 +1835,7 @@ function main (): void {
       out.push(`let 技能倍率 = ${expr} // ${result.skillFactor.toFixed(3)}`);
       if (result.skillSources.some(source => source.skill === 78)) {
         out.push(
-          `// 孙悟空3技能按源码是把命中面板值 ${result.carryHit} 直接加进伤害%；描述里的“命中+10%”已在命中面板里，不在这里重复加`
+          `// 孙悟空3技能按源码是把命中面板值 ${String(result.carryHit)} 直接加进伤害%；描述里的“命中+10%”已在命中面板里，不在这里重复加`
         );
       }
     } else {
@@ -1846,12 +1847,12 @@ function main (): void {
       result.mingZhongFloor
     );
     out.push(
-      `let 命中 = ${result.carryHit}`,
+      `let 命中 = ${String(result.carryHit)}`,
       result.bowFactor === 1
-        ? `let 命中率_通天塔 = 100.0% // ${result.weapon.name} + 命中 ${result.carryHit}，Final_MZ ${mzTower}`
+        ? `let 命中率_通天塔 = 100.0% // ${result.weapon.name} + 命中 ${String(result.carryHit)}，Final_MZ ${String(mzTower)}`
         : "let 命中率_通天塔 = 100.0% // 后羿弓把 miss 转成命中",
       result.bowFactor === 1
-        ? `let 命中率_试炼 = 100.0% // ${result.weapon.name} + 命中 ${result.carryHit}，Final_MZ ${mzShilian}`
+        ? `let 命中率_试炼 = 100.0% // ${result.weapon.name} + 命中 ${String(result.carryHit)}，Final_MZ ${String(mzShilian)}`
         : "let 命中率_试炼 = 100.0% // 后羿弓把 miss 转成命中"
     );
     if (result.combo.includes(Y.TANG_SAN_ZANG) || result.combo.includes(Y.ZHU_BA_JIE)) {
@@ -1866,7 +1867,7 @@ function main (): void {
         Math.max(0,result.carryHit - trialDodge) * (0.25 + 0.25 * xiXingLevel)
       );
       out.push(
-        `// 西行取经 Lv.${xiXingLevel}：通天塔 命中${result.carryHit}-闪避${towerDodge}=${result.carryHit - towerDodge}→${towerPct}%；试炼 命中${result.carryHit}-闪避${trialDodge}=${result.carryHit - trialDodge}→${trialPct}%`
+        `// 西行取经 Lv.${String(xiXingLevel)}：通天塔 命中${String(result.carryHit)}-闪避${String(towerDodge)}=${String(result.carryHit - towerDodge)}→${String(towerPct)}%；试炼 命中${String(result.carryHit)}-闪避${String(trialDodge)}=${String(result.carryHit - trialDodge)}→${String(trialPct)}%`
       );
     }
     out.push(
@@ -1876,7 +1877,7 @@ function main (): void {
     );
     for (const source of result.sources) {
       out.push(
-        `let ${source.name} = (100 ${source.percent >= 0 ? "+" : "-"} ${Math.abs(source.percent)}) / 100 // ${source.value.toFixed(3)}｜${source.detail}`
+        `let ${source.name} = (100 ${source.percent >= 0 ? "+" : "-"} ${String(Math.abs(source.percent))}) / 100 // ${source.value.toFixed(3)}｜${source.detail}`
       );
     }
     const bondCounts = new Map<number,number>();
@@ -1891,18 +1892,18 @@ function main (): void {
       if (level <= 0) {
         continue;
       }
-      const bondName = names.jiBan[String(bondType + 1)] ?? `羁绊${bondType + 1}`;
+      const bondName = names.jiBan[String(bondType + 1)] ?? `羁绊${String(bondType + 1)}`;
       const effect =
         bondType === 5
-          ? `，+${level * 5}%`
+          ? `，+${String(level * 5)}%`
           : bondType === 6
-            ? `，暴伤+${SHEN_MOU_CRIT_PER_LEVEL * level}（暴击时生效）`
+            ? `，暴伤+${String(SHEN_MOU_CRIT_PER_LEVEL * level)}（暴击时生效）`
             : bondType === 11
               ? "，计入西行取经增伤"
               : "，首击不计";
-      bondParts.push(`${bondName}×${count}(Lv.${level}${effect})`);
+      bondParts.push(`${bondName}×${String(count)}(Lv.${String(level)}${effect})`);
     }
-    out.push(`// 羁绊：${bondParts.length > 0 ? bondParts.join("；") : "无"}`,`let 羁绊 = ${result.bond.toFixed(3)}`,`// 神谋鬼算：${result.shenMouLevel > 0 ? `Lv.${result.shenMouLevel}，+${SHEN_MOU_CRIT_PER_LEVEL * result.shenMouLevel} 暴伤` : "未激活"}`,`let 神谋等级 = ${result.shenMouLevel}`,`let 暴伤 = (${round3(panel.critDamage)} + ${SHEN_MOU_CRIT_PER_LEVEL} * 神谋等级) / 100 // ${result.critMultiplier.toFixed(3)}`,`let 伤害加成 = ${round3(panel.damageAddition)}`,`let 武松增伤 = ${wusongDamage}`,`let 伤害加成桶 = (100 + 伤害加成 + 武松增伤) / 100 // ${result.damageAdditionFactor.toFixed(3)}`);
+    out.push(`// 羁绊：${bondParts.length > 0 ? bondParts.join("；") : "无"}`,`let 羁绊 = ${result.bond.toFixed(3)}`,`// 神谋鬼算：${result.shenMouLevel > 0 ? `Lv.${String(result.shenMouLevel)}，+${String(SHEN_MOU_CRIT_PER_LEVEL * result.shenMouLevel)} 暴伤` : "未激活"}`,`let 神谋等级 = ${String(result.shenMouLevel)}`,`let 暴伤 = (${round3(panel.critDamage)} + ${String(SHEN_MOU_CRIT_PER_LEVEL)} * 神谋等级) / 100 // ${result.critMultiplier.toFixed(3)}`,`let 伤害加成 = ${round3(panel.damageAddition)}`,`let 武松增伤 = ${String(wusongDamage)}`,`let 伤害加成桶 = (100 + 伤害加成 + 武松增伤) / 100 // ${result.damageAdditionFactor.toFixed(3)}`);
     const atkBaseDoc = panel.atkFlat * result.atkFactor * result.zhenfaFactor;
     const extraBaseDoc = result.heTuAttack + result.hpBaseAttack;
     const percentZone =
@@ -1914,16 +1915,16 @@ function main (): void {
       ...result.sources.map(source => source.name),
       "羁绊"
     ];
-    out.push(`let 阵法等级 = ${panel.zhenfaLevel}`,`let 阵法攻击加成 = ${result.zhenfaFactor.toFixed(3)}${result.zhenfaMode === "hp" ? " // 法相阵不加攻击" : " // 天覆阵最高攻+等级%"}`,`let 百分比乘区 = ${percentMultiply.join(" * ")} // ${percentZone.toFixed(3)}`,`let 乘区倍率 = 攻击桶 * 阵法攻击加成 * 百分比乘区 * 伤害加成桶 * (基础攻击*攻击桶*阵法攻击加成+额外基础攻击)/(基础攻击*攻击桶*阵法攻击加成) // ${result.total.toFixed(3)}`,"// 实际伤害顺序：攻击 → 防御系数 K → 百分比乘区 → 暴击 → 伤害加成 → 减伤","// 防御系数 K：攻击 ≥ 3×防御 时固定 100，否则按攻击/防御比（源码 CulDamagePercent）");
+    out.push(`let 阵法等级 = ${String(panel.zhenfaLevel)}`,`let 阵法攻击加成 = ${result.zhenfaFactor.toFixed(3)}${result.zhenfaMode === "hp" ? " // 法相阵不加攻击" : " // 天覆阵最高攻+等级%"}`,`let 百分比乘区 = ${percentMultiply.join(" * ")} // ${percentZone.toFixed(3)}`,`let 乘区倍率 = 攻击桶 * 阵法攻击加成 * 百分比乘区 * 伤害加成桶 * (基础攻击*攻击桶*阵法攻击加成+额外基础攻击)/(基础攻击*攻击桶*阵法攻击加成) // ${result.total.toFixed(3)}`,"// 实际伤害顺序：攻击 → 防御系数 K → 百分比乘区 → 暴击 → 伤害加成 → 减伤","// 防御系数 K：攻击 ≥ 3×防御 时固定 100，否则按攻击/防御比（源码 CulDamagePercent）");
     if (result.heTuAttack > 0) {
-      out.push(`let 河图 = ${result.heTuAttack} // 防御×8×15/100，直接加到 BaseAttack`);
+      out.push(`let 河图 = ${String(result.heTuAttack)} // 防御×8×15/100，直接加到 BaseAttack`);
     }
     if (result.hpBaseAttack > 0) {
       out.push(
         result.zhenfaMode === "hp"
-          ? `let 法相阵生命 = ${Math.trunc(panel.hpFinalZhenfa7)} // ×(100+600+生命研究+30)%×(1+阵法等级/100)`
-          : `let 生命 = ${Math.trunc(panel.hpFinal)} // ×(100+600+生命研究)%`,
-        `let 生命基础伤害 = ${result.hpBaseAttack} // 生命×20%，直接加到 BaseAttack`
+          ? `let 法相阵生命 = ${String(Math.trunc(panel.hpFinalZhenfa7))} // ×(100+600+生命研究+30)%×(1+阵法等级/100)`
+          : `let 生命 = ${String(Math.trunc(panel.hpFinal))} // ×(100+600+生命研究)%`,
+        `let 生命基础伤害 = ${String(result.hpBaseAttack)} // 生命×20%，直接加到 BaseAttack`
       );
     }
     const extraTerms = [
@@ -1932,7 +1933,7 @@ function main (): void {
     ];
     out.push(
       `let 攻击 = 基础攻击 * 攻击桶 * 阵法攻击加成${extraTerms.length > 0 ? ` + ${extraTerms.join(" + ")}` : ""} // ${result.atk.toExponential(3)}`,
-     `let 穿透 = ${panel.penetration}`,`let 通天塔防御 = ${SCENES[0].def}`,`let 通天塔防御系数 = CulDamagePercent(攻击, 通天塔防御 - 穿透) // ${result.kTower}`,"let 通天塔基础伤害 = 攻击 * 通天塔防御系数 / 100",`let 图鉴54增伤 = (100 + ${panel.tuJianDamagePct}) / 100 // 图鉴 Lv.${panel.tuJianLevel} × ${panel.research.tuJianDamagePerLevel}%/级，仅通天塔 Character_Enemy 生效`,`let 通天塔非暴击 = 通天塔基础伤害 * 百分比乘区 * 伤害加成桶 * (100 - ${SCENES[0].reduce}) / 100 * 图鉴54增伤 // ${formatWan(result.towerNonCrit)}`,`let 试炼防御 = ${SCENES[1].def}`,`let 试炼防御系数 = CulDamagePercent(攻击, 试炼防御 - 穿透) // ${result.kShilian}`,"let 试炼基础伤害 = 攻击 * 试炼防御系数 / 100",`let 试炼非暴击 = 试炼基础伤害 * 百分比乘区 * 伤害加成桶 * (100 - ${SCENES[1].reduce}) / 100 // ${formatWan(result.shilianNonCrit)}`,`let 通天塔暴击伤害 = 通天塔非暴击 * 暴伤 // ${formatWan(result.critTower)}`,`let 试炼暴击伤害 = 试炼非暴击 * 暴伤 // ${formatWan(result.critShilian)}`);
+     `let 穿透 = ${String(panel.penetration)}`,`let 通天塔防御 = ${String(SCENES[0].def)}`,`let 通天塔防御系数 = CulDamagePercent(攻击, 通天塔防御 - 穿透) // ${String(result.kTower)}`,"let 通天塔基础伤害 = 攻击 * 通天塔防御系数 / 100",`let 图鉴54增伤 = (100 + ${String(panel.tuJianDamagePct)}) / 100 // 图鉴 Lv.${String(panel.tuJianLevel)} × ${String(panel.research.tuJianDamagePerLevel)}%/级，仅通天塔 Character_Enemy 生效`,`let 通天塔非暴击 = 通天塔基础伤害 * 百分比乘区 * 伤害加成桶 * (100 - ${String(SCENES[0].reduce)}) / 100 * 图鉴54增伤 // ${formatWan(result.towerNonCrit)}`,`let 试炼防御 = ${String(SCENES[1].def)}`,`let 试炼防御系数 = CulDamagePercent(攻击, 试炼防御 - 穿透) // ${String(result.kShilian)}`,"let 试炼基础伤害 = 攻击 * 试炼防御系数 / 100",`let 试炼非暴击 = 试炼基础伤害 * 百分比乘区 * 伤害加成桶 * (100 - ${String(SCENES[1].reduce)}) / 100 // ${formatWan(result.shilianNonCrit)}`,`let 通天塔暴击伤害 = 通天塔非暴击 * 暴伤 // ${formatWan(result.critTower)}`,`let 试炼暴击伤害 = 试炼非暴击 * 暴伤 // ${formatWan(result.critShilian)}`);
     return out;
   };
 
@@ -1942,9 +1943,9 @@ function main (): void {
     allCombos = allCombos * (indexes.length - i) / (i + 1);
   }
   const lines: string[] = [];
-  lines.push("=== 英灵输出潜力排名（不读存档，遍历全部 5 人组合）===","--- 初始资源与最佳用途 ---",`御力宝箱Lv6 ${formatInt(panel.yuliChestCount)} × 600,000 御力 = ${formatInt(panel.yuliChestCount * 60_0000)}`,`御灵宝典 ${formatInt(panel.yuliBookCount)} × 100 御力 = ${formatInt(panel.yuliBookCount * 100)}`,`兑换码/通关点数额外御力 ${formatInt(panel.yuliTotal - panel.yuliChestCount * 60_0000 - panel.yuliBookCount * 100)}`,`合计御力 ${formatInt(panel.yuliTotal)} → 御灵师 Lv.${formatInt(panel.yulingshiLevel)}（累计等级和 ${formatInt(panel.yulingshiLevelSum)}，轻车熟路 -${panel.research.yuLiReduce}% 消耗）`,`→ 生命/攻击/防御/穿透 各 +${formatInt(panel.yulingshiAtk)}`,`突破 ${formatInt(panel.breakthroughCount)} 次：先幸运 ${formatInt(panel.luckyCount)} 次到 ${formatInt(panel.lucky)}，之后 ${formatInt(panel.speedCount)} 次全速度`,`→ 速度 ${formatInt(panel.speed)}，${panel.speedOk ? "已超过" : "未超过"}试炼 100 层 ${formatInt(TRIAL_SPEED)}；${panel.speedOk ? "神兵可选命中/伤害/暴伤" : "神兵只能选速度"}`,`五彩神石 ${formatInt(panel.qiluStone)} → 器鼎 Lv.${formatInt(panel.qiluLevel)}，品质期望 ${panel.pinzhi.toFixed(3)}`,`寒铁 ${formatInt(panel.ironTotal)} → 制作装备；炼器 Lv.${formatInt(panel.lianqiLevel)}（打造 ${formatInt(panel.lianqiCrafts)} 件，剩 ${formatInt(panel.ironRemain)}，研究 -${panel.research.hanTieReduce}%）`,`  → 10 槽主属性攻击 +${formatInt(panel.equipAtkFlat)}；攻击% +${round3(panel.equipAtkPct)}、伤害加成 +${round3(panel.equipDamageAddition)}、暴伤 +${round3(panel.equipCritDamage)}、暴击 +${round3(panel.equipCrit)}、穿透% +${round3(panel.equipPenPct)}`,`强化石 ${formatInt(panel.strengthStone)} → 10 槽强化，攻击 +${formatInt(panel.strengthAtkFlat)}`,`灵晶 ${formatInt(panel.lingJing)} → 900 解锁全部阵法，剩余升圣兽3（青龙）Lv.${formatInt(panel.shengShou3Level)}，攻击/防御 +${formatInt(panel.shengShou3Atk)}`,`神速符 ${formatInt(panel.shenSuFuTotal)} → 圣兽4（白虎）Lv.${formatInt(panel.shengShou4Level)}，攻击/穿透 +${formatInt(panel.shengShou4Atk)}`,`历史本纪 ${formatInt(panel.historyMaterial + panel.research.cost)} → 研究 ${formatInt(panel.research.cost)} + 转职强化 Lv.${formatInt(panel.historyLevel)}，攻击/穿透 +${formatInt(panel.historyAtk)}（只加输出位自己）；抽奖卷不计入`,`图鉴 15 种 × ${formatInt(panel.tuJianCount)} 个 = ${formatInt(panel.tuJianExp)} 经验 → Lv.${formatInt(panel.tuJianLevel)}；攻击 +${formatInt(panel.tuJianAtkFlat)}、防御 +${formatInt(panel.tuJianDefFlat)}、穿透 +${formatInt(panel.tuJianPenFlat)}；研究54 通天塔受到伤害 +${formatInt(panel.tuJianDamagePct)}%（试炼不生效）`,`钱币 ${formatInt(panel.coin)} → 神通卷轴共 ${formatInt(panel.freeScrolls)}（远超 38,200 需求）；商店价 -${panel.research.shopReduce}%，全部钱币买灵纹 ${formatInt(panel.lingwen)} → 阵法 Lv.${formatInt(panel.zhenfaLevel)}（灵纹研究 -${panel.research.zhenwenReduce}%）`,panel.yuanbaoMode === "shop"
-      ? `元宝 ${formatInt(panel.totalYuanbao)} = 初始 20,488 + 兑换码 ${formatInt(panel.codeYuanbao)} + 通关点数 ${formatInt(panel.tongGuanYuanbao)} → 仙葫药 ${formatInt(panel.xunbaoPills)} 份（${formatInt(panel.xunbaoPills * XUNBAO_PILL_COST)} 元宝）→ 余 ${formatInt(panel.vipYuanbao)} 升 VIP ${panel.vipLevel} → 命中 +${Math.trunc(panel.vipLevel / 2)}`
-      : `元宝 ${formatInt(panel.totalYuanbao)} = 初始 20,488 + 兑换码 ${formatInt(panel.codeYuanbao)} + 通关点数 ${formatInt(panel.tongGuanYuanbao)} → VIP ${panel.vipLevel}（消耗 ${formatInt(panel.vipSpent)}，剩 ${formatInt(panel.vipRemain)}）→ 命中 +${Math.trunc(panel.vipLevel / 2)}、暴击 +${Math.trunc(panel.vipLevel / 2)}`,"元宝对比：只比命中，VIP 35,592 元宝换 +11 命中；冥商蟠桃 +1 命中要 52,888 元宝，35,592 连一颗都买不起，所以命中口径 VIP 更划算。比最终伤害，18 份仙葫药（1,888×18=33,984）→ 18 格寻宝，期望 +46.08M 钱币、+5.90M 灵纹、+11.24M 寒铁、+1.20M 三味真火/忘情水；阵法约 624→1,811，孙悟空最终伤害约 ×2.6，但冥商一次只刷 6 件、每件 1 个，需要多次刷新。","","--- 研究（未研究节点）---",`已点 ${panel.research.steps} 个节点、合计 ${formatInt(panel.research.cost)} 历史本纪；下面是没研究的节点：`,...panel.research.unresearched,"","已点但没点满：",...panel.research.partial.length > 0 ? panel.research.partial : ["  - 无"],"--- 多用途资源对比 ---",`寒铁 → 炼器（主属性攻击 +${formatInt(panel.equipAtkFlat)}，折合最终攻击 +${formatWan(panel.equipAtkFlat * (100 + panel.atkPct) / 100 * (1 + panel.zhenfaLevel / 100))}）vs 圣兽1 玄武 Lv.${formatInt(shengShouUpgrade(panel.ironTotal).level)}（防御 +${formatInt(shengShouUpgrade(panel.ironTotal).atk)} → 河图攻击 +${formatInt(Math.trunc(shengShouUpgrade(panel.ironTotal).atk * (100 + panel.defPct) / 100 * 8 * 15 / 100))}）；炼器更高`,"五彩神石 → 器鼎（品质影响装备词条）优于直接卖；灵纹/灵晶/神速符都没有器鼎这条品质路线",`强化石 ${formatInt(panel.strengthStone)} → 10 槽强化攻击 +${formatInt(panel.strengthAtkFlat)}；无其他输出用途`,"神通卷轴 → 先点满 38,200 个神通；剩余可升圣兽2，但只加穿透/暴击，本表通天塔 K=100，边际接近 0",`灵纹 → 阵法 Lv.${formatInt(panel.zhenfaLevel)}（阵法1 ×${(1 + panel.zhenfaLevel / 100).toFixed(2)}，研究 -${panel.research.zhenwenReduce}% 消耗）；无其他输出用途`,`灵晶 ${formatInt(panel.lingJing)} → 900 解锁阵法 + 圣兽3 Lv.${formatInt(panel.shengShou3Level)}（攻击/防御 +${formatInt(panel.shengShou3Atk)}）；优于卖店`,`神速符 ${formatInt(panel.shenSuFuTotal)} → 圣兽4 Lv.${formatInt(panel.shengShou4Level)}（攻击/穿透 +${formatInt(panel.shengShou4Atk)}）优于直接吃加速`,`历史本纪 → 研究 ${formatInt(panel.research.cost)} + 转职强化 Lv.${formatInt(panel.historyLevel)}（攻击/穿透 +${formatInt(panel.historyAtk)}）优于卖店`,`忘情水 ${formatInt(panel.shenBingWaterBudget)} → 神兵水炼（伤害加成 +${panel.shenBingWaterDamage}、暴伤 +${panel.shenBingWaterCrit}）；突破重随不给攻击%，不选`,`三味真火 ${formatInt(panel.shenBingFireBudget)} → 神兵火炼（命中 +${panel.shenBingFireHit}）；器鼎加速只省时间，炼器经验只加装备主属性，均低于命中`,"元宝分子：仙葫路线相对 VIP 路线，每个输出位的最终伤害都更高（约 ×2.7~2.8）；只比命中则 VIP 更高。","","--- 兑换码与通关点数兑换 ---","兑换码 23 个（DuiHuanConfingData）：元宝 6,216、钱币 91,494、御力 8,978,442、寒铁 1,776、五彩神石 176、灵纹 88、神通卷轴 88、强化石 176、历史本纪 176、忘情水 911、三味真火 8、炼器宝典 10、升仙令 3、神速符 2、图鉴 5","通关点数 35 项（总价 2,223,302，全部按已兑换）：元宝 8,888、钱币 6,666、寒铁 18,888、五彩神石 5,888、灵纹 8,888、神通卷轴 3,888、强化石 5,888、历史本纪 8,888、御力宝箱Lv10×1",`通关点数永久属性：攻击 +${panel.tongGuanAtkPct}%、命中 +${panel.tongGuanHit}、暴伤 +${panel.tongGuanCritDamage}、暴击 +${panel.tongGuanCrit}、穿透 +${panel.tongGuanPenPct}%、速度 +15；其余生命/防御/闪避/抗暴/连击/反击/恢复/吸血/幸运不计入首击输出`,"","--- 资源面板 ---",`基础攻击 ${formatInt(panel.atkFlat)} = 御灵师 ${formatInt(panel.yulingshiAtk)} + 阵法 ${formatInt(panel.zhenfaAtkFlat)} + 装备 ${formatInt(panel.equipAtkFlat)} + 御灵装备 2,500,000 + 强化 ${formatInt(panel.strengthAtkFlat)} + 圣兽 ${formatInt(panel.shengShouAtk)} + 图鉴 ${formatInt(panel.tuJianAtkFlat)} + 历史本纪 ${formatInt(panel.historyAtk)} + 神通 20`,`图鉴 15 种 × ${formatInt(panel.tuJianCount)} 个 = ${formatInt(panel.tuJianExp)} 经验 → Lv.${formatInt(panel.tuJianLevel)}；攻击 +${formatInt(panel.tuJianAtkFlat)}、防御 +${formatInt(panel.tuJianDefFlat)}、穿透 +${formatInt(panel.tuJianPenFlat)}；研究54 让通天塔敌人受到伤害 +${formatInt(panel.tuJianDamagePct)}%（试炼敌人是 Character_YingLing，不生效）`,`攻击% ${panel.atkPct.toLocaleString("zh-CN",{maximumFractionDigits: 3})} = 御灵装备 600 + 装备 ${round3(panel.equipAtkPct)} + 阵法 15 + 通关 ${panel.tongGuanAtkPct} + 研究 ${panel.research.atkPct}`,`最终攻击 ${panel.finalAtk.toExponential(4)} = 基础攻击 × 攻击桶 × 阵法1(1+${panel.zhenfaLevel}/100)`,`命中 ${panel.hitBase} = 蓝宝石 55 + 神通9 的 10 + 通关 15 + VIP ${Math.trunc(panel.vipLevel / 2)} + 研究 ${panel.research.hit}；再加神兵火炼 ${panel.shenBingFireHit} = ${panel.hit} → 神通15「每 10% 命中提高 10% 对敌伤害」+${panel.shenTong3}%`,`孙悟空神转职额外：幸运 ${formatInt(panel.lucky)} → 「每 100% 御灵师幸运提升 5% 命中」+${Math.trunc(panel.lucky / 100) * 5} 命中，命中变为 ${panel.hit + Math.trunc(panel.lucky / 100) * 5}`,`伤害加成面板 ${round3(panel.damageAddition)} = 装备 ${round3(panel.equipDamageAddition)} + 神通 25 的 15 + 研究 ${panel.research.damageAddition} + 神兵水炼 ${panel.shenBingWaterDamage}（武松再 +35）`,`暴伤面板 ${round3(panel.critDamage)} = 基础 340 + 装备 ${round3(panel.equipCritDamage)} + 神通 70 + 通关 50 + 研究 ${panel.research.critDamage} + 神兵水炼 ${panel.shenBingWaterCrit}（神谋鬼算另 +20×等级）`,`穿透 ${formatInt(panel.penetration)}；通天塔 10000 层防御 ${formatInt(SCENES[0].def)} → K=${culDamagePercent(panel.finalAtk,Math.max(1,SCENES[0].def - panel.penetration))}；试炼 100 层防御 ${formatInt(SCENES[1].def)} → K=${culDamagePercent(panel.finalAtk,Math.max(1,SCENES[1].def - panel.penetration))}`,`河图防御 ${formatInt(panel.defFlat + 250_0000)} = 御灵师 ${formatInt(panel.yulingshiAtk)} + 圣兽3 ${formatInt(panel.shengShou3Atk)} + 阵法 ${formatInt(panel.zhenfaDefFlat)} + 图鉴 ${formatInt(panel.tuJianDefFlat)} + 御灵装备 2,500,000；× (100 + 金玉令 600 + 防御研究 ${panel.defPct})% → 河图攻击 ${formatInt(Math.trunc((panel.defFlat + 250_0000) * (100 + 600 + panel.defPct) / 100 * 8 * 15 / 100))}`);
+  lines.push("=== 英灵输出潜力排名（不读存档，遍历全部 5 人组合）===","--- 初始资源与最佳用途 ---",`御力宝箱Lv6 ${formatInt(panel.yuliChestCount)} × 600,000 御力 = ${formatInt(panel.yuliChestCount * 60_0000)}`,`御灵宝典 ${formatInt(panel.yuliBookCount)} × 100 御力 = ${formatInt(panel.yuliBookCount * 100)}`,`兑换码/通关点数额外御力 ${formatInt(panel.yuliTotal - panel.yuliChestCount * 60_0000 - panel.yuliBookCount * 100)}`,`合计御力 ${formatInt(panel.yuliTotal)} → 御灵师 Lv.${formatInt(panel.yulingshiLevel)}（累计等级和 ${formatInt(panel.yulingshiLevelSum)}，轻车熟路 -${String(panel.research.yuLiReduce)}% 消耗）`,`→ 生命/攻击/防御/穿透 各 +${formatInt(panel.yulingshiAtk)}`,`突破 ${formatInt(panel.breakthroughCount)} 次：先幸运 ${formatInt(panel.luckyCount)} 次到 ${formatInt(panel.lucky)}，之后 ${formatInt(panel.speedCount)} 次全速度`,`→ 速度 ${formatInt(panel.speed)}，${panel.speedOk ? "已超过" : "未超过"}试炼 100 层 ${formatInt(TRIAL_SPEED)}；${panel.speedOk ? "神兵可选命中/伤害/暴伤" : "神兵只能选速度"}`,`五彩神石 ${formatInt(panel.qiluStone)} → 器鼎 Lv.${formatInt(panel.qiluLevel)}，品质期望 ${panel.pinzhi.toFixed(3)}`,`寒铁 ${formatInt(panel.ironTotal)} → 制作装备；炼器 Lv.${formatInt(panel.lianqiLevel)}（打造 ${formatInt(panel.lianqiCrafts)} 件，剩 ${formatInt(panel.ironRemain)}，研究 -${String(panel.research.hanTieReduce)}%）`,`  → 10 槽主属性攻击 +${formatInt(panel.equipAtkFlat)}；攻击% +${round3(panel.equipAtkPct)}、伤害加成 +${round3(panel.equipDamageAddition)}、暴伤 +${round3(panel.equipCritDamage)}、暴击 +${round3(panel.equipCrit)}、穿透% +${round3(panel.equipPenPct)}`,`强化石 ${formatInt(panel.strengthStone)} → 10 槽强化，攻击 +${formatInt(panel.strengthAtkFlat)}`,`灵晶 ${formatInt(panel.lingJing)} → 900 解锁全部阵法，剩余升圣兽3（青龙）Lv.${formatInt(panel.shengShou3Level)}，攻击/防御 +${formatInt(panel.shengShou3Atk)}`,`神速符 ${formatInt(panel.shenSuFuTotal)} → 圣兽4（白虎）Lv.${formatInt(panel.shengShou4Level)}，攻击/穿透 +${formatInt(panel.shengShou4Atk)}`,`历史本纪 ${formatInt(panel.historyMaterial + panel.research.cost)} → 研究 ${formatInt(panel.research.cost)} + 转职强化 Lv.${formatInt(panel.historyLevel)}，攻击/穿透 +${formatInt(panel.historyAtk)}（只加输出位自己）；抽奖卷不计入`,`图鉴 15 种 × ${formatInt(panel.tuJianCount)} 个 = ${formatInt(panel.tuJianExp)} 经验 → Lv.${formatInt(panel.tuJianLevel)}；攻击 +${formatInt(panel.tuJianAtkFlat)}、防御 +${formatInt(panel.tuJianDefFlat)}、穿透 +${formatInt(panel.tuJianPenFlat)}；研究54 通天塔受到伤害 +${formatInt(panel.tuJianDamagePct)}%（试炼不生效）`,`钱币 ${formatInt(panel.coin)} → 神通卷轴共 ${formatInt(panel.freeScrolls)}（远超 38,200 需求）；商店价 -${String(panel.research.shopReduce)}%，全部钱币买灵纹 ${formatInt(panel.lingwen)} → 阵法 Lv.${formatInt(panel.zhenfaLevel)}（灵纹研究 -${String(panel.research.zhenwenReduce)}%）`,panel.yuanbaoMode === "shop"
+      ? `元宝 ${formatInt(panel.totalYuanbao)} = 初始 20,488 + 兑换码 ${formatInt(panel.codeYuanbao)} + 通关点数 ${formatInt(panel.tongGuanYuanbao)} → 仙葫药 ${formatInt(panel.xunbaoPills)} 份（${formatInt(panel.xunbaoPills * XUNBAO_PILL_COST)} 元宝）→ 余 ${formatInt(panel.vipYuanbao)} 升 VIP ${String(panel.vipLevel)} → 命中 +${String(Math.trunc(panel.vipLevel / 2))}`
+      : `元宝 ${formatInt(panel.totalYuanbao)} = 初始 20,488 + 兑换码 ${formatInt(panel.codeYuanbao)} + 通关点数 ${formatInt(panel.tongGuanYuanbao)} → VIP ${String(panel.vipLevel)}（消耗 ${formatInt(panel.vipSpent)}，剩 ${formatInt(panel.vipRemain)}）→ 命中 +${String(Math.trunc(panel.vipLevel / 2))}、暴击 +${String(Math.trunc(panel.vipLevel / 2))}`,"元宝对比：只比命中，VIP 35,592 元宝换 +11 命中；冥商蟠桃 +1 命中要 52,888 元宝，35,592 连一颗都买不起，所以命中口径 VIP 更划算。比最终伤害，18 份仙葫药（1,888×18=33,984）→ 18 格寻宝，期望 +46.08M 钱币、+5.90M 灵纹、+11.24M 寒铁、+1.20M 三味真火/忘情水；阵法约 624→1,811，孙悟空最终伤害约 ×2.6，但冥商一次只刷 6 件、每件 1 个，需要多次刷新。","","--- 研究（未研究节点）---",`已点 ${String(panel.research.steps)} 个节点、合计 ${formatInt(panel.research.cost)} 历史本纪；下面是没研究的节点：`,...panel.research.unresearched,"","已点但没点满：",...panel.research.partial.length > 0 ? panel.research.partial : ["  - 无"],"--- 多用途资源对比 ---",`寒铁 → 炼器（主属性攻击 +${formatInt(panel.equipAtkFlat)}，折合最终攻击 +${formatWan(panel.equipAtkFlat * (100 + panel.atkPct) / 100 * (1 + panel.zhenfaLevel / 100))}）vs 圣兽1 玄武 Lv.${formatInt(shengShouUpgrade(panel.ironTotal).level)}（防御 +${formatInt(shengShouUpgrade(panel.ironTotal).atk)} → 河图攻击 +${formatInt(Math.trunc(shengShouUpgrade(panel.ironTotal).atk * (100 + panel.defPct) / 100 * 8 * 15 / 100))}）；炼器更高`,"五彩神石 → 器鼎（品质影响装备词条）优于直接卖；灵纹/灵晶/神速符都没有器鼎这条品质路线",`强化石 ${formatInt(panel.strengthStone)} → 10 槽强化攻击 +${formatInt(panel.strengthAtkFlat)}；无其他输出用途`,"神通卷轴 → 先点满 38,200 个神通；剩余可升圣兽2，但只加穿透/暴击，本表通天塔 K=100，边际接近 0",`灵纹 → 阵法 Lv.${formatInt(panel.zhenfaLevel)}（阵法1 ×${(1 + panel.zhenfaLevel / 100).toFixed(2)}，研究 -${String(panel.research.zhenwenReduce)}% 消耗）；无其他输出用途`,`灵晶 ${formatInt(panel.lingJing)} → 900 解锁阵法 + 圣兽3 Lv.${formatInt(panel.shengShou3Level)}（攻击/防御 +${formatInt(panel.shengShou3Atk)}）；优于卖店`,`神速符 ${formatInt(panel.shenSuFuTotal)} → 圣兽4 Lv.${formatInt(panel.shengShou4Level)}（攻击/穿透 +${formatInt(panel.shengShou4Atk)}）优于直接吃加速`,`历史本纪 → 研究 ${formatInt(panel.research.cost)} + 转职强化 Lv.${formatInt(panel.historyLevel)}（攻击/穿透 +${formatInt(panel.historyAtk)}）优于卖店`,`忘情水 ${formatInt(panel.shenBingWaterBudget)} → 神兵水炼（伤害加成 +${String(panel.shenBingWaterDamage)}、暴伤 +${String(panel.shenBingWaterCrit)}）；突破重随不给攻击%，不选`,`三味真火 ${formatInt(panel.shenBingFireBudget)} → 神兵火炼（命中 +${String(panel.shenBingFireHit)}）；器鼎加速只省时间，炼器经验只加装备主属性，均低于命中`,"元宝分子：仙葫路线相对 VIP 路线，每个输出位的最终伤害都更高（约 ×2.7~2.8）；只比命中则 VIP 更高。","","--- 兑换码与通关点数兑换 ---","兑换码 23 个（DuiHuanConfingData）：元宝 6,216、钱币 91,494、御力 8,978,442、寒铁 1,776、五彩神石 176、灵纹 88、神通卷轴 88、强化石 176、历史本纪 176、忘情水 911、三味真火 8、炼器宝典 10、升仙令 3、神速符 2、图鉴 5","通关点数 35 项（总价 2,223,302，全部按已兑换）：元宝 8,888、钱币 6,666、寒铁 18,888、五彩神石 5,888、灵纹 8,888、神通卷轴 3,888、强化石 5,888、历史本纪 8,888、御力宝箱Lv10×1",`通关点数永久属性：攻击 +${String(panel.tongGuanAtkPct)}%、命中 +${String(panel.tongGuanHit)}、暴伤 +${String(panel.tongGuanCritDamage)}、暴击 +${String(panel.tongGuanCrit)}、穿透 +${String(panel.tongGuanPenPct)}%、速度 +15；其余生命/防御/闪避/抗暴/连击/反击/恢复/吸血/幸运不计入首击输出`,"","--- 资源面板 ---",`基础攻击 ${formatInt(panel.atkFlat)} = 御灵师 ${formatInt(panel.yulingshiAtk)} + 阵法 ${formatInt(panel.zhenfaAtkFlat)} + 装备 ${formatInt(panel.equipAtkFlat)} + 御灵装备 2,500,000 + 强化 ${formatInt(panel.strengthAtkFlat)} + 圣兽 ${formatInt(panel.shengShouAtk)} + 图鉴 ${formatInt(panel.tuJianAtkFlat)} + 历史本纪 ${formatInt(panel.historyAtk)} + 神通 20`,`图鉴 15 种 × ${formatInt(panel.tuJianCount)} 个 = ${formatInt(panel.tuJianExp)} 经验 → Lv.${formatInt(panel.tuJianLevel)}；攻击 +${formatInt(panel.tuJianAtkFlat)}、防御 +${formatInt(panel.tuJianDefFlat)}、穿透 +${formatInt(panel.tuJianPenFlat)}；研究54 让通天塔敌人受到伤害 +${formatInt(panel.tuJianDamagePct)}%（试炼敌人是 Character_YingLing，不生效）`,`攻击% ${panel.atkPct.toLocaleString("zh-CN",{maximumFractionDigits: 3})} = 御灵装备 600 + 装备 ${round3(panel.equipAtkPct)} + 阵法 15 + 通关 ${String(panel.tongGuanAtkPct)} + 研究 ${String(panel.research.atkPct)}`,`最终攻击 ${panel.finalAtk.toExponential(4)} = 基础攻击 × 攻击桶 × 阵法1(1+${String(panel.zhenfaLevel)}/100)`,`命中 ${String(panel.hitBase)} = 蓝宝石 55 + 神通9 的 10 + 通关 15 + VIP ${String(Math.trunc(panel.vipLevel / 2))} + 研究 ${String(panel.research.hit)}；再加神兵火炼 ${String(panel.shenBingFireHit)} = ${String(panel.hit)} → 神通15「每 10% 命中提高 10% 对敌伤害」+${String(panel.shenTong3)}%`,`孙悟空神转职额外：幸运 ${formatInt(panel.lucky)} → 「每 100% 御灵师幸运提升 5% 命中」+${String(Math.trunc(panel.lucky / 100) * 5)} 命中，命中变为 ${String(panel.hit + Math.trunc(panel.lucky / 100) * 5)}`,`伤害加成面板 ${round3(panel.damageAddition)} = 装备 ${round3(panel.equipDamageAddition)} + 神通 25 的 15 + 研究 ${String(panel.research.damageAddition)} + 神兵水炼 ${String(panel.shenBingWaterDamage)}（武松再 +35）`,`暴伤面板 ${round3(panel.critDamage)} = 基础 340 + 装备 ${round3(panel.equipCritDamage)} + 神通 70 + 通关 50 + 研究 ${String(panel.research.critDamage)} + 神兵水炼 ${String(panel.shenBingWaterCrit)}（神谋鬼算另 +20×等级）`,`穿透 ${formatInt(panel.penetration)}；通天塔 10000 层防御 ${formatInt(SCENES[0].def)} → K=${String(culDamagePercent(panel.finalAtk,Math.max(1,SCENES[0].def - panel.penetration)))}；试炼 100 层防御 ${formatInt(SCENES[1].def)} → K=${String(culDamagePercent(panel.finalAtk,Math.max(1,SCENES[1].def - panel.penetration)))}`,`河图防御 ${formatInt(panel.defFlat + 250_0000)} = 御灵师 ${formatInt(panel.yulingshiAtk)} + 圣兽3 ${formatInt(panel.shengShou3Atk)} + 阵法 ${formatInt(panel.zhenfaDefFlat)} + 图鉴 ${formatInt(panel.tuJianDefFlat)} + 御灵装备 2,500,000；× (100 + 金玉令 600 + 防御研究 ${String(panel.defPct)})% → 河图攻击 ${formatInt(Math.trunc((panel.defFlat + 250_0000) * (100 + 600 + panel.defPct) / 100 * 8 * 15 / 100))}`);
   const top = argNumber(args,"top") ?? 30;
   const pushCarrySection = (
     title: string,
@@ -1997,13 +1998,13 @@ function main (): void {
   };
   pushCarrySection("--- 通天塔 每个输出位（魔/神转职分开）的最好组合 ---",bestByCarryTower,"tower");
   pushCarrySection(
-    `--- 试炼 每个输出位（魔/神转职分开）的最好组合（必须带孟婆 ${MENG_PO}）---`,
+    `--- 试炼 每个输出位（魔/神转职分开）的最好组合（必须带孟婆 ${String(MENG_PO)}）---`,
     bestByCarryShilian,
     "shilian"
   );
-  pushComboSection(`--- 通天塔 前 ${top} 名组合 ---`,resultsTower,"tower");
+  pushComboSection(`--- 通天塔 前 ${String(top)} 名组合 ---`,resultsTower,"tower");
   pushComboSection(
-    `--- 试炼 前 ${top} 名组合（必须带孟婆 ${MENG_PO}）---`,
+    `--- 试炼 前 ${String(top)} 名组合（必须带孟婆 ${String(MENG_PO)}）---`,
     resultsShilian,
     "shilian"
   );
@@ -2011,7 +2012,7 @@ function main (): void {
   const formIndexes = [...new Set([...bestByForm.keys()].map(key => Number(key.split(":",1)[0])))];
   for (const index of formIndexes.sort((left,right) => left - right)) {
     const both = (["mo","shen"] as const)
-      .map(form => ({form,result: bestByForm.get(`${index}:${form}`)}))
+      .map(form => ({form,result: bestByForm.get(`${String(index)}:${form}`)}))
       .filter((item): item is {form: "mo" | "shen"; result: ComboResult} => item.result !== undefined);
     if (both.length === 0) {
       continue;
@@ -2023,11 +2024,11 @@ function main (): void {
       .join("｜");
     lines.push(`${nameOf(index)}：${text}`);
   }
-  lines.push("","--- 孙悟空神转职 全武器对比（首回合第一下，其他 4 人重新枚举） ---",`口径：全部武器按 15 级；孙悟空神转职命中 100%，不带后羿弓也不吃后羿弓的 -20%；每把武器都重新枚举 5 人组合，取该武器下乘区倍率最高的组合。首击不生效的武器在“首击效果”里注明；阵法统一用天覆阵（阵法1）Lv.${panel.zhenfaLevel}（面板攻击 +15%、最高攻 +${panel.zhenfaLevel}%）。`);
+  lines.push("","--- 孙悟空神转职 全武器对比（首回合第一下，其他 4 人重新枚举） ---",`口径：全部武器按 15 级；孙悟空神转职命中 100%，不带后羿弓也不吃后羿弓的 -20%；每把武器都重新枚举 5 人组合，取该武器下乘区倍率最高的组合。首击不生效的武器在“首击效果”里注明；阵法统一用天覆阵（阵法1）Lv.${String(panel.zhenfaLevel)}（面板攻击 +15%、最高攻 +${String(panel.zhenfaLevel)}%）。`);
   const weaponRanked = lingQi.weapons
     .map(weapon => ({
-      shilian: bestByWeaponShilian.get(`${weapon.index}:${weapon.entry}`),
-      tower:   bestByWeaponTower.get(`${weapon.index}:${weapon.entry}`),
+      shilian: bestByWeaponShilian.get(`${String(weapon.index)}:${weapon.entry}`),
+      tower:   bestByWeaponTower.get(`${String(weapon.index)}:${weapon.entry}`),
       weapon
     }))
     .sort((left,right) => (right.tower?.total ?? -1) - (left.tower?.total ?? -1));
@@ -2043,7 +2044,7 @@ function main (): void {
         : "     试炼（带孟婆）：无可用组合"
     );
   }
-  lines.push("","--- 每一部分的上限 ---","伤害 = 基础攻击 × 攻击桶 × 阵法1 × K/100 × 百分比乘区 × 暴伤 × 伤害加成桶 × (100-min(减伤,80))/100",`K：2 ~ 约 248，攻击 ≥ 3×防御时硬切成 100；本资源面板下通天塔 K=${culDamagePercent(panel.finalAtk,Math.max(1,SCENES[0].def - panel.penetration))}、试炼 K=${culDamagePercent(panel.finalAtk,Math.max(1,SCENES[1].def - panel.penetration))}。`,`命中率：带后羿弓的输出位按 100% 命中（伤害已经乘 0.8）；孙悟空神转职命中 100%，可自由选择灵器，后羿弓不触发；命中 ${panel.hit + Math.trunc(panel.lucky / 100) * 5} 对通天塔 10000 层闪避 ${TOWER_ENEMY_DODGE} 和试炼 100 层闪避 ${TRIAL_ENEMY_DODGE} 都是 100%。命中面板 ${panel.hit} 只用于 神通15（每 10% 命中 +10% 对敌伤害）和 孙悟空3技能（每 1% 命中 +1% 伤害）；暴击伤害按“暴击时”直接算，不乘暴击率；连击/反击不计。`,`试炼队伍必须包含孟婆（${MENG_PO}）；孟婆转职不计队友增伤。`,"伤害减免：封顶 80%（试炼 100 层就是 400→80）。","单个伤害乘区来源：int 上限 21.47 亿；连乘结果：long 上限 9.22e18。","司马懿威慑增伤：每层 +10%，无层数上限（威慑自身降攻打到 66% 封顶，但不影响这条增伤）。","魅惑：每层受到伤害 +3%，无上限；≥7 层跳过行动（控制，不影响本表伤害）。","流血：每回合按全场最高攻/10 结算，无上限；张良魔转职每层 +20% 无上限。","神通27：按负面层数之和，int 范围。万人敌：等级×敌人数，int 范围。","","--- 数值安全 ---",`本场景最大精确整数是通天塔防御 ${formatInt(SCENES[0].def)}、试炼防御 ${formatInt(SCENES[1].def)}，都小于 Number.MAX_SAFE_INTEGER(9.007e15)。`,"最终伤害可能超过 2^53；JS Number 与游戏 BigInteger 的 double 口径一致，显示按京近似，不保证个位精确。","游戏里伤害百分比累乘的 long 上限 9.22e18 未触及；后续 BigInteger 无上限。","","说明：","1、只统计开战即生效的负面层数；倾国倾城（命中后 12%×等级加魅惑）、千古流芳（命中后 15%×等级加流血）、关羽1技能（主动 +2 威慑）、关羽2技能（普攻 50% +1 威慑）、司马懿1技能（怒气 50% +2 威慑）都属于行动后叠加，首击不计。","2、羁绊里首击直接增伤的只有万人敌（等级×敌人数）；西行/神鬼/三国群英需要面板或残血目标；神谋鬼算走暴伤，只体现在“暴击伤害”列。","3、司马懿：魔转职「普攻变为全体攻击，且司马懿的全部伤害提高20%」，神转职「队友攻击时，敌人的每层【威慑】会使伤害额外+10%。司马懿也享受此效果」；公孙胜：魔转职「对敌伤害提高20%，普攻变为全体攻击」，神转职「队友攻击时，敌人的每层【怯懦】会使伤害额外+15%。公孙胜也享受此效果」。做队友时取收益更高的神转职。","4、怒气按首回合第一次行动前判定：开战 SP=30；时迁3技能 +30、张良3技能每回合开始 +10（神转职 +20）、人皇印开战 +50（15 级回合结束再 +45）；孙悟空神转职 +25、孟婆魔转职 +50、项羽魔转职 +15；孙悟空魔转职/哪吒魔转职满怒；项羽3技能把怒气上限降到 51，门槛变 50。首回合放不出怒气的输出位不参与排名。",`5、资源面板已代入：基础攻击 ${formatInt(panel.atkFlat)}，攻击% ${panel.atkPct.toLocaleString("zh-CN",{maximumFractionDigits: 3})}；突破没有攻击%，攻击桶来自御灵装备 600 + 装备 + 阵法 15 + 通关 30 + 研究 ${panel.research.atkPct}。`,`6、K 由 culDamagePercent(实际攻击, 敌防御-穿透) 计算：通天塔 10000 层防御 ${formatInt(SCENES[0].def)} → K=${culDamagePercent(panel.finalAtk,Math.max(1,SCENES[0].def - panel.penetration))}；试炼 100 层防御 ${formatInt(SCENES[1].def)} → K=${culDamagePercent(panel.finalAtk,Math.max(1,SCENES[1].def - panel.penetration))}。`,"7、项羽1技能在魔转职 Skill_1030 存在时目标改为 5 个（Entry_Skill_46.WhenCulTarget），且技能本身 +60% 伤害，所以项羽魔转职是全体输出位；1技能「敌人每层流血使项羽攻击提高3%」是攻击后加基础值，首击不享受。",`8、元宝按 ${panel.yuanbaoMode === "shop" ? `仙葫 ${panel.xunbaoPills} 份 + VIP ${panel.vipLevel}` : `VIP ${panel.vipLevel}`} 计算；命中通过 神通15 对所有输出位生效，孙悟空神转职（幸运转命中）和 3技能（每 1% 命中 +1% 伤害）额外受益。`,"9、忘情水 → 神兵水炼，三味真火 → 神兵火炼；寒铁只用于制作装备，翅膀消耗五彩之晶。",`10、寻宝给的神通卷轴 2,560,000 已远超需求，钱币全部买灵纹；强化石 ${formatInt(panel.strengthStone)} 已计入 10 槽强化；灵晶 ${formatInt(panel.lingJing)} 扣 900 解锁阵法后升圣兽3；神速符升圣兽4。`,`11、突破顺序：先幸运到 5 万（实际 ${formatInt(panel.lucky)}），之后全部速度；速度 ${formatInt(panel.speed)} ${panel.speedOk ? ">" : "≤"} 试炼 100 层 ${formatInt(TRIAL_SPEED)}，${panel.speedOk ? "神兵可选命中/伤害/暴伤" : "神兵只能选速度"}。`,`12、孙悟空神转职「每回合开始时额外获得25点怒气。战斗开始时，将幸运转化为孙悟空的命中，每100%御灵师幸运提升孙悟空5%的命中」：幸运 ${formatInt(panel.lucky)} → +${Math.trunc(panel.lucky / 100) * 5} 命中，只加自己。首回合怒气：带人皇印时 30+50+25=105；不带人皇印时靠时迁3技能（+30）和张良神转职（每回合 +20）凑到 105。孙悟空神命中 100%，后羿弓不触发；武器按 23 把灵器逐一枚举，首击最优为人皇印（开战 +50、回合结束 +45 怒气），其次是伏羲琴（每种负面 +30%）、河图（防御×8×15/100 加到 BaseAttack）。`,"13、孙悟空只有怒气动作是群攻：1技能「对全部敌人造成70%伤害…」只在怒气动作时把目标改成全体，普攻仍是单体，不能当群攻输出位。",`14、唐三藏3技能「进入战斗给予我方全体队友35%命中，持续3回合」按源码开战全体我方 +${TANG_SAN_ZANG_HIT} 命中；猪八戒3技能「进入战斗敌人全队+2流血，敌人全队-20%闪避，持续2回合」开战全体敌人 -${ZHU_BA_JIE_DODGE_DOWN} 闪避。西行取经按 max(0, 命中-敌闪避)×(0.25+0.25×等级) 计算：通天塔 10000 层敌闪避 ${TOWER_ENEMY_DODGE}，命中 ${panel.hit} 已经超过；试炼 100 层敌闪避 ${TRIAL_ENEMY_DODGE}，带后羿弓的输出位按 100% 命中，孙悟空神转职的 ${panel.hit + TANG_SAN_ZANG_HIT + Math.trunc(panel.lucky / 100) * 5} 命中也是 100%。`,"15、命中公式：英灵最终命中 = (英灵 Base + 主角 Base) × (100 + 英灵命中% + 主角命中%) / 100。主角命中已经包含在英灵最终命中里，不能再把主角命中加一次。本表是 15 级御灵装备参考，不是存档实际值；存档实际值可用 jiban-value.ts 读取。","16、流血 DoT 伤害不计；猪八戒的 2 层流血只作为负面层数，用于 神通27（按负面层数增伤）和张良魔转职（每层流血 +20%）。","17、神通按游戏内配置编号：神通15 = 每 10% 命中提高 10% 对敌伤害（10 级满 = +命中值%）；神通19 = 技能动作伤害 +20%/级（5 级满 = +100%）；神通20 = 怒气上限 +100、当前怒气 ×0.2×等级（5 级满 = 当前SP×1.0，怒气动作先扣100怒气，所以怒气位不学）；神通27 = 按目标负面层数之和增伤。",`18、敌人命中/闪避/速度由 enemy-stats.ts 按反编译公式计算（结果见 output/敌人属性.md）：通天塔 10000 层闪避 ${TOWER_ENEMY_DODGE}、试炼 100 层闪避 ${TRIAL_ENEMY_DODGE}、终局闪避 ${ZHONG_JU[0]?.dodge ?? 0}。`,`19、研究按源码逐级扣费（俭每升 1 级，下一级研究立刻 -1% 历史本纪）：先点俭以养德 Lv.20，再点资源折扣（寒铁/五彩神石/强化石/灵纹/御力/残念/破境石/神通卷轴/商店价），再点攻击/防御/命中/暴伤/伤害加成/幸运、阵法攻击/防御/穿透、装备制作线（炼器经验/装备属性/额外词条/器鼎等级与炼器等级转装备属性）、图鉴（经验/攻击/防御/穿透/生命/每图鉴增伤）；纯时间、掉落、抽奖、御灵石经验、扫荡类节点也点满但不进面板；生命/吸血/闪避/抗暴/减伤/连击/反击不点。研究共消耗 ${formatInt(panel.research.cost)} 历史本纪，剩余给转职强化；完整未研究清单见上文。`,"20、孙悟空神转职命中 100%，后羿弓的转命中分支不触发，所以可以自由选择灵器。23 把灵器逐一枚举 5 人组合后的首击排名：人皇印 > 伏羲琴 > 河图 > 其余并列。人皇印靠开战 +50 怒气让孙悟空不带时迁/张良也能首回合怒气，空出的位置给武松+沙僧：武松 +20% 攻击/+35% 增伤，沙僧把西行取经从 3 人 Lv.2（×0.75）提到 4 人 Lv.3（×1.00）。关羽1技能 +2 威慑是主动技能、首击不计，开战只有神转职 +3，所以 3 层威慑的光环（×1.3）低于 4 人西游（×1.3176）。伏羲琴按敌方负面“种类”每种 +30%（15 级），首击最多吃 1 种；河图把防御×8×15/100 加到 BaseAttack，但最终攻击已达 3.86 万亿，占比约 3%。判官笔/轩辕剑/昆仑镜/雷公锤/斩仙飞刀只影响后续回合或非首击，详见上方“孙悟空神转职 全武器对比”。");
+  lines.push("","--- 每一部分的上限 ---","伤害 = 基础攻击 × 攻击桶 × 阵法1 × K/100 × 百分比乘区 × 暴伤 × 伤害加成桶 × (100-min(减伤,80))/100",`K：2 ~ 约 248，攻击 ≥ 3×防御时硬切成 100；本资源面板下通天塔 K=${String(culDamagePercent(panel.finalAtk,Math.max(1,SCENES[0].def - panel.penetration)))}、试炼 K=${String(culDamagePercent(panel.finalAtk,Math.max(1,SCENES[1].def - panel.penetration)))}。`,`命中率：带后羿弓的输出位按 100% 命中（伤害已经乘 0.8）；孙悟空神转职命中 100%，可自由选择灵器，后羿弓不触发；命中 ${String(panel.hit + Math.trunc(panel.lucky / 100) * 5)} 对通天塔 10000 层闪避 ${String(TOWER_ENEMY_DODGE)} 和试炼 100 层闪避 ${String(TRIAL_ENEMY_DODGE)} 都是 100%。命中面板 ${String(panel.hit)} 只用于 神通15（每 10% 命中 +10% 对敌伤害）和 孙悟空3技能（每 1% 命中 +1% 伤害）；暴击伤害按“暴击时”直接算，不乘暴击率；连击/反击不计。`,`试炼队伍必须包含孟婆（${String(MENG_PO)}）；孟婆转职不计队友增伤。`,"伤害减免：封顶 80%（试炼 100 层就是 400→80）。","单个伤害乘区来源：int 上限 21.47 亿；连乘结果：long 上限 9.22e18。","司马懿威慑增伤：每层 +10%，无层数上限（威慑自身降攻打到 66% 封顶，但不影响这条增伤）。","魅惑：每层受到伤害 +3%，无上限；≥7 层跳过行动（控制，不影响本表伤害）。","流血：每回合按全场最高攻/10 结算，无上限；张良魔转职每层 +20% 无上限。","神通27：按负面层数之和，int 范围。万人敌：等级×敌人数，int 范围。","","--- 数值安全 ---",`本场景最大精确整数是通天塔防御 ${formatInt(SCENES[0].def)}、试炼防御 ${formatInt(SCENES[1].def)}，都小于 Number.MAX_SAFE_INTEGER(9.007e15)。`,"最终伤害可能超过 2^53；JS Number 与游戏 BigInteger 的 double 口径一致，显示按京近似，不保证个位精确。","游戏里伤害百分比累乘的 long 上限 9.22e18 未触及；后续 BigInteger 无上限。","","说明：","1、只统计开战即生效的负面层数；倾国倾城（命中后 12%×等级加魅惑）、千古流芳（命中后 15%×等级加流血）、关羽1技能（主动 +2 威慑）、关羽2技能（普攻 50% +1 威慑）、司马懿1技能（怒气 50% +2 威慑）都属于行动后叠加，首击不计。","2、羁绊里首击直接增伤的只有万人敌（等级×敌人数）；西行/神鬼/三国群英需要面板或残血目标；神谋鬼算走暴伤，只体现在“暴击伤害”列。","3、司马懿：魔转职「普攻变为全体攻击，且司马懿的全部伤害提高20%」，神转职「队友攻击时，敌人的每层【威慑】会使伤害额外+10%。司马懿也享受此效果」；公孙胜：魔转职「对敌伤害提高20%，普攻变为全体攻击」，神转职「队友攻击时，敌人的每层【怯懦】会使伤害额外+15%。公孙胜也享受此效果」。做队友时取收益更高的神转职。","4、怒气按首回合第一次行动前判定：开战 SP=30；时迁3技能 +30、张良3技能每回合开始 +10（神转职 +20）、人皇印开战 +50（15 级回合结束再 +45）；孙悟空神转职 +25、孟婆魔转职 +50、项羽魔转职 +15；孙悟空魔转职/哪吒魔转职满怒；项羽3技能把怒气上限降到 51，门槛变 50。首回合放不出怒气的输出位不参与排名。",`5、资源面板已代入：基础攻击 ${formatInt(panel.atkFlat)}，攻击% ${panel.atkPct.toLocaleString("zh-CN",{maximumFractionDigits: 3})}；突破没有攻击%，攻击桶来自御灵装备 600 + 装备 + 阵法 15 + 通关 30 + 研究 ${String(panel.research.atkPct)}。`,`6、K 由 culDamagePercent(实际攻击, 敌防御-穿透) 计算：通天塔 10000 层防御 ${formatInt(SCENES[0].def)} → K=${String(culDamagePercent(panel.finalAtk,Math.max(1,SCENES[0].def - panel.penetration)))}；试炼 100 层防御 ${formatInt(SCENES[1].def)} → K=${String(culDamagePercent(panel.finalAtk,Math.max(1,SCENES[1].def - panel.penetration)))}。`,"7、项羽1技能在魔转职 Skill_1030 存在时目标改为 5 个（Entry_Skill_46.WhenCulTarget），且技能本身 +60% 伤害，所以项羽魔转职是全体输出位；1技能「敌人每层流血使项羽攻击提高3%」是攻击后加基础值，首击不享受。",`8、元宝按 ${panel.yuanbaoMode === "shop" ? `仙葫 ${String(panel.xunbaoPills)} 份 + VIP ${String(panel.vipLevel)}` : `VIP ${String(panel.vipLevel)}`} 计算；命中通过 神通15 对所有输出位生效，孙悟空神转职（幸运转命中）和 3技能（每 1% 命中 +1% 伤害）额外受益。`,"9、忘情水 → 神兵水炼，三味真火 → 神兵火炼；寒铁只用于制作装备，翅膀消耗五彩之晶。",`10、寻宝给的神通卷轴 2,560,000 已远超需求，钱币全部买灵纹；强化石 ${formatInt(panel.strengthStone)} 已计入 10 槽强化；灵晶 ${formatInt(panel.lingJing)} 扣 900 解锁阵法后升圣兽3；神速符升圣兽4。`,`11、突破顺序：先幸运到 5 万（实际 ${formatInt(panel.lucky)}），之后全部速度；速度 ${formatInt(panel.speed)} ${panel.speedOk ? ">" : "≤"} 试炼 100 层 ${formatInt(TRIAL_SPEED)}，${panel.speedOk ? "神兵可选命中/伤害/暴伤" : "神兵只能选速度"}。`,`12、孙悟空神转职「每回合开始时额外获得25点怒气。战斗开始时，将幸运转化为孙悟空的命中，每100%御灵师幸运提升孙悟空5%的命中」：幸运 ${formatInt(panel.lucky)} → +${String(Math.trunc(panel.lucky / 100) * 5)} 命中，只加自己。首回合怒气：带人皇印时 30+50+25=105；不带人皇印时靠时迁3技能（+30）和张良神转职（每回合 +20）凑到 105。孙悟空神命中 100%，后羿弓不触发；武器按 23 把灵器逐一枚举，首击最优为人皇印（开战 +50、回合结束 +45 怒气），其次是伏羲琴（每种负面 +30%）、河图（防御×8×15/100 加到 BaseAttack）。`,"13、孙悟空只有怒气动作是群攻：1技能「对全部敌人造成70%伤害…」只在怒气动作时把目标改成全体，普攻仍是单体，不能当群攻输出位。",`14、唐三藏3技能「进入战斗给予我方全体队友35%命中，持续3回合」按源码开战全体我方 +${String(TANG_SAN_ZANG_HIT)} 命中；猪八戒3技能「进入战斗敌人全队+2流血，敌人全队-20%闪避，持续2回合」开战全体敌人 -${String(ZHU_BA_JIE_DODGE_DOWN)} 闪避。西行取经按 max(0, 命中-敌闪避)×(0.25+0.25×等级) 计算：通天塔 10000 层敌闪避 ${String(TOWER_ENEMY_DODGE)}，命中 ${String(panel.hit)} 已经超过；试炼 100 层敌闪避 ${String(TRIAL_ENEMY_DODGE)}，带后羿弓的输出位按 100% 命中，孙悟空神转职的 ${String(panel.hit + TANG_SAN_ZANG_HIT + Math.trunc(panel.lucky / 100) * 5)} 命中也是 100%。`,"15、命中公式：英灵最终命中 = (英灵 Base + 主角 Base) × (100 + 英灵命中% + 主角命中%) / 100。主角命中已经包含在英灵最终命中里，不能再把主角命中加一次。本表是 15 级御灵装备参考，不是存档实际值；存档实际值可用 jiban-value.ts 读取。","16、流血 DoT 伤害不计；猪八戒的 2 层流血只作为负面层数，用于 神通27（按负面层数增伤）和张良魔转职（每层流血 +20%）。","17、神通按游戏内配置编号：神通15 = 每 10% 命中提高 10% 对敌伤害（10 级满 = +命中值%）；神通19 = 技能动作伤害 +20%/级（5 级满 = +100%）；神通20 = 怒气上限 +100、当前怒气 ×0.2×等级（5 级满 = 当前SP×1.0，怒气动作先扣100怒气，所以怒气位不学）；神通27 = 按目标负面层数之和增伤。",`18、敌人命中/闪避/速度由 enemy-stats.ts 按反编译公式计算（结果见 output/敌人属性.md）：通天塔 10000 层闪避 ${String(TOWER_ENEMY_DODGE)}、试炼 100 层闪避 ${String(TRIAL_ENEMY_DODGE)}、终局闪避 ${String(ZHONG_JU[0]?.dodge ?? 0)}。`,`19、研究按源码逐级扣费（俭每升 1 级，下一级研究立刻 -1% 历史本纪）：先点俭以养德 Lv.20，再点资源折扣（寒铁/五彩神石/强化石/灵纹/御力/残念/破境石/神通卷轴/商店价），再点攻击/防御/命中/暴伤/伤害加成/幸运、阵法攻击/防御/穿透、装备制作线（炼器经验/装备属性/额外词条/器鼎等级与炼器等级转装备属性）、图鉴（经验/攻击/防御/穿透/生命/每图鉴增伤）；纯时间、掉落、抽奖、御灵石经验、扫荡类节点也点满但不进面板；生命/吸血/闪避/抗暴/减伤/连击/反击不点。研究共消耗 ${formatInt(panel.research.cost)} 历史本纪，剩余给转职强化；完整未研究清单见上文。`,"20、孙悟空神转职命中 100%，后羿弓的转命中分支不触发，所以可以自由选择灵器。23 把灵器逐一枚举 5 人组合后的首击排名：人皇印 > 伏羲琴 > 河图 > 其余并列。人皇印靠开战 +50 怒气让孙悟空不带时迁/张良也能首回合怒气，空出的位置给武松+沙僧：武松 +20% 攻击/+35% 增伤，沙僧把西行取经从 3 人 Lv.2（×0.75）提到 4 人 Lv.3（×1.00）。关羽1技能 +2 威慑是主动技能、首击不计，开战只有神转职 +3，所以 3 层威慑的光环（×1.3）低于 4 人西游（×1.3176）。伏羲琴按敌方负面“种类”每种 +30%（15 级），首击最多吃 1 种；河图把防御×8×15/100 加到 BaseAttack，但最终攻击已达 3.86 万亿，占比约 3%。判官笔/轩辕剑/昆仑镜/雷公锤/斩仙飞刀只影响后续回合或非首击，详见上方“孙悟空神转职 全武器对比”。");
 
   // Markdown 大纲:一级标题 + 目录 + 二级标题
   const mode = argString(args,"yuanbao-mode") ?? "shop";
@@ -2066,7 +2067,7 @@ function main (): void {
   const title = `# 英灵输出潜力排名（${mode === "vip" ? "VIP" : "仙葫"}路线）`;
   const toc = [
     "## 目录",
-    ...headings.map((heading,index) => `${index + 1}. ${heading}`),
+    ...headings.map((heading,index) => `${String(index + 1)}. ${heading}`),
     ""
   ];
   const text = [

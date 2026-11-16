@@ -209,7 +209,7 @@ function main (): void {
   const rateArg = process.argv.slice(2).find(item => !item.startsWith("--"));
   const rateInput = rateArg === undefined ? autoRate : Number(rateArg);
   if (!Number.isFinite(rateInput)) {
-    throw new TypeError(`第一个参数应为每分钟积分增加值，收到：${rateArg}`);
+    throw new TypeError(`第一个参数应为每分钟积分增加值，收到：${rateArg ?? ""}`);
   }
   const minutesOverride = argNumber(args,"minutes");
 
@@ -227,7 +227,7 @@ function main (): void {
     .map(record => ({...record}));
   const me = members.find(record => record.Cha_ID === MY_CHA_ID);
   if (!me) {
-    throw new Error(`我方阵营里找不到玩家（Cha_ID=${MY_CHA_ID}），存档可能已损坏`);
+    throw new Error(`我方阵营里找不到玩家（Cha_ID=${String(MY_CHA_ID)}），存档可能已损坏`);
   }
   const overrideGongXun = argNumber(args,"gongxun");
   if (overrideGongXun !== undefined) {
@@ -241,13 +241,13 @@ function main (): void {
     ? `本轮状态：进行中，已运行 ${(camp.OpenGameTime / 60).toFixed(1)} 分钟，剩余 ${remainMinutes.toFixed(1)} 分钟`
     : "本轮状态：未开启（不点选阵营不会开始，也不会有积分）");
   const rateNote = rateArg !== undefined && !argFlag(args,"auto")
-    ? `手工指定；当前归属己方 ${sideTiles.length} 块地实际 ${autoRate}，全图基准 ${allRate}`
-    : `默认按当前归属己方的 ${sideTiles.length} 块地求和，全图基准 ${allRate}`;
+    ? `手工指定；当前归属己方 ${String(sideTiles.length)} 块地实际 ${String(autoRate)}，全图基准 ${String(allRate)}`
+    : `默认按当前归属己方的 ${String(sideTiles.length)} 块地求和，全图基准 ${String(allRate)}`;
   lines.push(
-    `积分速率：${usedRate} 分/分钟（${rateNote}）`,
+    `积分速率：${String(usedRate)} 分/分钟（${rateNote}）`,
     `当前我方积分：${formatSuoXie(currentScore)}`,
-    `剩余加分次数：${ticks} 次（距下一次加分 ${(TICK_SECONDS - jifenCulTime).toFixed(1)} 秒，此后每 ${TICK_SECONDS} 秒一次）`,
-    `预计结算积分：${formatSuoXie(currentScore)} + ${ticks} × ${usedRate} = ${formatSuoXie(projectedScore)}`,"","--- 我方贡献排名 ---");
+    `剩余加分次数：${String(ticks)} 次（距下一次加分 ${(TICK_SECONDS - jifenCulTime).toFixed(1)} 秒，此后每 ${String(TICK_SECONDS)} 秒一次）`,
+    `预计结算积分：${formatSuoXie(currentScore)} + ${String(ticks)} × ${String(usedRate)} = ${formatSuoXie(projectedScore)}`,"","--- 我方贡献排名 ---");
   for (const [index,record] of members.entries()) {
     const mark = record.Cha_ID === MY_CHA_ID ? " ← 我" : "";
     const percent = result.total === 0 ? 0 : record.GongXun / result.total * 100;
@@ -255,9 +255,9 @@ function main (): void {
       `${String(index + 1).padStart(2," ")}. 角色${String(record.Cha_ID).padStart(2," ")}  贡献 ${formatSuoXie(record.GongXun).padStart(12," ")}  ${percent.toFixed(2)}%${mark}`
     );
   }
-  lines.push("","--- 结算明细 ---",`我的排名：第 ${result.rank} 名 / 共 ${members.length} 人，贡献 ${formatSuoXie(result.gongXun)}，占己方 ${(result.share * 100).toFixed(2)}%`,`名次奖励：${formatSuoXie(projectedScore)} × ${percentForRank(result.rank)}% = ${formatSuoXie(result.rankReward)}`,`50% 分润：${formatSuoXie(Math.floor(projectedScore / 2))} × ${(result.share * 100).toFixed(2)}% = ${formatSuoXie(result.shareReward)}`,`基础收益：${formatSuoXie(result.rankReward + result.shareReward)}`,`轮数倍率：(10 + ${Math.min(round,20)}) / 10 = ×${((10 + Math.min(round,20)) / 10).toFixed(1)}（Round=${round}，封顶 20）`,`王者之翼：${wingLevel > 0 ? `等级 ${wingLevel} → ×${wingLevelAddon.toFixed(2)}` : "未解锁 → ×1.00"}`,`预计元宝：${formatSuoXie(result.yuanbao)}`,"","--- 名次对照（同一积分与贡献占比）---");
+  lines.push("","--- 结算明细 ---",`我的排名：第 ${String(result.rank)} 名 / 共 ${String(members.length)} 人，贡献 ${formatSuoXie(result.gongXun)}，占己方 ${(result.share * 100).toFixed(2)}%`,`名次奖励：${formatSuoXie(projectedScore)} × ${String(percentForRank(result.rank))}% = ${formatSuoXie(result.rankReward)}`,`50% 分润：${formatSuoXie(Math.floor(projectedScore / 2))} × ${(result.share * 100).toFixed(2)}% = ${formatSuoXie(result.shareReward)}`,`基础收益：${formatSuoXie(result.rankReward + result.shareReward)}`,`轮数倍率：(10 + ${String(Math.min(round,20))}) / 10 = ×${((10 + Math.min(round,20)) / 10).toFixed(1)}（Round=${String(round)}，封顶 20）`,`王者之翼：${wingLevel > 0 ? `等级 ${String(wingLevel)} → ×${wingLevelAddon.toFixed(2)}` : "未解锁 → ×1.00"}`,`预计元宝：${formatSuoXie(result.yuanbao)}`,"","--- 名次对照（同一积分与贡献占比）---");
   for (const rank of [1,2,3,4]) {
-    const label = rank === 4 ? "第 4 名及以后" : `第 ${rank} 名`;
+    const label = rank === 4 ? "第 4 名及以后" : `第 ${String(rank)} 名`;
     lines.push(`${label}：${formatSuoXie(settle(projectedScore,members,0,round,wingLevel,rank).yuanbao)} 元宝`);
   }
   const plan = investPlan(camp,save,projectedScore,members,round,wingLevel,result);
@@ -283,16 +283,16 @@ function planLines (plan: InvestPlan,score: number): string[] {
     `保本条件：积分 ≥ ${formatSuoXie(plan.needScore)}（当前预计 ${formatSuoXie(score)}）`
   ];
   if (plan.bestX > 0 && plan.bestKind === "rank") {
-    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献）→ 名次 第 ${plan.baseRank} 名 → 第 ${plan.bestRank} 名，净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
+    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献）→ 名次 第 ${String(plan.baseRank)} 名 → 第 ${String(plan.bestRank)} 名，净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
   } else if (plan.bestX > 0) {
-    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献，分润边际=1 的最优点）→ 名次不变（第 ${plan.baseRank} 名），净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
+    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献，分润边际=1 的最优点）→ 名次不变（第 ${String(plan.baseRank)} 名），净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
   } else {
     lines.push(`建议投入 0 元宝：每 1 元宝最多换回 ${plan.marginal.toFixed(3)} 元宝，买贡献越投越亏`);
   }
   if (plan.rankJumps.length === 0) {
-    lines.push(`没有能靠元宝买到的更高名次（当前第 ${plan.baseRank} 名）`);
+    lines.push(`没有能靠元宝买到的更高名次（当前第 ${String(plan.baseRank)} 名）`);
   } else {
-    lines.push(`买名次：${plan.rankJumps.map(item => `${formatSuoXie(item.cost)} 元宝 → 第 ${item.rank} 名（${item.net >= 0 ? "净赚" : "净亏"} ${formatSuoXie(Math.abs(item.net))}）`).join("；")}`);
+    lines.push(`买名次：${plan.rankJumps.map(item => `${formatSuoXie(item.cost)} 元宝 → 第 ${String(item.rank)} 名（${item.net >= 0 ? "净赚" : "净亏"} ${formatSuoXie(Math.abs(item.net))}）`).join("；")}`);
   }
   return lines;
 }

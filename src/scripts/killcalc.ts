@@ -101,7 +101,7 @@ function main (): void {
     for (let l = from; l <= to; l++) {reportOne(`试炼 ${fmtShort(l)}层`,trialEnemy(l),false);}
   } else if (scene === "zhongju") {
     for (const e of ZHONG_JU) {
-      reportOne(`终局 挑战${e.tiaoZhanID} (Boss ${e.bossID.join("/")})`,e,false);
+      reportOne(`终局 挑战${String(e.tiaoZhanID)} (Boss ${e.bossID.join("/")})`,e,false);
     }
   } else {
     console.log("未知场景：tower / trial / zhongju");
@@ -137,7 +137,7 @@ ansPanel = hiPanel;
 function reportOne (tag: string,enemy: EnemyStats,applyTuJian: boolean): void {
   console.log(`\n=== ${tag} ===`);
   const reduce = Math.min(enemy.damageReduce,80);
-  console.log(`敌人: HP=${fmtShort(enemy.hp)} 防御=${fmtShort(enemy.def)} 速度=${fmtShort(enemy.speed)} 闪避=${fmtShort(enemy.dodge)} 减伤=${reduce}%(封顶80)${SKILL_REDUCE ? ` +技能减伤${SKILL_REDUCE}%` : ""}${ADD_BE_DAMAGE ? ` 我方图鉴减益+${ADD_BE_DAMAGE}%` : ""}`);
+  console.log(`敌人: HP=${fmtShort(enemy.hp)} 防御=${fmtShort(enemy.def)} 速度=${fmtShort(enemy.speed)} 闪避=${fmtShort(enemy.dodge)} 减伤=${String(reduce)}%(封顶80)${SKILL_REDUCE ? ` +技能减伤${String(SKILL_REDUCE)}%` : ""}${ADD_BE_DAMAGE ? ` 我方图鉴减益+${String(ADD_BE_DAMAGE)}%` : ""}`);
   const fixed = argNumber(parseArgs(process.argv.slice(2)),"resource");
   const {panel,resource} = fixed == null
     ? minResource(enemy,applyTuJian)
@@ -153,11 +153,11 @@ function reportOne (tag: string,enemy: EnemyStats,applyTuJian: boolean): void {
   console.log(`一击必杀: 单点非暴击 ${fmtShort(os)} ${m.oneshot ? "✓" : `✗(需 >= ${fmtShort(enemy.hp)})`}`);
   console.log("—— 最佳资源搭配(最小资源预算;已含御灵师突破[幸运→5万]/阵法/装备/神通/神兵/研究/VIP,孙悟空魔转职满怒) ——");
   console.log(`  资源预算(初始资源/项) ≈ ${resource.toLocaleString("en-US")}`);
-  console.log(`  御灵师 Lv.${panel.yulingshiLevel}  突破 ${panel.breakthroughCount} 次(幸运 ${fmtShort(panel.lucky)} / 速度 ${fmtShort(panel.speed)})`);
-  console.log(`  阵法 Lv.${panel.zhenfaLevel}  装备品质 ${panel.pinzhi.toFixed(2)}  历史本纪(转职) Lv.${panel.historyLevel}  图鉴 Lv.${panel.tuJianLevel}`);
-  console.log(`  攻击 ${fmtShort(panel.finalAtk)}  命中 ${fmtShort(panel.hit)}  伤害加成 ${panel.damageAddition}  穿透 ${fmtShort(panel.penetration)}  图鉴增伤 ${panel.tuJianDamagePct}%`);
+  console.log(`  御灵师 Lv.${String(panel.yulingshiLevel)}  突破 ${String(panel.breakthroughCount)} 次(幸运 ${fmtShort(panel.lucky)} / 速度 ${fmtShort(panel.speed)})`);
+  console.log(`  阵法 Lv.${String(panel.zhenfaLevel)}  装备品质 ${panel.pinzhi.toFixed(2)}  历史本纪(转职) Lv.${String(panel.historyLevel)}  图鉴 Lv.${String(panel.tuJianLevel)}`);
+  console.log(`  攻击 ${fmtShort(panel.finalAtk)}  命中 ${fmtShort(panel.hit)}  伤害加成 ${String(panel.damageAddition)}  穿透 ${fmtShort(panel.penetration)}  图鉴增伤 ${String(panel.tuJianDamagePct)}%`);
   console.log("★ 全部一击必杀:本波敌人共用该属性(以最强计),满足上表即整波全覆盖。");
-  console.log(`  (孙悟空配队乘区 skillMult=${SUN_WU_KONG.skillMult} pctBucket=${SUN_WU_KONG.pctBucket} 为待校准占位;面板已含 阵法+15%攻击、神通15 命中→伤害% 等真实加成)`);
+  console.log(`  (孙悟空配队乘区 skillMult=${String(SUN_WU_KONG.skillMult)} pctBucket=${String(SUN_WU_KONG.pctBucket)} 为待校准占位;面板已含 阵法+15%攻击、神通15 命中→伤害% 等真实加成)`);
 }
 if (process.argv[1] === import.meta.filename) {
   try {main();} catch (error) {

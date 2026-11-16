@@ -44,7 +44,7 @@ function main (): void {
   const targetArg = process.argv.slice(2).find(item => !item.startsWith("--"));
   const target = targetArg === undefined ? DEFAULT_TARGET : Number(targetArg);
   if (!Number.isInteger(target) || target < 1) {
-    throw new Error(`第一个参数应为目标等级，收到：${targetArg}`);
+    throw new Error(`第一个参数应为目标等级，收到：${String(targetArg)}`);
   }
   const dir = resolveSaveDir(args);
   const save = loadSave(dir);
@@ -55,7 +55,7 @@ function main (): void {
     throw new Error("存档里没有御灵师等级（CurYuLingShiLv），可能存档未初始化");
   }
   if (target <= curLevel) {
-    console.log(`当前 Lv.${curLevel} 已达到目标 Lv.${target}，不需要升级`);
+    console.log(`当前 Lv.${String(curLevel)} 已达到目标 Lv.${String(target)}，不需要升级`);
     return;
   }
   const book = save.props.get(BOOK_PROP);
@@ -92,21 +92,21 @@ function main (): void {
     "=== 御灵师升级计算 ===",
     `结论：还差 ${formatSuoXie(remainExp)} 经验 → 御灵宝典 ${formatSuoXie(needBooks)} 本 → 钱币 ${formatSuoXie(needMoney)}`,
     `存档：${dir}`,
-    `当前：Lv.${curLevel}，经验 ${formatSuoXie(curExp)}；目标：Lv.${target}（需升 ${target - curLevel} 级）`,"",
+    `当前：Lv.${String(curLevel)}，经验 ${formatSuoXie(curExp)}；目标：Lv.${String(target)}（需升 ${String(target - curLevel)} 级）`,"",
     "--- 经验 ---",
-    `逐级合计：Lv.${curLevel} → Lv.${target} 共需 ${formatSuoXie(totalExp)} 经验`,
-    `单级消耗：Lv.${curLevel} 需 ${formatSuoXie(levelCost(curLevel))}，Lv.${target - 1} 需 ${formatSuoXie(levelCost(target - 1))}`,
+    `逐级合计：Lv.${String(curLevel)} → Lv.${String(target)} 共需 ${formatSuoXie(totalExp)} 经验`,
+    `单级消耗：Lv.${String(curLevel)} 需 ${formatSuoXie(levelCost(curLevel))}，Lv.${String(target - 1)} 需 ${formatSuoXie(levelCost(target - 1))}`,
     `扣除现有经验后还差：${formatSuoXie(totalExp)} − ${formatSuoXie(curExp)} = ${formatSuoXie(remainExp)}`,"",
     "--- 御灵宝典 ---",
-    `每本经验：${formatSuoXie(book.params1 ?? 0)} × (100 + 研究 ${expMark})% = ${formatSuoXie(expPerBook)}`,
+    `每本经验：${formatSuoXie(book.params1 ?? 0)} × (100 + 研究 ${String(expMark)})% = ${formatSuoXie(expPerBook)}`,
     `需要本数：${formatSuoXie(books)} 本（剩余经验 ÷ 每本 ${formatSuoXie(expPerBook)}，向上取整）`,
     `已持有 ${formatSuoXie(haveBooks)} 本，还差 ${formatSuoXie(needBooks)} 本`,"",
     "--- 钱币（整批购买一次取整）---",
-    `一次买 ${formatSuoXie(needBooks)} 本 → 整批结算 ${formatSuoXie(buyMoney)} 钱币（折合 ${rawPrice}/本）`,
+    `一次买 ${formatSuoXie(needBooks)} 本 → 整批结算 ${formatSuoXie(buyMoney)} 钱币（折合 ${String(rawPrice)}/本）`,
     `已持有 ${formatSuoXie(haveMoney)} 钱币，还差 ${formatSuoXie(needMoney)}`,"",
     "--- 突破 ---",
-    `需要突破 ${breakthroughs} 次（Lv.${curLevel} → Lv.${target} 之间所有 10 的倍数等级）`,
-    `消耗：${breakthroughs} × ${TUPO_COST} = ${formatSuoXie(needTupo)} 突破丹（Prop ${TUPO_PROP}），已持有 ${formatSuoXie(haveTupo)}`,"",
+    `需要突破 ${String(breakthroughs)} 次（Lv.${String(curLevel)} → Lv.${String(target)} 之间所有 10 的倍数等级）`,
+    `消耗：${String(breakthroughs)} × ${String(TUPO_COST)} = ${formatSuoXie(needTupo)} 突破丹（Prop ${String(TUPO_PROP)}），已持有 ${formatSuoXie(haveTupo)}`,"",
     "说明：突破不消耗经验，但等级卡在 10 的倍数且突破丹不足时无法继续升级。"
   );
   console.log(lines.join("\n"));

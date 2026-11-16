@@ -12,6 +12,7 @@
  * 因资源分配求解是静态模型,不模拟挂机掉落,故只列出不计入.
  */
 import {loadConfig} from "../tools.ts";
+
 export interface KeJiConfig {
   cost:      number;
   id:        number;

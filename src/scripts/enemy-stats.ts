@@ -199,7 +199,7 @@ function main (): void {
   const levels = positionals.slice(1).map(parseLevel);
   const lines: string[] = ["=== 敌人属性（全部按反编译公式计算）===","","命中率公式：Final_MZ = 100 + 我方命中 - 敌闪避；命中率 = (Final_MZ+1)/101，封顶 100%",""];
   if (scene === undefined) {
-    lines.push(...sceneLines("trial",Array.from({length: 10},(_,index) => (index + 1) * 100)),"",...sceneLines("tower",Array.from({length: 10},(_,index) => (index + 1) * 10000)),"",...sceneLines("zhongju",[]),"","说明：","1、通天塔 `Character_Enemy` 的构造参数是 `(品质, GetTrueRound(), 预设, 地图, CurRound)`，所以 `True_Round` = 层数；命中/闪避 = `min(层数/100,70) + max(0,(层数-11000)/1000)`，速度 = `26+品质+1+层数/100+min(层数/100,70)`。",`2、试炼按 \`LevelToTargetLevel(层数)\`：命中/闪避/暴击/抗暴 = \`100+层数×3\`，速度 = \`层数×35×(150+层数)/100\`；100 层命中/闪避 ${TRIAL_ENEMY_100.dodge}、速度 ${TRIAL_ENEMY_100.speed}。`,"3、终局按 `ZhongJu_Config_Data.BattleData_Manager`：`percent=true` 的属性直接取 Base，`percent=false` 的属性取 `Base×(100+Percent)/100`。","4、红拂女神转职给全队 `Final_MZ >= 65` 的下限，所以命中率最低 65/101 ≈ 65.3%。");
+    lines.push(...sceneLines("trial",Array.from({length: 10},(_,index) => (index + 1) * 100)),"",...sceneLines("tower",Array.from({length: 10},(_,index) => (index + 1) * 10000)),"",...sceneLines("zhongju",[]),"","说明：","1、通天塔 `Character_Enemy` 的构造参数是 `(品质, GetTrueRound(), 预设, 地图, CurRound)`，所以 `True_Round` = 层数；命中/闪避 = `min(层数/100,70) + max(0,(层数-11000)/1000)`，速度 = `26+品质+1+层数/100+min(层数/100,70)`。",`2、试炼按 \`LevelToTargetLevel(层数)\`：命中/闪避/暴击/抗暴 = \`100+层数×3\`，速度 = \`层数×35×(150+层数)/100\`；100 层命中/闪避 ${String(TRIAL_ENEMY_100.dodge)}、速度 ${String(TRIAL_ENEMY_100.speed)}。`,"3、终局按 `ZhongJu_Config_Data.BattleData_Manager`：`percent=true` 的属性直接取 Base，`percent=false` 的属性取 `Base×(100+Percent)/100`。","4、红拂女神转职给全队 `Final_MZ >= 65` 的下限，所以命中率最低 65/101 ≈ 65.3%。");
   } else {
     const queryLevels = levels.length > 0 ? levels : [SCENE_DEFAULT_LEVEL[scene]];
     lines.push(...sceneLines(scene,queryLevels));
@@ -235,7 +235,7 @@ function sceneLines (scene: Scene,levels: readonly number[]): string[] {
     const rows = [" 终局 ","| 挑战 | BossID | 命中 | 闪避 | 暴击 | 抗暴 | 速度 | 减伤(封顶80) |"];
     for (const enemy of ZHONG_JU) {
       rows.push(
-        `| ${enemy.tiaoZhanID} | ${enemy.bossID.join("/")} | ${formatSuoXie(enemy.hit)} | ${formatSuoXie(enemy.dodge)} | ${formatSuoXie(enemy.crit)} | ${formatSuoXie(enemy.critResist)} | ${formatSuoXie(enemy.speed)} | ${formatSuoXie(enemy.damageReduce)} |`
+        `| ${String(enemy.tiaoZhanID)} | ${enemy.bossID.join("/")} | ${formatSuoXie(enemy.hit)} | ${formatSuoXie(enemy.dodge)} | ${formatSuoXie(enemy.crit)} | ${formatSuoXie(enemy.critResist)} | ${formatSuoXie(enemy.speed)} | ${formatSuoXie(enemy.damageReduce)} |`
       );
     }
     return rows;

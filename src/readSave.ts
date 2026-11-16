@@ -218,7 +218,7 @@ export function formatSuoXie (value: number): string {
   }
   const digits = scaled >= 1000 ? 0 : scaled >= 100 ? 1 : scaled >= 10 ? 2 : 3;
   const text = scaled.toFixed(digits);
-  return `${value < 0 ? "-" : ""}${text}${CN_UNITS[unit]}`;
+  return `${value < 0 ? "-" : ""}${text}${CN_UNITS[unit] ?? ""}`;
 }
 
 // 取 Mark 计数
@@ -285,7 +285,7 @@ export function resolveSaveDir (args: CliArgs): string {
     return dir;
   }
   const slot = argNumber(args,"save") ?? 1;
-  const saveDir = join(DEFAULT_SAVE_ROOT,`Save_${slot}`);
+  const saveDir = join(DEFAULT_SAVE_ROOT,`Save_${String(slot)}`);
   if (!existsSync(saveDir)) {
     throw new Error(`存档不存在：${saveDir}（用 --save=N 指定槽位，或 --dir=路径）`);
   }

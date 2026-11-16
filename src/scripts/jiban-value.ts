@@ -2,7 +2,8 @@ import {existsSync,mkdirSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {argFlag,argNumber,argString,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import {loadConfig,runMain,type YingLingConfig} from "../tools.ts";
+import {loadConfig,runMain} from "../tools.ts";
+import type {YingLingConfig} from "../tools.ts";
 import type {BattleDataRecorder} from "../readSave.ts";
 
 /**
@@ -326,7 +327,7 @@ function main (): void {
     }
   }
   if (owned.size < SLOT_COUNT) {
-    throw new Error(`存档里属于主角的英灵只有 ${owned.size} 个，不够 ${SLOT_COUNT} 个上阵`);
+    throw new Error(`存档里属于主角的英灵只有 ${String(owned.size)} 个，不够 ${String(SLOT_COUNT)} 个上阵`);
   }
   const bondOf = new Map<number,number[]>();
   for (const config of yingLingConfig) {
@@ -528,7 +529,7 @@ function main (): void {
         enemyMingZhong:    value,
         enemyShanBi:       value,
         key:               "tower",
-        title:             `通天塔第 ${round} 层（TrueRound=${trueRound}）`
+        title:             `通天塔第 ${String(round)} 层（TrueRound=${String(trueRound)}）`
       });
     }
   }
@@ -543,7 +544,7 @@ function main (): void {
       enemyMingZhong:    100 + ceng * 3,
       enemyShanBi:       100 + ceng * 3,
       key:               "shilian",
-      title:             `试炼第 ${ceng} 层`
+      title:             `试炼第 ${String(ceng)} 层`
     });
   }
   if (sceneArg === "manual") {
@@ -636,26 +637,26 @@ function main (): void {
       ? evaluateCombo(currentCombo,bondOf,jiban,first.ctx)
       : undefined;
   const currentKey = currentCombo.join(",");
-  const bondName = (bondType: number): string => names.jiBan[String(bondType + 1)] ?? `羁绊${bondType + 1}`;
-  const yingLingName = (index: number): string => names.yingLing[String(index)] ?? `英灵${index}`;
+  const bondName = (bondType: number): string => names.jiBan[String(bondType + 1)] ?? `羁绊${String(bondType + 1)}`;
+  const yingLingName = (index: number): string => names.yingLing[String(index)] ?? `英灵${String(index)}`;
   const describe = (result: Pick<ComboResult,"bondCounts" | "bondLevels">): string => {
     const parts: string[] = [];
     for (const [bondId,count] of [...result.bondCounts].sort((left,right) => left[0] - right[0])) {
       const level = result.bondLevels.get(bondId) ?? 0;
-      parts.push(`${bondName(bondId)}×${count}(Lv.${level})`);
+      parts.push(`${bondName(bondId)}×${String(count)}(Lv.${String(level)})`);
     }
     return parts.length > 0 ? parts.join(" ") : "无羁绊";
   };
   const equipmentText =
-    `15 级后羿弓（+${BOW_FLAT} 三围）｜15 级金玉令（+${TOKEN_FLAT} 三围、+${TOKEN_PCT}% 三围）｜` +
-    `6 颗 15 级宝石（+${GEM_FLAT * GEMS.length} 三围、${GEMS.map(gem => `${gem.name}${gem.value}`).join("/")}）`;
+    `15 级后羿弓（+${String(BOW_FLAT)} 三围）｜15 级金玉令（+${String(TOKEN_FLAT)} 三围、+${String(TOKEN_PCT)}% 三围）｜` +
+    `6 颗 15 级宝石（+${String(GEM_FLAT * GEMS.length)} 三围、${GEMS.map(gem => `${gem.name}${String(gem.value)}`).join("/")}）`;
   const lines: string[] = [];
-  lines.push("=== 配队输出排名（15 级御灵装备 + 两场景每击伤害）===","说明：本文件按存档面板计算，未含威慑/魅惑/流血/怯懦等负面层数联动；全量英灵组合排名见 output/输出英灵排名.md",`存档：${save.dir}`,`装备：${equipmentText}`,`      后羿弓 Lv.${EQUIP_LEVEL}：命中按 100% 口径，伤害 ×${BOW_HIT_DAMAGE.toFixed(2)}`,`我方（主角+最高攻英灵）：攻击 ${formatDamage(baseAtk)}${zhenFaAtkPct > 0 ? `（阵法 ${zhenFaId} Lv.${zhenFaLevel} → ${formatDamage(atkWithZhenFa)}）` : ""}｜穿透 ${formatDamage(ignoreDef)}｜命中 ${mingZhong}｜闪避 ${shanBi}｜暴击 ${critValue}｜暴伤 ${(critMultiplier * 100).toFixed(0)}%｜伤害加成 ${damageAddition}%`,`持有英灵：${ownedList.length} 个`,`初始怒气 30 / 上限 101；神通 ${shenTong.length} 个全点满 ${shenTongTotal} 卷轴；怒气输出需放弃 #${maxSpShenTong?.id ?? "?"}（怒气上限 +100）→ ${shenTong.length - 1} 个共 ${shenTongWithoutMaxSp} 卷轴（未计折扣）`,"","--- 各羁绊单独收益（按 5 人满羁绊算，取第一个场景）---");
+  lines.push("=== 配队输出排名（15 级御灵装备 + 两场景每击伤害）===","说明：本文件按存档面板计算，未含威慑/魅惑/流血/怯懦等负面层数联动；全量英灵组合排名见 output/输出英灵排名.md",`存档：${save.dir}`,`装备：${equipmentText}`,`      后羿弓 Lv.${String(EQUIP_LEVEL)}：命中按 100% 口径，伤害 ×${BOW_HIT_DAMAGE.toFixed(2)}`,`我方（主角+最高攻英灵）：攻击 ${formatDamage(baseAtk)}${zhenFaAtkPct > 0 ? `（阵法 ${String(zhenFaId)} Lv.${String(zhenFaLevel)} → ${formatDamage(atkWithZhenFa)}）` : ""}｜穿透 ${formatDamage(ignoreDef)}｜命中 ${String(mingZhong)}｜闪避 ${String(shanBi)}｜暴击 ${String(critValue)}｜暴伤 ${(critMultiplier * 100).toFixed(0)}%｜伤害加成 ${String(damageAddition)}%`,`持有英灵：${String(ownedList.length)} 个`,`初始怒气 30 / 上限 101；神通 ${String(shenTong.length)} 个全点满 ${String(shenTongTotal)} 卷轴；怒气输出需放弃 #${String(maxSpShenTong?.id ?? "?")}（怒气上限 +100）→ ${String(shenTong.length - 1)} 个共 ${String(shenTongWithoutMaxSp)} 卷轴（未计折扣）`,"","--- 各羁绊单独收益（按 5 人满羁绊算，取第一个场景）---");
   for (const config of jiban) {
     const maxLevel = bondLevel(jiban,config.type,SLOT_COUNT);
     const single = bondMultiplier(config.type,maxLevel,first.ctx);
     const tag = single > 1.0001 ? `×${single.toFixed(3)}` : "不计入输出";
-    lines.push(`${bondName(config.type)}（类型 ${config.type}）：5 人 Lv.${maxLevel} → ${tag}`);
+    lines.push(`${bondName(config.type)}（类型 ${String(config.type)}）：5 人 Lv.${String(maxLevel)} → ${tag}`);
   }
   lines.push("");
   if (currentResult) {
@@ -665,17 +666,17 @@ function main (): void {
       const rank = results.findIndex(item => item.combo.join(",") === currentKey) + 1;
       const item = rank > 0 ? results[rank - 1] : undefined;
       lines.push(
-        `  ${scene.title}：${item ? `每击 ${formatDamage(item.damage)}，排第 ${rank} 名` : "没有可用的全体输出位或未进榜"}${currentCarry ? `（输出位 ${yingLingName(currentCarry.index)}，${currentCarry.mode}${currentCarry.pct}%）` : ""}`
+        `  ${scene.title}：${item ? `每击 ${formatDamage(item.damage)}，排第 ${String(rank)} 名` : "没有可用的全体输出位或未进榜"}${currentCarry ? `（输出位 ${yingLingName(currentCarry.index)}，${currentCarry.mode}${String(currentCarry.pct)}%）` : ""}`
       );
     }
     lines.push("");
   }
   const top = argNumber(args,"top") ?? 20;
   for (const {ctx,results,scene} of sceneRanks) {
-    lines.push(`--- ${scene.title} ---`,`敌人：命中/闪避/抗暴 ${scene.enemyMingZhong}/${scene.enemyShanBi}/${scene.enemyBaoJiResist}｜防御 ${formatDamage(scene.enemyDef)}｜减伤 ${Math.min(scene.enemyDamageReduce,80)}%｜一波 ${scene.enemyCount} 人`,`命中口径：100%｜后羿弓伤害 ×${BOW_HIT_DAMAGE.toFixed(2)}｜暴击率 ${(ctx.critRate * 100).toFixed(1)}%｜候选组合 ${results.length} 种`);
+    lines.push(`--- ${scene.title} ---`,`敌人：命中/闪避/抗暴 ${String(scene.enemyMingZhong)}/${String(scene.enemyShanBi)}/${String(scene.enemyBaoJiResist)}｜防御 ${formatDamage(scene.enemyDef)}｜减伤 ${String(Math.min(scene.enemyDamageReduce,80))}%｜一波 ${String(scene.enemyCount)} 人`,`命中口径：100%｜后羿弓伤害 ×${BOW_HIT_DAMAGE.toFixed(2)}｜暴击率 ${(ctx.critRate * 100).toFixed(1)}%｜候选组合 ${String(results.length)} 种`);
     for (const [index,result] of results.slice(0,top).entries()) {
       const carryText = result.carry
-        ? `${yingLingName(result.carry.index)}(${result.carry.mode}${result.carry.pct}%)`
+        ? `${yingLingName(result.carry.index)}(${result.carry.mode}${String(result.carry.pct)}%)`
         : "无输出位";
       lines.push(
         `${String(index + 1).padStart(2," ")}. 每击 ${formatDamage(result.damage)}｜羁绊 ×${result.multiplier.toFixed(3)}｜输出 ${carryText}  [${result.combo.join(",")}] ${describe(result)}`,

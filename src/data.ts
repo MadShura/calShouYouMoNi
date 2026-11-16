@@ -135,6 +135,11 @@ export interface SystemGain {
 // 9 个新增 tozhanli 方法的统一返回:18 项固定值 + 18 项百分比 + 过程量.
 // 只统计「本次投入材料」带来的增量,初始态(研究全满等)只影响消耗/系数,不重复计入.
 export interface ToZhanliResult extends AllPercentProperties,AllProperties {
+
+  // 伤害乘区来源(百分比乘区的各条 PercentAddition):羁绊/技能 EntryEffect 的战斗价值,
+  // 全部来自反编译 Entry_*.cs(数值为源码 Base,不在 config 里).与 yingling-output.ts 输出乘区同源.
+  // 仅记录贡献,不直接并入战力数字;按 type 硬编码(见 calzhanli.ts ENTRY_BOND_TABLE).
+  combatBonus:         {name: string; percent: number}[];
   count:               number; // 升级/制造/突破次数
   finalLevel:          number; // 最终等级
   left:                number; // 剩余材料
@@ -143,10 +148,6 @@ export interface ToZhanliResult extends AllPercentProperties,AllProperties {
   used:                number; // 消耗材料
   zhanliPercent:       number; // 战力百分比(神通 EntryEffect 类:Level×PinZhi,进 GetZhanLi 乘区)
   zhenFaAttackPercent: number; // 阵法1(天覆阵)战斗期给最高攻单位 +阵法等级% 攻击(非面板,单独记过程量)
-  // 伤害乘区来源(百分比乘区的各条 PercentAddition):羁绊/技能 EntryEffect 的战斗价值,
-  // 全部来自反编译 Entry_*.cs(数值为源码 Base,不在 config 里).与 yingling-output.ts 输出乘区同源.
-  // 仅记录贡献,不直接并入战力数字;按 type 硬编码(见 calzhanli.ts ENTRY_BOND_TABLE).
-  combatBonus:        {name: string; percent: number}[];
 }
 
 // 18 项里走「真百分比」的 5 项(property.json 中 percent=0):
