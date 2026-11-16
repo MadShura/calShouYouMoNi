@@ -36,6 +36,8 @@
 - 先执行 `git commit` 保存当前进度(不顾忌之前的修改内容,直接 commit), commit 内容写 `准备...`
 - **先判断要生成/修改的代码类型,必须执行对应 code skill 后按其规范编写**:
 
+
+生成脚本，或者是用脚本制造生成物调用  `script-code` skill
 `.ts` / `.mts` 等 TS 代码执行 `typescript-code` skill
 `.vue` 组件 / Composable执行 `vue-code`  skill
 原子类 / `uno.config.ts` / 图标类执行  `unocss-code` skill
