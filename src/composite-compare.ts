@@ -13,7 +13,7 @@ import {MATERIAL_COST_PER_UNIT} from "./data.ts";
 import {formatSuoXie} from "./readSave.ts";
 import {oneShotDamage} from "./scripts/game-formulas.ts";
 import type {MasterPanel} from "./zhanli-panel.ts";
-import {calcOutput,ENEMY_5,finalValue,KEY_TO_PROP,loadMasterPanel,PROP_COUNT} from "./zhanli-panel.ts";
+import {calcOutput,ENEMY_5,KEY_TO_PROP,loadMasterPanel} from "./zhanli-panel.ts";
 
 interface CompositePlan {
   name:      string;
@@ -102,14 +102,9 @@ const SHEN_TONG_15_CAP = 21_4748_3637;
 const WU_SONG_ATK_PERCENT = 20;
 const WU_SONG_DAMAGE_ADD = 35;
 
-interface WukongPlan {
-  name:      string;
-  yulingDir: number;            // 11 幸运 / 9 速度
-  zhen:      "tianfu" | "niaoxiang";
-}
-
 interface WukongRow {
   name:        string;
+  luckyBreaks: number;          // 选幸运的突破次数(其余突破选速度)
   lucky:       number;
   speed:       number;
   hit:         number;
@@ -120,74 +115,108 @@ interface WukongRow {
   kill:        boolean;
 }
 
+// 御灵师单次突破增益(calzhanli.ts:applyYuLingTuPo,pinZhi=4→factor=1.75):⌊2+4×k×1.75⌋=2+7k(k 为突破序号,7k 为整数).
+// 幸运方向与速度方向同公式,故前 n 次突破选幸运的累计幸运 = 2n+7n(n+1)/2(解析式,避免循环).
+const wukongBreakSum = (n: number): number => n <= 0 ? 0 : 2 * n + 7 * n * (n + 1) / 2;
+
 /**
  * 单条「孙悟空神+西游 Lv.3」方案的伤害:按命中增伤链算 pctBucket,交给 oneShotDamage 打终局第 5 层.
- * panel 为零面板;merged 含御灵突破与阵法增量,compositePanel 把攻/穿透/幸运/伤害加成等计入面板两层.
+ * lucky/speed 为御灵突破累计值;baseAtk/basePen 来自御灵宝典升级(与突破方向无关);
+ * atkMul=天覆阵面板攻击倍率(1.15);zhenSpeedDmg=鸟翔阵速度差伤害加成(加法桶).
  */
-function wukongDamage (panel: MasterPanel,result: Record<string,number>): Omit<WukongRow,"name"> {
-  const p = compositePanel(panel,result);
-  const lucky = finalValue(p,17);
-  const speed = finalValue(p,3);
-  const hit = finalValue(p,4) + WUKONG_TANG_HIT + Math.trunc(lucky / 100) * 5;
+function wukongDamage (
+  lucky: number,speed: number,baseAtk: number,basePen: number,atkMul: number,zhenSpeedDmg: number
+): Omit<WukongRow,"name" | "luckyBreaks"> {
+  const hit = WUKONG_TANG_HIT + Math.trunc(lucky / 100) * 5;
   const xiXingPct = Math.trunc(
     Math.max(0,hit - (ENEMY_5.dodge - WUKONG_ZHU_DODGE_DOWN)) * XI_XING_LV3_RATE
   );
   const shenTong15 = Math.min(hit,SHEN_TONG_15_CAP);
-  const critAdd = p.zhenFaID === 6 ? 30 : 0;
-  const mustCrit = (finalValue(p,6) - ENEMY_5.critResist + critAdd + 1) / 101 >= 1;
-  const pctBucket = (mustCrit ? finalValue(p,8) / 100 : 1) *
+  const mustCrit = (0 - ENEMY_5.critResist + 1) / 101 >= 1; // 零面板暴击 0,zhenFaID 0 无阵法6 加成
+  const pctBucket = (mustCrit ? 130 / 100 : 1) *
     (1 + hit / 100) * (1 + shenTong15 / 100) * (1 + xiXingPct / 100);
-  const damage = oneShotDamage(finalValue(p,0),ENEMY_5,{
+  const damage = oneShotDamage(baseAtk * atkMul,ENEMY_5,{
     atkPct:    100 + WU_SONG_ATK_PERCENT,
-    dmgAdd:    finalValue(p,13) + WU_SONG_DAMAGE_ADD,
+    dmgAdd:    WU_SONG_DAMAGE_ADD + zhenSpeedDmg,
     pctBucket,
-    pen:       finalValue(p,15),
+    pen:       basePen,
     skillMult: 1
   });
   return {
     damage,hit,kill: damage >= ENEMY_5.hp,lucky,shenTong15,speed,
-    xiXingPct,zhenSpeedDmg: result.damageAddition ?? 0
+    xiXingPct,zhenSpeedDmg
   };
 }
 
 /**
- * 孙悟空神+西游 Lv.3 对比:御灵幸运+天覆阵 vs 御灵速度+鸟翔阵,相同钱币全额买御灵宝典与灵纹.
- * 从零面板起步(18 项全 0),不读存档;队伍加成照人皇印队保留.
- * @param money 投入的钱币总数(默认一垓 = 1e20)
+ * 孙悟空神+西游 Lv.3 对比(从零面板,不读存档,队伍加成照人皇印队保留),四条路线:
+ * ① 全幸运+天覆阵;② 全速度+鸟翔阵;③ 混合·刚好击杀(含鸟翔协同,最少幸运突破);④ 混合·纯命中链达标.
+ * 混合路线=前 m 次突破选幸运补命中、其余选速度给鸟翔;m 由二分反解(范围 0..totalBreaks,有限不会溢出).
+ * @param money 投入的钱币总数(默认一垓降 5 数量级 = 1e15)
  */
-export function compareWukongSyzygy (money = 1e20): WukongRow[] {
+export function compareWukongSyzygy (money = 1e15): WukongRow[] {
   const books = maxBuyCount(MATERIAL_COST_PER_UNIT["御灵宝典"]!,money);
   const zhen = maxBuyCount(MATERIAL_COST_PER_UNIT["灵纹"]!,money);
-  const panel: MasterPanel = {
-    base: new Array<number>(PROP_COUNT).fill(0),
-    dir: "zero",
-    pct: new Array<number>(PROP_COUNT).fill(0),
-    zhenFaID: 0
+  // 御灵宝典升级给的攻击/穿透与突破方向无关,取全幸运一次即可
+  const upgraded = yulingbaodianTozhanli(books,11,4);
+  const baseAtk = upgraded.atk ?? 0;
+  const basePen = upgraded.ignoreDef ?? 0;
+  const totalBreaks = Math.trunc((upgraded.finalLevel ?? 0) / 10);
+  // 鸟翔速度差封顶 = 源码 Entry_ZhenFa_8.cs 的 2147483646(data.ts:ZHENFA_NIAOXIANG_DAMAGE_CAP)
+  const BIRD_CAP = 21_4748_3646;
+
+  // 给定幸运突破次数 m,算命中、鸟翔速度差与伤害
+  const evalBreak = (m: number,atkMul: number,tianfu: boolean) => {
+    const lucky = wukongBreakSum(m);
+    const speed = wukongBreakSum(totalBreaks - m);
+    const zhenSpeedDmg = tianfu
+      ? 0
+      : Math.min(Math.max(0,speed - ENEMY_5.speed),BIRD_CAP);
+    const row = wukongDamage(lucky,speed,baseAtk,basePen,atkMul,zhenSpeedDmg);
+    return {luckyBreaks: m,...row};
   };
-  const plans: WukongPlan[] = [
-    {name: "孙悟空神+西游Lv3+御灵幸运+天覆阵",yulingDir: 11,zhen: "tianfu"},
-    {name: "孙悟空神+西游Lv3+御灵速度+鸟翔阵",yulingDir: 9,zhen: "niaoxiang"}
+  // 二分:满足条件的最小幸运突破次数(ok 对 m 单调).用 floor 取中点保证区间严格收缩;
+  // 若用 ceil,当 lo+1==hi 时 mid 恒等于 hi,ok(mid) 为真则 hi 不变 → 死循环.
+  const minBreaks = (ok: (m: number) => boolean): number => {
+    if (!ok(totalBreaks)) {return totalBreaks;}
+    let lo = 0;
+    let hi = totalBreaks;
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      if (ok(mid)) {hi = mid;} else {lo = mid + 1;}
+    }
+    return lo;
+  };
+
+  const allLucky = evalBreak(totalBreaks,1.15,true);   // ① 全幸运+天覆(攻击×1.15)
+  const allSpeed = evalBreak(0,1,false);               // ② 全速度+鸟翔
+  // ③ 刚好击杀(含鸟翔):最少幸运突破使伤害 ≥ 敌HP
+  const mKill = minBreaks(m => evalBreak(m,1,false).damage >= ENEMY_5.hp);
+  const justKill = evalBreak(mKill,1,false);
+  // ④ 纯命中链达标:最少幸运突破使命中 ≥ 无鸟翔时的击杀命中
+  const pureHitNeed = 3379_0000; // 由核查二分得出(纯命中链击杀所需命中)
+  const mPure = minBreaks(m => evalBreak(m,1,false).hit >= pureHitNeed);
+  const pureHit = evalBreak(mPure,1,false);
+
+  const rows: WukongRow[] = [
+    {name: "御灵幸运+天覆阵(全幸运)",...allLucky},
+    {name: "御灵速度+鸟翔阵(全速度)",...allSpeed},
+    {name: "混合·刚好击杀(含鸟翔)",...justKill},
+    {name: "混合·纯命中链达标",...pureHit}
   ];
-  const rows = plans.map(plan => {
-    const yl = yulingbaodianTozhanli(books,plan.yulingDir,4);
-    const ylSpeed = plan.yulingDir === 9 ? (yl.speed ?? 0) : 0;
-    const zf = plan.zhen === "niaoxiang"
-      ? niaoxiangzhenTozhanli(zhen,ylSpeed,ENEMY_5.speed)
-      : tianfuzhenTozhanli(zhen);
-    return {name: plan.name,...wukongDamage(panel,mergeResults(yl,zf))};
-  });
   rows.sort((a,b) => b.damage - a.damage);
   return rows;
 }
 
-// 打印孙悟空神命中增伤链对比:列幸运/速度/命中/神通15/西行取经/鸟翔速度差/伤害/是否击杀.
-export function printWukongSyzygy (money = 1e20): void {
+// 打印孙悟空神命中增伤链对比:列幸运突破/幸运/速度/命中/神通15/西行取经/鸟翔速度差/伤害/是否击杀.
+export function printWukongSyzygy (money = 1e15): void {
   const books = maxBuyCount(MATERIAL_COST_PER_UNIT["御灵宝典"]!,money);
   const zhen = maxBuyCount(MATERIAL_COST_PER_UNIT["灵纹"]!,money);
-  console.log("=== 孙悟空神+西游Lv3 命中增伤链对比(从零面板,御灵幸运+天覆 vs 速度+鸟翔,终局第5层) ===");
+  console.log("=== 孙悟空神+西游Lv3 命中增伤链对比(从零面板,御灵幸运+天覆 / 速度+鸟翔 / 两条混合,终局第5层) ===");
   console.log(`钱币=${formatSuoXie(money)} 御灵宝典=${formatSuoXie(books)} 灵纹=${formatSuoXie(zhen)} 敌闪避=${String(ENEMY_5.dodge)} 敌HP=${formatSuoXie(ENEMY_5.hp)}`);
   for (const row of compareWukongSyzygy(money)) {
     const fields = [
+      `幸运突破=${formatSuoXie(row.luckyBreaks)}`,
       `幸运=${formatSuoXie(row.lucky)}`,
       `速度=${formatSuoXie(row.speed)}`,
       `命中=${formatSuoXie(row.hit)}`,
