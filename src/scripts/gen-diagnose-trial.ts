@@ -21,6 +21,7 @@ import type {GameRecord} from "../readSave.ts";
 import {trialEnemy} from "./enemy-stats.ts";
 import type {EnemyStats} from "./enemy-stats.ts";
 import {fmtShort,oneShotDamage,requiredAtk} from "./game-formulas.ts";
+import {runMain,type ShiLianSave} from "../tools.ts";
 import {buildResourcePanel} from "./yingling-output.ts";
 import type {ResourcePanel} from "./yingling-output.ts";
 
@@ -29,12 +30,6 @@ const TANG_SAN_ZANG_HIT = 30; // 唐三藏 3 技能开战全体 +30 命中(孙�
 
 // 养成资源 PropID:寒铁1/五彩神石2/破境石3/御力4/强化石5/神通卷轴6/灵纹7/灵晶8/历史本纪9/忘情水81/三味真火85
 const CULTIVATE_PROPS = [1,2,3,4,5,6,7,8,9,81,85];
-interface ShiLianSave {
-  Count?:       number;
-  Cur_CengShu?: number;
-  Cur_PiLao?:   number;
-  JinDu?:       number;
-}
 function buildPanel (resource: number): null | ResourcePanel {
   try {
     return buildResourcePanel(new Map<string,string | true>([["resource",String(resource)]]));
@@ -143,11 +138,5 @@ lo = 0;
   diagnose(from,panel);
 }
 if (process.argv[1] !== undefined && import.meta.filename === process.argv[1]) {
-  try {
-    main();
-  } catch (error) {
-    const message = Error.isError(error) ? error.message : String(error);
-    console.error(`错误：${message}`);
-    process.exitCode = 1;
-  }
+  runMain(main);
 }

@@ -1,4 +1,5 @@
 import {argFlag,formatSuoXie,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {runMain} from "../tools.ts";
 
 /**
  * 器鼎升级计算器 口径来自 yingling-output.ts:2157 qiLuLevel:
@@ -84,10 +85,4 @@ function qiLuTotalStone (levelFrom: number,levelTo: number,reducePercent = 0): n
   }
   return total;
 }
-try {
-  main();
-} catch (error) {
-  const message = Error.isError(error) ? error.message : String(error);
-  console.error(`错误：${message}`);
-  process.exitCode = 1;
-}
+runMain(main);

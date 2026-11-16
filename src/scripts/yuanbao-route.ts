@@ -21,6 +21,7 @@ import {argNumber,argString,formatSuoXie,getMarkCount,getPropNums,loadSave,parse
 import type {GameRecord} from "../readSave.ts";
 import {yuLingLevelCost} from "./game-formulas.ts";
 import {trialEnemy,trialEnemyHp} from "./enemy-stats.ts";
+import {type ShiLianSave} from "../tools.ts";
 
 // #region 类型与只读数据加载
 const DEFAULT_GAME_DIR = String.raw`D:\game\steam\steamapps\common\MoNiShouYou`;
@@ -144,13 +145,6 @@ interface RouteBResult {
   yuanbaoFromLv15:     number;
   yuanbaoFromMaterial: number;
   ziXuan:              number;
-}
-
-interface ShiLianSave {
-  Count?:       number;
-  Cur_CengShu?: number;
-  Cur_PiLao?:   number;
-  JinDu?:       number;
 }
 
 // #endregion

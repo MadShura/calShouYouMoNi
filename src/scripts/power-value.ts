@@ -1,7 +1,7 @@
-import {readFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {argFlag,argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {loadConfig,runMain} from "../tools.ts";
 import type {BattleDataRecorder,SaveBundle} from "../readSave.ts";
 
 /**
@@ -16,9 +16,6 @@ import type {BattleDataRecorder,SaveBundle} from "../readSave.ts";
  * - 强化公式:ZhuanZhiManager / Equip_Using / ZhenFaRecorder / ShengShou_Record / PropHelper.GenerateEquip / TuJianData_Record
  * - 阵法:Entry_ZhenFa_1 / 6 / 8
  */
-const HERE = import.meta.dirname;
-const CONFIG_DIR = join(HERE,"..","config");
-
 // PropertyTypeEnum
 const P = {
   ATK:            0,
@@ -389,9 +386,6 @@ function gainText (gains: Gain[],percentProps: Set<number>): string {
     parts.push(`${name}+${formatScore(gain.value)}${isPercent ? "%" : ""}`);
   }
   return parts.length === 0 ? "无输出属性" : parts.join(" ");
-}
-function loadConfig<T> (name: string): T {
-  return JSON.parse(readFileSync(join(CONFIG_DIR,`${name}.json`),"utf8")) as T;
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
@@ -973,10 +967,4 @@ function tuJianLevelUpExp (level: number): number {
   }
   return total;
 }
-try {
-  main();
-} catch (error) {
-  const message = Error.isError(error) ? error.message : String(error);
-  console.error(`错误：${message}`);
-  process.exitCode = 1;
-}
+runMain(main);

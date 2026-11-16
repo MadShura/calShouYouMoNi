@@ -1,4 +1,5 @@
 import {argFlag,formatSuoXie,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {runMain} from "../tools.ts";
 
 /**
  * 炼器(制作装备)升级计算器 口径全部来自反编译源码,与 yingling-output.ts 一致:
@@ -94,10 +95,4 @@ function main (): void {
   );
   console.log(lines.join("\n"));
 }
-try {
-  main();
-} catch (error) {
-  const message = Error.isError(error) ? error.message : String(error);
-  console.error(`错误：${message}`);
-  process.exitCode = 1;
-}
+runMain(main);

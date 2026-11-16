@@ -11,12 +11,7 @@
  * - 掉落类(39-43/56-62) 与御灵石经验一样「点满但不进面板」,本模块单列,
  * 因资源分配求解是静态模型,不模拟挂机掉落,故只列出不计入.
  */
-import {readFileSync} from "node:fs";
-import {join} from "node:path";
-
-const HERE = import.meta.dirname;
-const CONFIG_DIR = join(HERE,"..","config");
-const loadConfig = <T>(name: string): T => JSON.parse(readFileSync(join(CONFIG_DIR,`${name}.json`),"utf8")) as T;
+import {loadConfig} from "../tools.ts";
 export interface KeJiConfig {
   cost:      number;
   id:        number;

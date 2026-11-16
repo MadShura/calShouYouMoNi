@@ -1,7 +1,8 @@
-import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
+import {existsSync,mkdirSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {argFlag,argNumber,argString,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {loadConfig,runMain,type YingLingConfig} from "../tools.ts";
 import type {BattleDataRecorder} from "../readSave.ts";
 
 /**
@@ -26,7 +27,6 @@ import type {BattleDataRecorder} from "../readSave.ts";
  * - 西行取经:伤害% += max(0, 我方命中 - 敌闪避) × (0.25 + 0.25×等级)
  */
 const HERE = import.meta.dirname;
-const CONFIG_DIR = join(HERE,"..","config");
 
 // PropertyTypeEnum
 const P = {
@@ -126,15 +126,6 @@ interface SceneInfo {
   enemyShanBi:       number;
   key:               string;
   title:             string;
-}
-
-interface YingLingConfig {
-  bonds:        number[];
-  index:        number;
-  skillMo:      number;
-  skills:       number[];
-  skillShen:    number;
-  yingLingType: number;
 }
 
 // 羁绊等级:达到哪个 Count 就取那一档(按 ZhenRongJiBanTypeEnum 匹配)
@@ -266,9 +257,6 @@ function formatDamage (value: number): string {
     return `${(value / 10000).toFixed(2)} 万`;
   }
   return Math.round(value).toString();
-}
-function loadConfig<T> (name: string): T {
-  return JSON.parse(readFileSync(join(CONFIG_DIR,`${name}.json`),"utf8")) as T;
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
@@ -782,10 +770,4 @@ function withEquipment (raw: RawStats): RawStats {
   }
   return {base,pct};
 }
-try {
-  main();
-} catch (error) {
-  const message = Error.isError(error) ? error.message : String(error);
-  console.error(`错误：${message}`);
-  process.exitCode = 1;
-}
+runMain(main);

@@ -1,6 +1,5 @@
-import {readFileSync} from "node:fs";
-import {join} from "node:path";
 import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {loadConfig,runMain} from "../tools.ts";
 import type {CampData,CampPlayerRecord,SaveBundle} from "../readSave.ts";
 
 interface DiKuaiTile {
@@ -58,7 +57,6 @@ interface Settlement {
  * - 用法:pnpm yuanbao [每分钟积分增加值],第一个位置参数默认按当前归属己方地块求和
  * (AddJiFen 只加己方地块,全图 13 块地总分 71 仅作基准显示)
  */
-const CONFIG_DIR = join(import.meta.dirname,"..","config");
 const LINGLI_MAX = 60_0000;
 const MY_CHA_ID = 1; // 几号存档
 const ROUND_SECONDS = 8 * 60 * 60; // 8小时 = 28800秒
@@ -171,9 +169,6 @@ function investTable (plan: InvestPlan,score: number,members: readonly CampPlaye
     );
   }
   return lines;
-}
-function loadConfig<T> (name: string): T {
-  return JSON.parse(readFileSync(join(CONFIG_DIR,`${name}.json`),"utf8")) as T;
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
@@ -342,10 +337,4 @@ function tileScore (level: number): number {
   }
   return 15;
 }
-try {
-  main();
-} catch (error) {
-  const message = Error.isError(error) ? error.message : String(error);
-  console.error(`错误：${message}`);
-  process.exitCode = 1;
-}
+runMain(main);

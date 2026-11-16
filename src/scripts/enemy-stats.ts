@@ -1,7 +1,8 @@
-import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
+ import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {argString,formatSuoXie,parseArgs} from "../readSave.ts";
+import {runMain} from "../tools.ts";
 
 /**
  * 三个场景的敌人属性(全部来自反编译).
@@ -253,11 +254,5 @@ function sceneLines (scene: Scene,levels: readonly number[]): string[] {
   return rows;
 }
 if (process.argv[1] === import.meta.filename) {
-  try {
-    main();
-  } catch (error) {
-    const message = Error.isError(error) ? error.message : String(error);
-    console.error(`错误：${message}`);
-    process.exitCode = 1;
-  }
+  runMain(main);
 }

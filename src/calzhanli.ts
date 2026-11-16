@@ -1794,29 +1794,9 @@ function applyBattleProps (
   result: ToZhanliResult,
   effects: readonly {percent: boolean; prop: number; value: number}[]
 ): void {
-  const fieldOf: Record<number,string> = {
-    0:  "atk",
-1:  "def",
-10: "fanJi",
-11: "recovery",
-12: "xiXie",
-13: "damageAddition",
-14: "damageReduce",
-15: "ignoreDef",
-    16: "returnDamage",
-17: "lucky",
-2:  "hp",
-3:  "speed",
-4:  "mingZhong",
-5:  "shanBi",
-    6:  "baoJi",
-7:  "baoJiResist",
-8:  "baoJiDamage",
-9:  "lianJi"
-  };
   const r = result as unknown as Record<string,number>;
   for (const e of effects) {
-    const base = fieldOf[e.prop];
+    const base = PROPERTY_TO_KEY[e.prop] as string | undefined;
     if (base === undefined) {
       continue;
     }

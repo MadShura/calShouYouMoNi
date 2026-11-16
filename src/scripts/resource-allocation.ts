@@ -53,10 +53,8 @@ import {argNumber,argString,parseArgs,resolveSaveDir} from "../readSave.ts";
 import type {CliArgs} from "../readSave.ts";
 import {buildResearchPlan} from "./research-plan.ts";
 import type {ResearchResult} from "./research-plan.ts";
+import {loadConfig} from "../tools.ts";
 
-const HERE = import.meta.dirname;
-const CONFIG_DIR = join(HERE,"..","config");
-const loadConfig = <T>(name: string): T => JSON.parse(readFileSync(join(CONFIG_DIR,`${name}.json`),"utf8")) as T;
 interface CodeEntry {code: string; props: [number,number][]}
 interface EquipPercentEntry {initialLevel: number; percentLevelAdd: number; pinzhi: number}
 interface ExchangeConfig {

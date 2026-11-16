@@ -1,4 +1,5 @@
 import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {runMain} from "../tools.ts";
 
 /**
  * 御灵师升级计算器 公式全部来自反编译代码:
@@ -117,10 +118,4 @@ function percentToInt (baseValue: number,percentage: number,reduce: boolean): nu
   const value = baseValue * factor / 100;
   return value < 0 ? -Math.round(-value) : Math.round(value);
 }
-try {
-  main();
-} catch (error) {
-  const message = Error.isError(error) ? error.message : String(error);
-  console.error(`错误：${message}`);
-  process.exitCode = 1;
-}
+runMain(main);

@@ -1,10 +1,11 @@
-import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
+import {existsSync,mkdirSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {argNumber,argString,parseArgs} from "../readSave.ts";
 import {hitRate,TOWER_ENEMY_10000,TRIAL_ENEMY_100,ZHONG_JU} from "./enemy-stats.ts";
 import type {CliArgs} from "../readSave.ts";
 import {culDamagePercent,sceneDamage} from "./game-formulas.ts";
+import {loadConfig,runMain,type YingLingConfig} from "../tools.ts";
 
 /**
  * 英灵输出潜力排名(不读存档)
@@ -34,7 +35,6 @@ import {culDamagePercent,sceneDamage} from "./game-formulas.ts";
  * - 神通27:按目标身上全部负面层数之和增伤
  */
 const HERE = import.meta.dirname;
-const CONFIG_DIR = join(HERE,"..","config");
 const OUT_DIR = join(HERE,"..","output");
 const SLOT_COUNT = 5;
 const EQUIP_SLOT_COUNT = 10;
@@ -479,15 +479,6 @@ interface TongGuanEntry {
   prop:     number;
   type:     "prop" | "property";
   value?:   number;
-}
-
-interface YingLingConfig {
-  bonds:        number[];
-  index:        number;
-  skillMo:      number;
-  skills:       number[];
-  skillShen:    number;
-  yingLingType: number;
 }
 
 // 只保留会直接增伤的羁绊；其余羁绊在首击不计
@@ -1168,9 +1159,6 @@ function lianQiLevelUpExp (level: number): number {
     return 3700 + 300 * (level - 40);
   }
   return 1700 + 200 * (level - 30);
-}
-function loadConfig<T> (name: string): T {
-  return JSON.parse(readFileSync(join(CONFIG_DIR,`${name}.json`),"utf8")) as T;
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
@@ -2260,12 +2248,6 @@ function yuLingShiLevel (
     level += 1;
   }
 }
-try {
-  if (process.argv[1] === import.meta.filename) {
-  main();
-}
-} catch (error) {
-  const message = Error.isError(error) ? error.message : String(error);
-  console.error(`错误：${message}`);
-  process.exitCode = 1;
+if (process.argv[1] === import.meta.filename) {
+  runMain(main);
 }
