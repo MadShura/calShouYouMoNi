@@ -7,7 +7,7 @@
  * - 开一格扣当前层数点体力:GetOpenReward 里 Cur_TuLi -= Cur_CengShu_Index(:117)
  * - 入口格免费(Initial/EnterNext 放进 OpenBlock),每层付费 15 格;开到大奖格才能进下一层(UIPanel_XunBao.cs:186-197)
  * - 仙葫药(prop 155)每个 +10 寻宝体力(PropEffect_Add_XunBaoTiLi.cs:23-26)
- * - 盈余分配:保底(每层只走到大奖+第10层全开)之外的体力,从高层往低层开非大奖格(每格扣层数点体力)
+ * - 盈余分配:保底之外的溢出体力只能在当前层开非大奖格(低层 EnterNext 会清空回不去,第10层保底已全开),每格扣当前层数点体力
  * 运行:pnpm xunbao
  */
 import {argNumber,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
@@ -109,38 +109,35 @@ function main (): void {
   for (const note of stepNotes) {console.log(`  · ${note}`);}
   console.log(`  保底需求 = ${String(baseNeed)} 体力`);
 
-  // 体力盈余分配:保底之外的溢出体力,从高层往低层开非大奖格(每格扣层数点体力).
+  // 体力盈余分配:保底之外的溢出体力只能在【当前层】开非大奖格(每格扣当前层数点体力).
+  // 低层已走过:EnterNext() 会 OpenBlock.Clear(),格子清空回不去;第10层在保底里已全开.
   // 可用体力 = 本轮结束前体力 + 已有仙葫芦(仙葫芦此时作为体力来源,与"缺口"口径不同).
   const usableTili = tiliAtEnd + xianhuTili;
   let spare = usableTili - baseNeed;
-  console.log("\n=== 体力盈余 → 该在第几层开非大奖格 ===");
+  console.log("\n=== 体力盈余 → 当前层还能开几个非大奖格 ===");
   console.log(`  可用体力 = 本轮结束前 ${String(tiliAtEnd)} + 仙葫芦 ${String(xianhuNums)}×${String(TILI_PER_XIANHU)}=${String(xianhuTili)} = ${String(usableTili)}`);
   console.log(`  保底需求 = ${String(baseNeed)} → 溢出 ${String(spare)} 体力可用来开非大奖格`);
   if (spare <= 0) {
     console.log(`  体力不足，没有溢出：还差 ${String(-spare)} 体力（约 ${String(Math.ceil(-spare / TILI_PER_XIANHU))} 个仙葫芦）才能走完保底路线，更谈不上开非大奖格`);
+  } else if (layer >= LAST_LAYER) {
+    console.log(`  已在第${String(LAST_LAYER)}层，保底已按全开计入，没有可额外开的非大奖格`);
   } else {
-    const picks: string[] = [];
-    for (let lv = layer; lv >= 1 && spare > 0; lv -= 1) {
-      if (lv === LAST_LAYER) {continue;}   // 第10层已按全开计入保底
-      let available: number;
-      if (lv === layer) {
-        const openedPaid = Math.max(0,openBlock.length - 1);
-        available = Math.max(0,PAID_BLOCKS - openedPaid);   // 当前层按实际剩余付费格
-      } else {
-        available = PAID_BLOCKS;   // 更低层(已走过/下一轮)按可全开算
+    // 当前层剩余付费格(去掉入口格);若大奖未开,其中一格是大奖(走大奖保底必开),不算额外非大奖格
+    const openedPaid = Math.max(0,openBlock.length - 1);
+    const paidLeft = Math.max(0,PAID_BLOCKS - openedPaid);
+    const extraBlocks = daJiangOpened ? paidLeft : Math.max(0,paidLeft - 1);
+    const blocks = Math.min(extraBlocks,Math.floor(spare / layer));
+    if (blocks > 0) {
+      const cost = blocks * layer;
+      spare -= cost;
+      console.log(`  当前第${String(layer)}层:剩余 ${String(paidLeft)} 个付费格，可开 ${String(blocks)} 个非大奖格(×${String(layer)}=${String(cost)}体力)`);
+      if (blocks === extraBlocks && spare > 0) {
+        console.log(`  当前层非大奖格已开满，剩余 ${String(spare)} 体力用不掉(低层格子已清空回不去、第${String(LAST_LAYER)}层已全开)`);
+      } else if (spare > 0) {
+        console.log(`  余 ${String(spare)} 体力不够在当前层再开一格(每格 ${String(layer)} 体力)`);
       }
-      const blocks = Math.min(available,Math.floor(spare / lv));
-      if (blocks > 0) {
-        const cost = blocks * lv;
-        spare -= cost;
-        picks.push(`第${String(lv)}层开 ${String(blocks)} 格非大奖格(×${String(lv)}=${String(cost)}体力)`);
-      }
-    }
-    for (const pick of picks) {console.log(`  · ${pick}`);}
-    if (picks.length === 0) {
-      console.log("  溢出体力不够在当前层开一格非大奖格");
     } else {
-      console.log(`  结论：从最高层往下，${picks.join("；")}；余 ${String(spare)} 体力`);
+      console.log(`  当前第${String(layer)}层没有可开的非大奖格，或溢出 ${String(spare)} 体力不够开一格(每格 ${String(layer)} 体力)`);
     }
   }
 }
