@@ -29,7 +29,7 @@
     "test:all": "pnpm test",
     "up:tsConfig": "axl tsconfig-exclude",
     "xunbao": "pnpm exec tsx src/xunbao.ts",
-    "yuanbao": "pnpm exec tsx src/camp-yuanbao.ts",
+    "zhenyin": "pnpm exec tsx src/zhenyin.ts",
     "yuling": "pnpm exec tsx src/yulingshi-level.ts",
     "zhizao": "pnpm exec tsx src/zhizao.ts"
   },

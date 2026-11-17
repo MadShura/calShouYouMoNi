@@ -54,7 +54,7 @@ interface Settlement {
  * - 王者之翼:Mark_Enum.Wing_CB_3(枚举序号 70)每级 +5%
  * - 元宝投入:UIBlockZhenYingBuChongLingLi.cs 第 105-120 行,1 元宝 = 1 贡献 + 10 灵力,
  * 单次上限 (600000 - 己方灵力) / 10 且不大于持有元宝
- * - 用法:pnpm yuanbao [每分钟积分增加值],第一个位置参数默认按当前归属己方地块求和
+ * - 用法:pnpm zhenyin [每分钟积分增加值],第一个位置参数默认按当前归属己方地块求和
  * (AddJiFen 只加己方地块,全图 13 块地总分 71 仅作基准显示)
  */
 const LINGLI_MAX = 60_0000;
@@ -175,7 +175,7 @@ function main (): void {
   if (isArgOn(args,"help")) {
     console.log(
       [
-        "用法：pnpm yuanbao [每分钟积分增加值] [参数]",
+        "用法：pnpm zhenyin [每分钟积分增加值] [参数]",
         "",
         "  54                   第一个位置参数=本轮每分钟积分增加值（默认按当前归属己方的地块求和）",
         "  --save=1             存档槽位（默认 1）",

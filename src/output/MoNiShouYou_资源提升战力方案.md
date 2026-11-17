@@ -3,7 +3,7 @@
 - 整理日期：2026-11-12
 - 反编译源码：`src//反编译`
 - 配置数据：`src//config/*.json`
-- 配套脚本：`src//scripts/*.ts`（`power-value.ts` / `yulingshi-level.ts` / `yingling-output.ts` / `camp-yuanbao.ts` / `xunbao-tili.ts`）
+- 配套脚本：`src//scripts/*.ts`（`power-value.ts` / `yulingshi-level.ts` / `yingling-output.ts` / `zhenyin.ts` / `xunbao-tili.ts`）
 - 本文定位：**把所有资源（道具/材料）能投入的「提升战力」方案汇总成一张目录**。这里说的「战力」= 输出伤害（攻击、穿透、命中、暴击、暴伤、伤害加成、速度、连击）。**不比较哪个更好**，只列方案、公式来源、作用对象、效率特征。具体数值与优劣由你自己算。
 - 公式全部来自反编译代码，配置来自 `config/*.json`；深处公式见 `MoNiShouYou_机制核查笔记.md` / `MoNiShouYou_全部伤害加成清单.md` / `MoNiShouYou_伤害计算与加成上限.md` / `MoNiShouYou_阵营玩法代码详解.md`，本文只做索引与汇总。
 
@@ -165,7 +165,7 @@
 
 ### 15. 元宝（多系统枢纽）
 - **仙葫药(155) → 寻宝第10层**：产出钱币/寒铁/灵纹/历史本纪/强化石/神通卷轴/灵晶/神速符/忘情水/三味真火（各 2,560,000 期望），外加御灵宝典、御力宝箱Lv6、五彩神石与元宝大奖。
-- **VIP 等级**：给命中/暴击等（详见 `camp-yuanbao.ts`）。
+- **VIP 等级**：给命中/暴击等（详见 `zhenyin.ts`）。
 - **冥商属性药**：卖材料换元宝 → 买百分比属性药（按当前属性折算收益，溢出则 0）。
 - **阵营**：补充灵力 1 元宝 = 10 灵力 + 1 贡献；行军加速 10 元宝/次；王者之翼3 解锁（阵营第1名）每级 +5% 结算元宝（无上限）。
 - **消耗**：仙葫药(155)→寻宝第10层（各资源期望 2,560,000）；另 VIP/冥商药/阵营灵力（1元宝=10灵力+1贡献）/王者之翼（每级+5%结算元宝）。
@@ -290,6 +290,6 @@
 - 神兵水/火炼：`YingLing.CharacterSystem/ShenBingRecorder.cs` 第 28-45 行（`GetStrengthRemand` 火炼=85、水炼=81）
 - 伤害主线与各系统公式：`MoNiShouYou_伤害计算与加成上限.md`、`MoNiShouYou_全部伤害加成清单.md`
 - 机制核查（抽奖/点卡/转职强化/装备强化/阵法/制作翅膀/器鼎/圣兽）：`MoNiShouYou_机制核查笔记.md`
-- 阵营元宝/王者之翼：`MoNiShouYou_阵营玩法代码详解.md` + `scripts/camp-yuanbao.ts`
+- 阵营元宝/王者之翼：`MoNiShouYou_阵营玩法代码详解.md` + `scripts/zhenyin.ts`
 - 资源名 ↔ PropID：`config/names.json`；兑换码/通关点数：`config/exchange.json`
 - 设计契约与推荐分配（单一推荐方案，非全方案）：`DESIGN.md`「资源最佳用途」一节
