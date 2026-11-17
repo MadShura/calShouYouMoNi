@@ -34,6 +34,12 @@ interface XunBaoManagerSave {
   TiLiRecovery?:      number;
 }
 
+// 座位号 → 横纵坐标:源码 MayDajiangSeat 用 row*10+col+1 编码(如 21 = 第3行第1列)。
+// 源码 CheckCanOpen 用 ±1 左右、±10 上下,与 row/col 一一对应。
+function seatCoord (seat: number): string {
+  return `(行${String(Math.floor((seat - 1) / 10) + 1)},列${String((seat - 1) % 10 + 1)})`;
+}
+
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
   const dir = resolveSaveDir(args);
@@ -74,11 +80,11 @@ function main (): void {
     stepNotes.push(`已在第${String(LAST_LAYER)}层:还差 ${String(remainBlocks)} 个付费格 × ${String(LAST_LAYER)} = ${String(remainNeed)} 体力`);
   } else {
     if (isDaJiangOpened) {
-      stepNotes.push(`第${String(layer)}层大奖 ${String(daJiangSeat)} 已开 → 直接进下一层,本层剩余 0 体力`);
+      stepNotes.push(`第${String(layer)}层大奖 ${seatCoord(daJiangSeat)} 已开 → 直接进下一层,本层剩余 0 体力`);
     } else {
       const step = HIDDEN_EXPECT_BLOCKS * layer;
       remainNeed += step;
-      stepNotes.push(`第${String(layer)}层大奖 ${String(daJiangSeat)} 未开 → 按期望 ${String(HIDDEN_EXPECT_BLOCKS)} 格 × ${String(layer)} = ${String(step)} 体力`);
+      stepNotes.push(`第${String(layer)}层大奖 ${seatCoord(daJiangSeat)} 未开 → 按期望 ${String(HIDDEN_EXPECT_BLOCKS)} 格 × ${String(layer)} = ${String(step)} 体力`);
     }
     for (let next = layer + 1; next < LAST_LAYER; next += 1) {
       const step = HIDDEN_EXPECT_BLOCKS * next;
@@ -93,8 +99,8 @@ function main (): void {
   const overrideNeed = argNumber(args,"need");
   if (overrideNeed !== undefined) {baseNeed = overrideNeed;}
   console.log("\n=== 当前寻宝状态 ===");
-  console.log(`  层数 第${String(layer)}/${String(LAST_LAYER)}层，大奖位 ${String(daJiangSeat)}（${isDaJiangOpened ? "已开" : "未开"}）`);
-  console.log(`  已开格 ${String(openBlock.length)}/16：${JSON.stringify(openBlock)}`);
+  console.log(`  层数 第${String(layer)}/${String(LAST_LAYER)}层，大奖位 ${seatCoord(daJiangSeat)}（座位号 ${String(daJiangSeat)}，${isDaJiangOpened ? "已开" : "未开"}）`);
+  console.log(`  已开格 ${String(openBlock.length)}/16：${openBlock.map(seatCoord).join(" ")}`);
   console.log(`  当前体力 ${String(curTuli)} / 上限 ${String(maxTili)}`);
   console.log(`  已计时 ${gameTime.toFixed(1)}s / 周期 ${String(REFRE_SECONDS)}s，剩余 ${remainSeconds.toFixed(1)}s（${remainHours.toFixed(2)} 小时）`);
   console.log(`  恢复累加 TiLiRecovery = ${recovery.toFixed(1)} / ${String(RECOVER_SECONDS)}；Wing_CB_4 = ${String(wing)}，恢复倍率 ×${recoveryRate.toFixed(2)}`);
