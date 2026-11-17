@@ -2,6 +2,7 @@
 import {dirname,join} from "node:path";
 import {argString,formatSuoXie,parseArgs} from "../readSave.ts";
 import {runMain} from "../tools.ts";
+import {towerAddition} from "./game-formulas.ts";
 
 /**
  * 三个场景的敌人属性(全部来自反编译).
@@ -127,20 +128,6 @@ function propertyValue (record: ZhongJuRecord,property: number): number {
 }
 
 // Character_Enemy.GetAddition:按 True_Round(层数)算 HP/ATK/DEF 的额外倍率
-function towerAddition (layer: number): number {
-  if (layer <= 10000) {
-    return 1;
-  }
-  const bucket = Math.min(Math.trunc(layer / 10000),200);
-  if (layer < 20000) {
-    return 1 + (layer - 10000) / 10000 * 9;
-  }
-  const low = 10 * 2 ** (bucket - 2);
-  const high = 10 * 2 ** (bucket - 1);
-  const remain = layer % 10000;
-  return remain === 0 ? low : remain / 10000 * (high - low) + low;
-}
-
 // 试炼敌人 HP:LevelToTargetLevel 把 HP.PercentAddition 设为 1000000+层数×10000;
 // GetFinalValue(HP)=Base·(100+Percent)/100,Base=模板英灵升到 GetLevel() 的累计 HP(每级 225·(L/50+1),可解析求和)
 function trialBaseHp (ceng: number): number {

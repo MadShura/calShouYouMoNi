@@ -348,7 +348,10 @@ export function logFormulaBreakdown (): void {
     log(`   [队伍免费] 武松+${String(WU_SONG_ATK_PERCENT)}${isBird ? "" : ` [阵法免费] 天覆面板+${String(TIANFU_PANEL_ATK)} [灵纹] 等级+${formatSuoXie(Number(r.zhenLevel))}`}`);
     log(`   攻击%合计=${formatSuoXie(Number(r.atkPct))}% → finalAtk = ${amt(r.baseAtk)}×(100+${formatSuoXie(Number(r.atkPct))})/100 = ${amt(finalAtk)}`);
     log("\n③ 防御与 K");
-    log(`   穿透=${amt(r.pen)} 敌DEF=${amt(ENEMY_DEF)} → DEF'=${amt(defAfterPen)}`);
+    log("   穿透来源(御灵升级/阵法升级四维同增,每级攻=穿,故穿透固定值=对应攻击固定值):");
+    log(`   [御灵宝典 ${amtCoin(r.coinBook)}] 御灵师穿 = 125×L×(L-1), L=${formatSuoXie(Number(r.yuLevel))} → ${amt(yuAtk)}`);
+    log(`   [灵纹 ${amtCoin(r.coinZhen)}] 阵法四维穿, Z=${formatSuoXie(Number(r.zhenLevel))} → ${amt(r.zhenAtk)}`);
+    log(`   穿透=${amt(yuAtk)} + ${amt(r.zhenAtk)} = ${amt(r.pen)} 敌DEF=${amt(ENEMY_DEF)} → DEF'=${amt(defAfterPen)}`);
     log(`   K=CulDamagePercent(finalAtk=${amt(finalAtk)}, DEF'=${amt(defAfterPen)})=${String(k)} → bigInteger2=${amt(finalAtk * k / 100n)}`);
     log("\n④ 命中链乘区(逐项连乘)");
     log(`   命中=${formatSuoXie(Number(hit))}(命中率${(r.hitRateValue * 100).toFixed(2)}%) skill78 +${formatSuoXie(Number(hit))} 神通15 +${formatSuoXie(Number(shenTong15))} 西行 +${formatSuoXie(Number(xiPct))}`);

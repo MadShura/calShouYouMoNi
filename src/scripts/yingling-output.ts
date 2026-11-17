@@ -3,7 +3,8 @@ import {dirname,join} from "node:path";
 import {argNumber,argString,parseArgs} from "../readSave.ts";
 import {hitRate,TOWER_ENEMY_10000,TRIAL_ENEMY_100,ZHONG_JU} from "./enemy-stats.ts";
 import type {CliArgs} from "../readSave.ts";
-import {culDamagePercent,sceneDamage} from "./game-formulas.ts";
+import {bondLevel,combinationsOf,culDamagePercent,lianQiLevelUpExp,pinZhiDistribution,sceneDamage,vipLevelUpCost} from "./game-formulas.ts";
+import type {EquipPercentEntry,JiBanConfig} from "./game-formulas.ts";
 import {loadConfig,runMain} from "../tools.ts";
 import type {YingLingConfig} from "../tools.ts";
 
@@ -358,12 +359,6 @@ interface DamageFactor {
   value:   number;
 }
 
-interface EquipPercentEntry {
-  initialLevel:    number;
-  percentLevelAdd: number;
-  pinzhi:          number;
-}
-
 // 兑换码配置(DuiHuanConfingData)
 interface ExchangeCode {
   code:  string;
@@ -375,11 +370,6 @@ interface ExchangeConfig {
   tongGuan: {entries: TongGuanEntry[]; source: string; totalPrice: number};
 }
 type Form = "base" | "mo" | "shen";
-interface JiBanConfig {
-  id:     number;
-  levels: {count: number; entry: number; level: number}[];
-  type:   number;
-}
 
 // 把所有初始资源按代码里的最佳用途换成面板
 interface KeJiConfig {
@@ -536,39 +526,7 @@ function assertSafe (value: number,label: string): number {
 }
 
 // 羁绊等级:达到哪个 Count 就取那一档
-function bondLevel (jiban: JiBanConfig[],bondType: number,count: number): number {
-  const config = jiban.find(item => item.type === bondType);
-  let level = 0;
-  const levels =  config?.levels ?? [];
-  for (const item of levels) {
-    if (count >= item.count && item.level > level) {
-      level = item.level;
-    }
-  }
-  return level;
-}
-
 // 只保留会直接增伤的羁绊；其余羁绊在首击不计
-// 从有序列表里取 count 个的所有组合(递归,避免深层 for 嵌套触发 max-depth)
-function combinationsOf (list: readonly number[],count: number): number[][] {
-  const out: number[][] = [];
-  const walk = (start: number,picked: number[]): void => {
-    if (picked.length === count) {
-      out.push([...picked]);
-      return;
-    }
-    for (let i = start; i < list.length; i += 1) {
-      const value = list[i];
-      if (value === undefined) {continue;}
-      picked.push(value);
-      walk(i + 1,picked);
-      picked.pop();
-    }
-  };
-  walk(0,[]);
-  return out;
-}
-
 // 只点影响首回合第一下攻击的研究;俭先点,它每升一级立刻降低下一级研究消耗
 // 17/21/36-48/56-62 只影响时间/掉落/抽奖/御灵石经验,按用户要求点满但不进面板
 const RESEARCH_STEPS: readonly {id: number; level: number}[] = [
@@ -1166,21 +1124,6 @@ function formatWan (value: number): string {
 }
 
 // PropHelper.GetLianQiLevelUpExp:炼器每级所需经验
-function lianQiLevelUpExp (level: number): number {
-  if (level <= 10) {
-    return level * 20;
-  }
-  if (level < 20) {
-    return 200 + 50 * (level - 10);
-  }
-  if (level < 30) {
-    return 700 + 100 * (level - 20);
-  }
-  if (level >= 40) {
-    return 3700 + 300 * (level - 40);
-  }
-  return 1700 + 200 * (level - 30);
-}
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
   if (args.get("help") === true) {
@@ -2093,27 +2036,6 @@ function optimizeShenBingWater (
 }
 
 // EquipLevel_PercentTable.GeneratePercent:器鼎等级对应的品质概率(千分制)
-function pinZhiDistribution (qiluLevelValue: number,table: EquipPercentEntry[]): number[] {
-  const percent = Array.from({length: table.length},() => 0);
-  for (let index = table.length - 1; index >= 0; index -= 1) {
-    const entry = table[index];
-    if (!entry) {
-      continue;
-    }
-    const used = percent.reduce((sum,value) => sum + value,0);
-    if (used >= 1000) {
-      break;
-    }
-    if (entry.initialLevel < qiluLevelValue) {
-      percent[index] = Math.min(
-        (qiluLevelValue - entry.initialLevel) * entry.percentLevelAdd,
-        1000 - used
-      );
-    }
-  }
-  return percent;
-}
-
 // 器鼎升级:每 5 级一档,消耗 10×档位 五彩神石
 function qiLuLevel (stones: number,reducePercent = 0): {level: number; remain: number} {
   let level = 1;
@@ -2194,10 +2116,6 @@ function vipLevel (yuanbao: number): {level: number; remain: number; spent: numb
 }
 
 // VIPHelper.GetLevelUpRemandProp:升到 nextLevel 需要的元宝
-function vipLevelUpCost (nextLevel: number): number {
-  return (1 + Math.trunc(nextLevel / 10)) * nextLevel * 60 + 8;
-}
-
 // 御灵师升级:消耗 100*(L/10)*(L/10+1)+20*(L/10+1)*(L%10) 御力
 function yuLingShiLevel (
   yuli: number,

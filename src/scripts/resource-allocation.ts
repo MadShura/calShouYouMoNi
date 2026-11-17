@@ -32,6 +32,7 @@ import process from "node:process";
 import {
   culDamagePercent,
   fmtShort,
+  lianQiLevelUpExp,
   makeEquipMainAtk,
   oneShotDamage,
   qiDingCost,
@@ -41,6 +42,7 @@ import {
   shengShouStat,
   TUJIAN_ITEM_EXP,
   tuJianStat,
+  vipLevelUpCost,
   yuLingLevelCost,
   zhenFaCost,
   zhenFaStat,
@@ -317,13 +319,6 @@ function expectedPinZhi (qiluLevel: number): number {
   }
   return pinzhi;
 }
-function lianQiLevelUpExp (level: number): number {
-  if (level <= 10) {return level * 20;}
-  if (level < 20) {return 200 + 50 * (level - 10);}
-  if (level < 30) {return 700 + 100 * (level - 20);}
-  if (level >= 40) {return 3700 + 300 * (level - 40);}
-  return 1700 + 200 * (level - 30);
-}
 
 // 突破第 i 次给 2+trunc(4·i·1.75)=2+7i；Σ_{i=1..n}(2+7i)=2n+7n(n+1)/2 (闭式,避免逐次累加)
 function sumBreakthrough (n: number): number {
@@ -340,9 +335,6 @@ remain = exp;
     level += 1;
     costSum += Math.trunc((level - 1) / 10) + 1;
   }
-}
-function vipLevelUpCost (nextLevel: number): number {
-  return (1 + Math.trunc(nextLevel / 10)) * nextLevel * 60 + 8;
 }
 const sumLinear = (from: number,to: number,base: number,step: number): number => {
   if (to <= from) {return 0;}

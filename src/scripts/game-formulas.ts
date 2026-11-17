@@ -308,6 +308,119 @@ export const fmtShort = (n: number): string => {
   return n.toFixed(0);
 };
 
+// 装备品质概率表条目.
+export interface EquipPercentEntry {
+  initialLevel:    number;
+  percentLevelAdd: number;
+  pinzhi:          number;
+}
+
+// 羁绊配置(各脚本共用):levels 按 count 阈值给 level.
+export interface JiBanConfig {
+  id:     number;
+  levels: {count: number; entry: number; level: number}[];
+  type:   number;
+}
+
+// 取羁绊在 count 人下的等级(取所有满足 count 阈值中的最大 level).
+export function bondLevel (jiban: JiBanConfig[],bondType: number,count: number): number {
+  const config = jiban.find(item => item.type === bondType);
+  if (!config) {return 0;}
+  let level = 0;
+  for (const item of config.levels) {
+    if (count >= item.count && item.level > level) {
+      level = item.level;
+    }
+  }
+  return level;
+}
+
+// 夹到 [0,1].
+export function clamp01 (value: number): number {
+  if (value < 0) {
+    return 0;
+  }
+  return Math.min(value,1);
+}
+
+// ============================== 各分析脚本共用函数(原散落多文件,集中于此) ==============================
+// 组合生成:C(n,k),从 list 取 count 个的有序组合(list 内下标递增).
+export function combinationsOf (list: readonly number[],count: number): number[][] {
+  const out: number[][] = [];
+  const walk = (start: number,picked: number[]): void => {
+    if (picked.length === count) {
+      out.push([...picked]);
+      return;
+    }
+    for (let i = start; i < list.length; i += 1) {
+      const value = list[i];
+      if (value === undefined) {continue;}
+      picked.push(value);
+      walk(i + 1,picked);
+      picked.pop();
+    }
+  };
+  walk(0,[]);
+  return out;
+}
+
+// 炼器升级一级所需经验(研究口径按满 50 级,每本 150).
+export function lianQiLevelUpExp (level: number): number {
+  if (level <= 10) {
+    return level * 20;
+  }
+  if (level < 20) {
+    return 200 + 50 * (level - 10);
+  }
+  if (level < 30) {
+    return 700 + 100 * (level - 20);
+  }
+  if (level >= 40) {
+    return 3700 + 300 * (level - 40);
+  }
+  return 1700 + 200 * (level - 30);
+}
+
+// 按器鼎等级从高到低分配 1000‰ 品质概率.
+export function pinZhiDistribution (qiLuLevel: number,table: EquipPercentEntry[]): number[] {
+  const percent = Array.from({length: table.length},() => 0);
+  for (let index = table.length - 1; index >= 0; index -= 1) {
+    const entry = table[index];
+    if (!entry) {
+      continue;
+    }
+    const used = percent.reduce((sum,value) => sum + value,0);
+    if (used >= 1000) {
+      break;
+    }
+    if (entry.initialLevel >= qiLuLevel) {continue;}
+    const remain = 1000 - used;
+    const add = Math.min((qiLuLevel - entry.initialLevel) * entry.percentLevelAdd,remain);
+    percent[index] = add;
+  }
+  return percent;
+}
+
+// 通天塔层数加成(MapRecorder.cs,层数/100 每万层翻倍的连续段).
+export function towerAddition (layer: number): number {
+  if (layer <= 10000) {
+    return 1;
+  }
+  const bucket = Math.min(Math.trunc(layer / 10000),200);
+  if (layer < 20000) {
+    return 1 + (layer - 10000) / 10000 * 9;
+  }
+  const low = 10 * 2 ** (bucket - 2);
+  const high = 10 * 2 ** (bucket - 1);
+  const remain = layer % 10000;
+  return remain === 0 ? low : remain / 10000 * (high - low) + low;
+}
+
+// VIP 升级所需元宝.
+export function vipLevelUpCost (nextLevel: number): number {
+  return (1 + Math.trunc(nextLevel / 10)) * nextLevel * 60 + 8;
+}
+
 // ============================== 演示:逐档表 ==============================
 function main (): void {
   console.log("===== 所有资源→战力 系统公式逐档表 =====");

@@ -1,6 +1,8 @@
 import {argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {loadConfig,runMain} from "../tools.ts";
 import type {BattleDataRecorder} from "../readSave.ts";
+import {clamp01,culDamagePercent,pinZhiDistribution} from "./game-formulas.ts";
+import type {EquipPercentEntry} from "./game-formulas.ts";
 
 /**
  * 物资性价比:卖冥商换元宝买属性药 VS 直接用来强化 统一口径是「期望伤害变化率」,公式来自反编译代码:
@@ -113,12 +115,6 @@ interface BondContext {
   xiXing:  number;
 }
 
-interface EquipPercentEntry {
-  initialLevel:    number;
-  percentLevelAdd: number;
-  pinzhi:          number;
-}
-
 // 一次属性改动,percent 对应 ChangeProprtyValue 的 percent 参数
 interface Gain {
   percent: boolean;
@@ -221,36 +217,10 @@ function ciTiaoCount (pinZhi: number): number {
   if (pinZhi > 9) {count += 1;}
   return count;
 }
-function clamp01 (value: number): number {
-  if (value < 0) {
-    return 0;
-  }
-  return Math.min(value,1);
-}
 
 // 复制一份 RawStats
 function cloneRaw (raw: RawStats): RawStats {
   return {base: [...raw.base],pct: [...raw.pct]};
-}
-
-// CulDamagePercent:攻防比系数
-function culDamagePercent (atk: number,def: number): number {
-  if (def <= 0) {
-    return atk > 0 ? 100 : 50;
-  }
-  if (atk === def) {
-    return 50;
-  }
-  if (atk > def) {
-    if (atk >= 3 * def) {
-      return 100;
-    }
-    return 50 + Math.trunc((atk - def) * 50 / def) * 2;
-  }
-  if (atk * 3 <= def) {
-    return 2;
-  }
-  return 2 + Math.trunc((atk * 3 - def) * 48 / (def * 2));
 }
 function emptyRaw (): RawStats {
   return {base: Array.from({length: PROP_COUNT},() => 0),pct: Array.from({length: PROP_COUNT},() => 0)};
@@ -938,29 +908,6 @@ function main (): void {
   }
   lines.push("--- 说明 ---","1、百分比属性（暴击/暴伤/命中/伤害加成/连击）的收益按当前面板换算，不是“1 点 = 1 点攻击”。","2、命中/暴击/连击/反击的实际概率上限 100%，溢出部分无收益；伤害减免上限 80%。","3、攻防系数在攻击 ≥ 3×有效防御时会从约 250 掉回 100，堆攻击/穿透时要注意这个断点。","4、制作装备是毛收益：产出随机、要替换旧装备；阵法 1 的战斗期 +等级% 攻击不在面板里。","5、冥商收购每个档位只能成交一次，这里取最高单价。");
   console.log(lines.join("\n"));
-}
-
-// 装备品质概率表(EquipLevel_PercentTable.GeneratePercent)
-function pinZhiDistribution (qiLuLevel: number,table: EquipPercentEntry[]): number[] {
-  const percent = Array.from({length: table.length},() => 0);
-  for (let index = table.length - 1; index >= 0; index -= 1) {
-    const entry = table[index];
-    if (!entry) {
-      continue;
-    }
-    const used = percent.reduce((sum,value) => sum + value,0);
-    if (used >= 1000) {
-      break;
-    }
-    if (entry.initialLevel >= qiLuLevel) {continue;}
-    let add = (qiLuLevel - entry.initialLevel) * entry.percentLevelAdd;
-    const remain = 1000 - used;
-    if (remain <= add) {
-      add = remain;
-    }
-    percent[index] = add;
-  }
-  return percent;
 }
 function propName (names: NamesConfig,propID: number): string {
   return names.props[String(propID)] ?? `道具${String(propID)}`;

@@ -1,5 +1,6 @@
-import {formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {culPercentToInt,formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {runMain} from "../tools.ts";
+import {yuLingLevelCost as levelCost} from "./game-formulas.ts";
 
 /**
  * 御灵师升级计算器 公式全部来自反编译代码:
@@ -21,12 +22,6 @@ const SELL_PRICE_MARK = 29;
 const TUPO_COST = 500;
 const TUPO_PROP = 81;
 const YULING_EXP_MARK = 33;
-
-// CulLevel_Up_Remand()
-function levelCost (level: number): number {
-  const tens = Math.floor(level / 10);
-  return 100 * tens * (tens + 1) + 20 * (tens + 1) * (level % 10);
-}
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
   if (isArgOn(args,"help")) {
@@ -84,7 +79,7 @@ function main (): void {
   const needBooks = Math.max(0,books - booksOwned);
 
   // 批量购买整批一次取整
-  const buyMoney = percentToInt(book.valueCost * needBooks,sellMark,true);
+  const buyMoney = culPercentToInt(book.valueCost * needBooks,sellMark,true);
   const needMoney = Math.max(0,buyMoney - moneyOwned);
   const needTupo = breakthroughs * TUPO_COST;
   const lines: string[] = [
@@ -109,12 +104,5 @@ function main (): void {
     "说明：突破不消耗经验，但等级卡在 10 的倍数且突破丹不足时无法继续升级。"
   ];
   console.log(lines.join("\n"));
-}
-
-// ToolClass.Cul_Percent_ToInt:四舍五入远离零
-function percentToInt (baseValue: number,percentage: number,hasReduce: boolean): number {
-  const factor = hasReduce ? 100 - percentage : 100 + percentage;
-  const value = baseValue * factor / 100;
-  return value < 0 ? -Math.round(-value) : Math.round(value);
 }
 runMain(main);

@@ -4,6 +4,8 @@ import {argNumber,argString,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../
 import {loadConfig,runMain} from "../tools.ts";
 import type {YingLingConfig} from "../tools.ts";
 import type {BattleDataRecorder} from "../readSave.ts";
+import {bondLevel,clamp01,combinationsOf,culDamagePercent,towerAddition as enemyAddition} from "./game-formulas.ts";
+import type {JiBanConfig} from "./game-formulas.ts";
 
 /**
  * 配队输出排名(羁绊 + 15 级御灵装备 + 绝对伤害)
@@ -96,12 +98,6 @@ interface ComboResult {
   multiplier: number;
 }
 
-interface JiBanConfig {
-  id:     number;
-  levels: {count: number; entry: number; level: number}[];
-  type:   number;
-}
-
 interface NamesConfig {
   jiBan:     Record<string,string>;
   maps:      Record<string,string>;
@@ -126,19 +122,6 @@ interface SceneInfo {
   enemyShanBi:       number;
   key:               string;
   title:             string;
-}
-
-// 羁绊等级:达到哪个 Count 就取那一档(按 ZhenRongJiBanTypeEnum 匹配)
-function bondLevel (jiban: JiBanConfig[],bondType: number,count: number): number {
-  const config = jiban.find(item => item.type === bondType);
-  if (!config) {return 0;}
-  let level = 0;
-  for (const item of config.levels) {
-    if (count >= item.count && item.level > level) {
-      level = item.level;
-    }
-  }
-  return level;
 }
 
 // 单个羁绊对期望伤害的倍率(入参是 ZhenRongJiBanTypeEnum:0 三国群英...11 西行取经)
@@ -167,32 +150,6 @@ function bondMultiplier (bondType: number,level: number,ctx: BondContext): numbe
   }
   return 1;
 }
-function clamp01 (value: number): number {
-  if (value < 0) {
-    return 0;
-  }
-  return Math.min(value,1);
-}
-
-// 从有序列表里取 count 个的所有组合(递归,避免深层 for 嵌套触发 max-depth)
-function combinationsOf (list: readonly number[],count: number): number[][] {
-  const out: number[][] = [];
-  const walk = (start: number,picked: number[]): void => {
-    if (picked.length === count) {
-      out.push([...picked]);
-      return;
-    }
-    for (let i = start; i < list.length; i += 1) {
-      const value = list[i];
-      if (value === undefined) {continue;}
-      picked.push(value);
-      walk(i + 1,picked);
-      picked.pop();
-    }
-  };
-  walk(0,[]);
-  return out;
-}
 
 // 组合里的开战增益(武松增伤/加攻；命中按 100% 口径,不再算命中类光环)
 function comboSupport (combo: number[]): {atkBuff: number; damageBuff: number} {
@@ -201,41 +158,6 @@ function comboSupport (combo: number[]): {atkBuff: number; damageBuff: number} {
     atkBuff:    hasWuSong ? 20 : 0, // 武松神形态 1011:最高攻 +20% 攻击 3 回合(加到攻击百分比)
     damageBuff: hasWuSong ? 35 : 0 // 武松三技能:最高攻 +35% 增伤 3 回合(加到伤害加成)
   };
-}
-
-// Damage_Recorder.CulDamagePercent:攻防比系数
-function culDamagePercent (atk: number,def: number): number {
-  if (def <= 0) {
-    return atk > 0 ? 100 : 50;
-  }
-  if (atk === def) {
-    return 50;
-  }
-  if (atk > def) {
-    if (atk >= 3 * def) {
-      return 100;
-    }
-    return 50 + Math.trunc((atk - def) * 50 / def) * 2;
-  }
-  if (atk * 3 <= def) {
-    return 2;
-  }
-  return 2 + Math.trunc((atk * 3 - def) * 48 / (def * 2));
-}
-
-// Character_Enemy.GetAddition:TrueRound 成长倍率
-function enemyAddition (trueRound: number): number {
-  if (trueRound <= 10000) {
-    return 1;
-  }
-  const num = Math.min(Math.trunc(trueRound / 10000),200);
-  if (trueRound < 20000) {
-    return 1 + (trueRound - 10000) / 10000 * 9;
-  }
-  const low = 10 * 2 ** (num - 2);
-  const high = 10 * 2 ** (num - 1);
-  const rem = trueRound % 10000;
-  return rem === 0 ? low : rem / 10000 * (high - low) + low;
 }
 function evaluateCombo (
   combo: number[],

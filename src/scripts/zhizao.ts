@@ -1,5 +1,6 @@
 import {formatSuoXie,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {runMain} from "../tools.ts";
+import {lianQiLevelUpExp} from "./game-formulas.ts";
 
 /**
  * 炼器(制作装备)升级计算器 口径全部来自反编译源码,与 yingling-output.ts 一致:
@@ -11,23 +12,6 @@ import {runMain} from "../tools.ts";
  */
 const BOOK_PROP = 86;
 const DEFAULT_TARGET = 1000;
-
-// PropHelper.GetLianQiLevelUpExp:炼器每级所需经验(从 level 升到 level+1)
-function lianQiLevelUpExp (level: number): number {
-  if (level <= 10) {
-    return level * 20;
-  }
-  if (level < 20) {
-    return 200 + 50 * (level - 10);
-  }
-  if (level < 30) {
-    return 700 + 100 * (level - 20);
-  }
-  if (level >= 40) {
-    return 3700 + 300 * (level - 40);
-  }
-  return 1700 + 200 * (level - 30);
-}
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
   if (isArgOn(args,"help")) {
