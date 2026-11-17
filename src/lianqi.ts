@@ -1,5 +1,5 @@
-import {formatSuoXie,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import {runMain} from "../tools.ts";
+import {formatSuoXie,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {runMain} from "./tools.ts";
 
 /**
  * 器鼎升级计算器 口径来自 yingling-output.ts:2157 qiLuLevel:

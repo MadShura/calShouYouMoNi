@@ -15,13 +15,13 @@
  * 作为保守的统一预算估算,可用 --resource=N 覆盖(N 为「每项初始资源」预算值).
  * 用法:pnpm exec tsx src/scripts/gen-diagnose-trial.ts [--resource=N] [--save=1]
  */
-import {argNumber,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import type {GameRecord} from "../readSave.ts";
+import {argNumber,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import type {GameRecord} from "./readSave.ts";
 import {trialEnemy} from "./enemy-stats.ts";
 import type {EnemyStats} from "./enemy-stats.ts";
 import {fmtShort,oneShotDamage,requiredAtk} from "./game-formulas.ts";
-import {runMain} from "../tools.ts";
-import type {ShiLianSave} from "../tools.ts";
+import {runMain} from "./tools.ts";
+import type {ShiLianSave} from "./tools.ts";
 import {buildResourcePanel} from "./yingling-output.ts";
 import type {ResourcePanel} from "./yingling-output.ts";
 

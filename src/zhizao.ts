@@ -1,5 +1,5 @@
-import {formatSuoXie,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import {runMain} from "../tools.ts";
+import {formatSuoXie,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {runMain} from "./tools.ts";
 import {lianQiLevelUpExp} from "./game-formulas.ts";
 
 /**

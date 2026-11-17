@@ -1,12 +1,12 @@
 import {existsSync,mkdirSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
-import {argNumber,argString,parseArgs} from "../readSave.ts";
+import {argNumber,argString,parseArgs} from "./readSave.ts";
 import {hitRate,TOWER_ENEMY_10000,TRIAL_ENEMY_100,ZHONG_JU} from "./enemy-stats.ts";
-import type {CliArgs} from "../readSave.ts";
+import type {CliArgs} from "./readSave.ts";
 import {bondLevel,combinationsOf,culDamagePercent,lianQiLevelUpExp,pinZhiDistribution,sceneDamage,vipLevelUpCost} from "./game-formulas.ts";
 import type {EquipPercentEntry,JiBanConfig} from "./game-formulas.ts";
-import {loadConfig,runMain} from "../tools.ts";
-import type {YingLingConfig} from "../tools.ts";
+import {loadConfig,runMain} from "./tools.ts";
+import type {YingLingConfig} from "./tools.ts";
 
 /**
  * 英灵输出潜力排名(不读存档)

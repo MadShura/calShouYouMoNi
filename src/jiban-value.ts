@@ -1,9 +1,9 @@
 import {existsSync,mkdirSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
-import {argNumber,argString,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import {loadConfig,runMain} from "../tools.ts";
-import type {YingLingConfig} from "../tools.ts";
-import type {BattleDataRecorder} from "../readSave.ts";
+import {argNumber,argString,isArgOn,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {loadConfig,runMain} from "./tools.ts";
+import type {YingLingConfig} from "./tools.ts";
+import type {BattleDataRecorder} from "./readSave.ts";
 import {bondLevel,clamp01,combinationsOf,culDamagePercent,towerAddition as enemyAddition} from "./game-formulas.ts";
 import type {JiBanConfig} from "./game-formulas.ts";
 

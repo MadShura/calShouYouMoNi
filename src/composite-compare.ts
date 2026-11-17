@@ -12,7 +12,7 @@
 import {writeFileSync} from "node:fs";
 import {MATERIAL_COST_PER_UNIT} from "./data.ts";
 import {formatSuoXie} from "./readSave.ts";
-import {hitRate} from "./scripts/enemy-stats.ts";
+import {hitRate} from "./enemy-stats.ts";
 import {ENEMY_5} from "./zhanli-panel.ts";
 
 // 口径(全部来自反编译源码,见 src/反编译):

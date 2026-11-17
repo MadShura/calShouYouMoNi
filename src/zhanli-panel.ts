@@ -9,8 +9,8 @@
 import {readFileSync} from "node:fs";
 import {PROPERTY_TO_KEY} from "./data.ts";
 import {loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
-import {ZHONG_JU} from "./scripts/enemy-stats.ts";
-import {oneShotDamage} from "./scripts/game-formulas.ts";
+import {ZHONG_JU} from "./enemy-stats.ts";
+import {oneShotDamage} from "./game-formulas.ts";
 
 export const PROP_COUNT = 18;
 export const PROPERTY_CONFIG = JSON.parse(

@@ -1,6 +1,6 @@
-import {argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import {loadConfig,runMain} from "../tools.ts";
-import type {BattleDataRecorder} from "../readSave.ts";
+import {argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {loadConfig,runMain} from "./tools.ts";
+import type {BattleDataRecorder} from "./readSave.ts";
 import {clamp01,culDamagePercent,pinZhiDistribution} from "./game-formulas.ts";
 import type {EquipPercentEntry} from "./game-formulas.ts";
 

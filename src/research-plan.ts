@@ -11,7 +11,7 @@
  * - 掉落类(39-43/56-62) 与御灵石经验一样「点满但不进面板」,本模块单列,
  * 因资源分配求解是静态模型,不模拟挂机掉落,故只列出不计入.
  */
-import {loadConfig} from "../tools.ts";
+import {loadConfig} from "./tools.ts";
 
 export interface KeJiConfig {
   cost:      number;

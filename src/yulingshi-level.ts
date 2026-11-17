@@ -1,5 +1,5 @@
-import {culPercentToInt,formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import {runMain} from "../tools.ts";
+import {culPercentToInt,formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {runMain} from "./tools.ts";
 import {yuLingLevelCost as levelCost} from "./game-formulas.ts";
 
 /**

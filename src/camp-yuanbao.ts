@@ -1,6 +1,6 @@
-import {argNumber,formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import {loadConfig,runMain} from "../tools.ts";
-import type {CampData,CampPlayerRecord,SaveBundle} from "../readSave.ts";
+import {argNumber,formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {loadConfig,runMain} from "./tools.ts";
+import type {CampData,CampPlayerRecord,SaveBundle} from "./readSave.ts";
 
 interface DiKuaiTile {
   col:      number;

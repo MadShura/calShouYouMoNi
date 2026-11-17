@@ -1,4 +1,4 @@
-import {argNumber,parseArgs} from "../readSave.ts";
+import {argNumber,parseArgs} from "./readSave.ts";
 
 /**
  * 寻宝期望体力

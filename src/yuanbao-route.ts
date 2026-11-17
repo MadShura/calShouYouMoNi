@@ -17,10 +17,10 @@
  */
 import {existsSync,readFileSync} from "node:fs";
 import {join} from "node:path";
-import {argNumber,argString,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {argNumber,argString,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
 import {yuLingLevelCost} from "./game-formulas.ts";
 import {trialEnemy,trialEnemyHp} from "./enemy-stats.ts";
-import type {ShiLianSave} from "../tools.ts";
+import type {ShiLianSave} from "./tools.ts";
 
 // #region 类型与只读数据加载
 const DEFAULT_GAME_DIR = String.raw`D:\game\steam\steamapps\common\MoNiShouYou`;

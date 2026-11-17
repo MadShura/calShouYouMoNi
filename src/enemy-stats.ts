@@ -1,7 +1,7 @@
  import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
-import {argString,formatSuoXie,parseArgs} from "../readSave.ts";
-import {runMain} from "../tools.ts";
+import {argString,formatSuoXie,parseArgs} from "./readSave.ts";
+import {runMain} from "./tools.ts";
 import {towerAddition} from "./game-formulas.ts";
 
 /**
