@@ -110,18 +110,15 @@ function main (): void {
   for (const note of stepNotes) {console.log(`  · ${note}`);}
   console.log(`  剩余需求 = ${String(remainNeed)} 体力（整轮从头参考值 ${String(XUNBAO_NEED_TILI)}：前9层期望+第10层全开，当前已进行到第${String(layer)}层）`);
 
-  console.log("\n=== 还需多少个仙葫芦 ===");
-  console.log(`  已有仙葫芦 ${String(xianhuNums)} 个 × ${String(TILI_PER_XIANHU)} = ${String(xianhuTili)} 体力`);
-  const supply = tiliAtEnd + xianhuTili;
-  console.log(`  本轮结束前体力 ${String(tiliAtEnd)} + 仙葫芦 ${String(xianhuTili)} = ${String(supply)} 体力`);
-  const gap = remainNeed - supply;
+  console.log("\n=== 还需仙葫芦才能走完本轮 ===");
+  console.log(`  体力缺口 = 剩余需求 ${String(remainNeed)} − 本轮结束前体力 ${String(tiliAtEnd)} = ${String(remainNeed - tiliAtEnd)}`);
+  const gap = remainNeed - tiliAtEnd;
   if (gap > 0) {
     const needPills = Math.ceil(gap / TILI_PER_XIANHU);
-    console.log(`  还差 ${String(gap)} 体力 → 需再用 ${String(needPills)} 个仙葫芦（${String(needPills * XIANHU_COST)} 元宝）`);
+    console.log(`  还需 ${String(needPills)} 个仙葫芦（${String(needPills * XIANHU_COST)} 元宝）才能搞完本轮`);
   } else {
-    console.log(`  已够（多 ${String(-gap)} 体力，无需再用仙葫芦）`);
+    console.log(`  无需仙葫芦，本轮结束前体力已够（多 ${String(-gap)}）`);
   }
-  const gapNoXianhu = remainNeed - tiliAtEnd;
-  console.log(`  若不动用已有仙葫芦：体力缺口 ${String(gapNoXianhu)} → 需 ${String(Math.ceil(Math.max(0,gapNoXianhu) / TILI_PER_XIANHU))} 个仙葫芦`);
+  console.log(`  参考：已有仙葫芦 ${String(xianhuNums)} 个 × ${String(TILI_PER_XIANHU)} = ${String(xianhuTili)} 体力（本口径不抵扣）`);
 }
 runMain(main);
