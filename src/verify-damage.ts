@@ -21,9 +21,19 @@
  * 阵法:读存档 CurZhenFa.天覆阵(1)=最高攻 +等级% 攻击;鸟翔阵(8)=无攻击加成,但按
  *   Entry_ZhenFa_8.cs:30-41 把 min(我方Speed.TrueBase−敌速,2147483646) 加进百分比乘区.
  *
- * 减伤:CulFinalDamage 末步 ×(100−敌人减伤)/100.通天塔 205400 层「第一次攻击」实测 143~146 垓,
- *   第一个目标是小怪(idx13 图鉴 5910%、Mark 0 层),0% 减伤时 206.4 垓,只有 30% 减伤对上 144.5;
- *   等价于 10 层威慑(Entry_ZhenShe 每层 −3%,封顶 −66%);--reduce=N 可覆盖.试炼/终局封顶 80.
+ * 减伤:CulFinalDamage 末步 ×(100−敌人减伤)/100.通天塔敌人**不减伤**:Character_Enemy.Initail_Data
+ *   从不写 DamageReduce,预设词条(Enemy_Skill_13/14/15)只加敌方暴击,敌人身上也没有减伤词条,
+ *   所以 0%.旧版写的 30% 是把 207585 层实到的「首领 142~148 垓」误当成「第一个目标(小怪)」反解出来的,
+ *   属于把 boss 数字套到小怪身上;--reduce=N 仍可手动覆盖.试炼/终局封顶 80.
+ *
+ * 队友与羁绊(全部读存档,不写死):
+ * - 孙悟空自身词条 BattleEntry:神通15(每 10 级 命中×1)、神通19(每级技能动作 +20%)、神通27(目标负面层数和);
+ * - 阵容羁绊 ZhenRongManager.ZhenRong + config/yingling.json 的 bonds(=ZhenRongJiBanTypeEnum) 统计人数,
+ *   再按 config/jiban.json 取档位等级:西行取经(类型11)=(命中−敌闪避)×(0.25+0.25×级)、
+ *   神鬼志异(类型4)=(我方闪避−敌命中)×(0.2+0.2×级)、万人敌(类型5)=层数×敌人数、三国群英(类型0)=(100−敌HP%)/(4−0.5×级);
+ * - 队友开战效果:武松神转职(技能1011,Entry_Skill_1011) 最高攻 +20% 攻击;武松3技能(技能18,Entry_Skill_18)
+ *   最高攻 +35% 伤害加成;唐三藏3技能(技能81,Entry_Skill_81) 全体 +30 命中;猪八戒3技能(技能84,Entry_Skill_84)
+ *   全体敌人 +2 层流血且 −20 闪避(同时喂 神通27 与 西行取经).
  *
  * 图鉴增伤(研究54,仅通天塔):Character_Enemy.cs:125-131 = 图鉴等级 × 研究54等级;通天塔 map5 的
  *   小怪/精英/首领 PresetID 取自 config/maps.json(louLouID/jingYingID/bossID).
@@ -84,19 +94,16 @@ const WU_KONG = 26;
 const WU_SONG = 6;
 const TANG_SAN_ZANG = 27;
 const ZHU_BA_JIE = 28;
-const SHA_SENG = 29;
-const COMBO = [WU_KONG,WU_SONG,TANG_SAN_ZANG,ZHU_BA_JIE,SHA_SENG] as const;
 
 // 战斗期常量(源码口径,与角色面板无关).
-const TANG_SAN_ZANG_HIT = 30;                      // 唐三藏 3技能:开战全体 +30 命中
-const ZHU_BA_JIE_DODGE_DOWN = 20;                   // 猪八戒 3技能:开战全体 -20 闪避
-const LIU_XUE_STACKS = 2;                           // 猪八戒 3技能:开战 +2 层流血
-const XI_XING_LEVEL = 3;                            // 西行取经 4 人队 = Lv.3
-const XI_XING_RATE = 0.25 + 0.25 * XI_XING_LEVEL;    // Lv.3 → ×1.0
-const WU_SONG_ATK_PCT = 20;                         // 武松神转职:最高攻 +20% 攻击(进攻击桶)
-const WU_SONG_DMG_ADD = 35;                         // 武松 3技能:最高攻 +35% 伤害加成
-const RAGE_SKILL_REDUCE = 30;                       // 孙悟空神转职怒气技能 -30%
-const SHEN_TONG_19_PCT = 100;                       // 神通19:怒气动作 +20%×5 级
+const TANG_SAN_ZANG_HIT = 30;                      // 唐三藏3技能 Entry_Skill_81:开战全体 +30 命中
+const ZHU_BA_JIE_DODGE_DOWN = 20;                   // 猪八戒3技能 Entry_Skill_84:开战全体敌人 -20 闪避
+const LIU_XUE_STACKS = 2;                           // 猪八戒3技能 Entry_Skill_84:开战 +2 层流血(Bad)
+const SKILL_76_PCT = -30;                           // 孙悟空3技能「对全部敌人造成70%伤害」= -30 桶
+const SHEN_TONG_19_BASE = 20;                       // 神通19 Entry_ShenTong_5:每级技能动作 +20%
+const MARK_PCT = 10;                                // 孙悟空3技能:每命中一个敌人 +10% 怒气伤害
+const WU_SONG_ATK_PCT = 20;                         // 武松神转职 Entry_Skill_1011:最高攻 +20% 攻击
+const WU_SONG_DMG_ADD = 35;                         // 武松3技能 Entry_Skill_18:最高攻 +35% 伤害加成
 const BATTERY_MIN = 0.95;                           // Damage_Recorder.cs:80-81 Random.Range 下限
 const BATTERY_MAX = 1.05;                           // 同上上限
 const SP_OPEN_BATTLE = 30;                          // 开战 SP
@@ -104,7 +111,7 @@ const SP_MAX = 101;                                 // MaxSP
 const SP_RAGE_NEED = 100;                           // 怒气动作门槛
 const REN_HUANG_YIN_SP = 50;                        // 人皇印:开战 +50 怒气
 const WU_KONG_SHEN_SP = 25;                         // 孙悟空神转职:开战 +25 怒气
-const TOWER_DAMAGE_REDUCE = 30;                     // 通天塔实测反解减伤(见文件头)
+const TOWER_DAMAGE_REDUCE = 0;                      // 通天塔敌人不减伤(见文件头)
 const ZHENFA_TIANFU = 1;
 const ZHENFA_NIAOXIANG = 8;
 const NIAOXIANG_DAMAGE_CAP = 21_4748_3646;
@@ -113,6 +120,21 @@ const TOWER_QUALITY: Record<number,readonly number[]> = {
   0: [1,1,2,3,2],1: [1,1,1,1,1],2: [1,1,1,2,1],3: [1,1,2,2,1],4: [1,1,2,2,2]
 };
 const QUALITY_NAME: Record<number,string> = {1: "小怪",2: "精英",3: "首领"};
+
+// 词条枚举索引(EntryNameEnum 声明顺序).
+const ENTRY_SHENTONG_3 = 37;    // 神通15:命中×Base(1)×等级/10
+const ENTRY_SHENTONG_5 = 39;    // 神通19:技能动作 +20%/级
+const ENTRY_SHENTONG_11 = 45;   // 神通27:目标负面层数之和
+const ENTRY_SKILL_18 = 65;      // 武松3技能:最高攻 +35 伤害加成
+const ENTRY_SKILL_81 = 260;     // 唐三藏3技能:全体 +30 命中
+const ENTRY_SKILL_84 = 263;     // 猪八戒3技能:敌人 +2 流血、-20 闪避
+const ENTRY_SKILL_1011 = 203;   // 武松神转职:最高攻 +20 攻击
+
+// 羁绊类型(ZhenRongJiBanTypeEnum) = config/jiban.json 的 type 字段.
+const JI_BAN_SAN_GUO = 0;       // 三国群英:(100−敌HP%)/(4−0.5×级)
+const JI_BAN_SHEN_GUI = 4;      // 神鬼志异:(我方闪避−敌命中)×(0.2+0.2×级)
+const JI_BAN_WAN_REN_DI = 5;    // 万人敌:层数×敌人数
+const JI_BAN_XI_XING = 11;      // 西行取经:(命中−敌闪避)×(0.25+0.25×级)
 
 // 存档结构(只声明本文件用到的字段).
 export interface BattleRecorder {
@@ -141,6 +163,7 @@ export interface PropDefinition {
 export interface YingLingEntry {
   _id:                number;
   BattleData_Manager?: {battleData_Recorders_List?: BattleRecorder[]};
+  BattleEntry?:       {EntryNameEnum: number; Level: number; StayRound: number}[];
   Cur_Level?:         number;
   Master_ID?:         number;
   Skills?:            number[];
@@ -154,6 +177,7 @@ export interface ChaEntry {
   keJi_Recorders?:         {KeJi_ID: number; KeJi_Level: number}[];
   tuJianData_RecordsList?: {EnemyIndex: number; Level: number}[];
   zhenFaRecorders?:        {JieSuo: boolean; Level: number; ZhenFaID: number}[];
+  ZhenRongManager?:        {ZhenRong?: {ZhenRong?: number[]}};
 }
 export interface SaveBundle {
   cha:       ChaEntry;
@@ -202,6 +226,7 @@ interface LingQiConfig {
   weapons: LingQiWeapon[];
 }
 interface YingLingConfig {
+  bonds?:    number[];   // = ZhenRongJiBanTypeEnum 列表
   index:     number;
   skillMo:   number;
   skillShen: number;
@@ -222,12 +247,25 @@ export interface CarryPanel {
   crit:       number;
   critDamage: number;
   dmgAdd:     number;
+  dodge:      number;
   equips:     EquipInfo[];
   hit:        number;
   lucky:      number;
   pen:        number;
   speed:      number;
   weapon:     LingQiWeapon | undefined;
+}
+export interface DamageBuckets {
+  hit:        number;   // 孙悟空3技能:每 1% 命中 +1% 伤害
+  mark:       number;   // 孙悟空3技能 Mark×10
+  shenGui:    number;   // 神鬼志异
+  shenTong15: number;   // 神通15
+  shenTong19: number;   // 神通19
+  shenTong27: number;   // 神通27
+  skill:      number;   // 孙悟空3技能 70%
+  speedDiff:  number;   // 鸟翔阵
+  tuJian:     number;   // 图鉴 × 研究54
+  xiXing:     number;   // 西行取经
 }
 export interface DamageRange {
   scene:          string;
@@ -243,16 +281,27 @@ export interface DamageRange {
   k:              number;
   total:          number;
   nonCrit:        number;
-  tuJianDamagePct:number;
-  weiShePct:      number;
-  markPct:        number;
+  crit:           number;
+  mark:           number;
+  buckets:        DamageBuckets;
   wuSongAtkPct:   number;
   wuSongDmgAdd:   number;
   zhenFaNote:     string;
-  speedDiff:      number;
-  crit:           number;
   nonCritRange:   readonly [number,number];
   critRange:      readonly [number,number];
+}
+// 队伍在开战瞬间生效的加成(全部由存档 BattleEntry / 阵容羁绊 推出).
+export interface TeamContext {
+  badStacks:     number;             // 敌人开战负面层数(神通27 用)
+  jiban:         Map<number,number>; // 羁绊类型 → 生效等级
+  shenTong15:    number;
+  shenTong19:    number;
+  shenTong27:    number;
+  tangSanZangHit:number;
+  wuSongAtkPct:  number;
+  wuSongDmgAdd:  number;
+  zhenFaID:      number;
+  zhenFaLevel:   number;
 }
 interface CliArgs {
   get: (key: string) => string | true | undefined;
@@ -462,6 +511,7 @@ export function loadCarryPanel (save: SaveBundle,carryIndex = WU_KONG): CarryPan
     crit:       mergedFinal(PROP_CRIT,percentProps,yingLing,master).value,
     critDamage: mergedFinal(PROP_CRIT_DAMAGE,percentProps,yingLing,master).value,
     dmgAdd:     mergedFinal(PROP_DAMAGE_ADD,percentProps,yingLing,master).value,
+    dodge:      mergedFinal(PROP_DODGE,percentProps,yingLing,master).value,
     equips,
     hit:        mergedFinal(PROP_HIT,percentProps,yingLing,master).value,
     lucky:      mergedFinal(PROP_LUCKY,percentProps,yingLing,master).value,
@@ -499,6 +549,65 @@ function hasShen (save: SaveBundle,index: number): boolean {
 function towerPresets (): {boss: number; elite: number; normal: number} {
   const map = loadConfig<MapRecord[]>("maps").find(item => item.mapID === 5);
   return {boss: map?.bossID ?? 15,elite: map?.jingYingID ?? 14,normal: map?.louLouID ?? 13};
+}
+
+// ============================== 队伍加成 ==============================
+
+// 某英灵(主角队)在存档里的词条列表.
+function entriesOf (save: SaveBundle,index: number): {EntryNameEnum: number; Level: number; StayRound: number}[] {
+  return save.yingLings.find(item => item.YingLing_Index === index && item.Master_ID === 1)?.BattleEntry ?? [];
+}
+
+// 某英灵某词条的等级和(同名词条可叠加).
+function entryLevel (save: SaveBundle,index: number,entry: number): number {
+  return entriesOf(save,index).filter(item => item.EntryNameEnum === entry).reduce((sum,item) => sum + item.Level,0);
+}
+
+// 当前阵容(英灵索引);空位 0 忽略.
+function lineupOf (save: SaveBundle): number[] {
+  return (save.cha.ZhenRongManager?.ZhenRong?.ZhenRong ?? []).filter(index => index !== 0);
+}
+
+// 阵容羁绊:类型 → 生效等级(人数必须与 config/jiban.json 的档位人数完全相等,见 ZhenRong_JiBan.TrrigerEffect).
+function jibanLevelsOf (save: SaveBundle): Map<number,number> {
+  const configs = loadConfig<{levels: {count: number; level: number}[]; type: number}[]>("jiban");
+  const counts = new Map<number,number>();
+  for (const index of lineupOf(save)) {
+    const bonds = loadConfig<YingLingConfig[]>("yingling").find(item => item.index === index)?.bonds ?? [];
+    for (const type of bonds) {counts.set(type,(counts.get(type) ?? 0) + 1);}
+  }
+  const result = new Map<number,number>();
+  for (const [type,count] of counts) {
+    const level = configs.find(item => item.type === type)?.levels.find(item => item.count === count)?.level;
+    if (level !== undefined) {result.set(type,level);}
+  }
+  return result;
+}
+
+/**
+ * 开战瞬间生效的队伍加成,全部按存档与配置推导(不写死等级).
+ * @param save 存档.
+ * @param carryIndex 输出位英灵索引.
+ * @returns TeamContext.
+ */
+export function teamContextOf (save: SaveBundle,carryIndex = WU_KONG): TeamContext {
+  const lineup = lineupOf(save);
+  const zhenFa = currentZhenFa(save);
+  const has = (index: number): boolean => lineup.includes(index);
+  const shenTong15 = entryLevel(save,carryIndex,ENTRY_SHENTONG_3);
+  return {
+    // 猪八戒3技能:两个小词条都是敌人开战负面(流血 + 减闪避)
+    badStacks:      has(ZHU_BA_JIE) ? LIU_XUE_STACKS : 0,
+    jiban:          jibanLevelsOf(save),
+    shenTong15,
+    shenTong19:     entryLevel(save,carryIndex,ENTRY_SHENTONG_5),
+    shenTong27:     entryLevel(save,carryIndex,ENTRY_SHENTONG_11),
+    tangSanZangHit: has(TANG_SAN_ZANG) && entryLevel(save,TANG_SAN_ZANG,ENTRY_SKILL_81) > 0 ? TANG_SAN_ZANG_HIT : 0,
+    wuSongAtkPct:   has(WU_SONG) && entryLevel(save,WU_SONG,ENTRY_SKILL_1011) > 0 ? WU_SONG_ATK_PCT : 0,
+    wuSongDmgAdd:   has(WU_SONG) && entryLevel(save,WU_SONG,ENTRY_SKILL_18) > 0 ? WU_SONG_DMG_ADD : 0,
+    zhenFaID:       zhenFa.id,
+    zhenFaLevel:    zhenFa.level
+  };
 }
 
 // ============================== 敌人属性 ==============================
@@ -592,11 +701,15 @@ function zhongJuEnemies (): (EnemyStats & {tiaoZhanID: number})[] {
 
 /**
  * 按存档实际面板 + 孙悟空神·人皇印队乘区,计算一次技能对某敌人的伤害及各档浮动范围.
+ *
+ * 乘区口径严格按源码:所有项都进 CulFinalValuePercentArray 的百分比数组(逐项 ×(100+x)/100),
+ * 之后才乘 K/100、随机 0.95~1.05、暴伤、伤害加成、减伤.
  * @param scene 场景.
  * @param layer 层数(终局用 challenge 定位,不参与敌人属性).
  * @param panel 输出位战斗面板(loadCarryPanel 结果).
  * @param enemy 敌人属性.
- * @param opts 阵法/图鉴增伤/威慑/Mark/武松加成/减伤覆盖.
+ * @param team 队伍开战加成(teamContextOf 结果).
+ * @param opts 图鉴增伤 / Mark 层数 / 敌人数量 / 减伤覆盖.
  * @returns DamageRange.
  */
 export function damageRangeOf (
@@ -604,69 +717,66 @@ export function damageRangeOf (
   layer: number,
   panel: CarryPanel,
   enemy: EnemyStats,
+  team: TeamContext,
   opts: {
-    zhenFaLevel?: number;
-    zhenFaID?: number;
     tuJianDamagePct?: number;
-    weiShe?: number;
-    wuSongAtkPct?: number;
-    wuSongDmgAdd?: number;
     mark?: number;
+    enemyCount?: number;
     reducePct?: number;
   } = {}
 ): DamageRange {
   const reduce = opts.reducePct ?? (scene === "tower" ? TOWER_DAMAGE_REDUCE : Math.min(enemy.damageReduce,80));
   const tuJianDamagePct = opts.tuJianDamagePct ?? 0;
-  const zhenFaLevel = opts.zhenFaLevel ?? 0;
-  const zhenFaID = opts.zhenFaID ?? 0;
-  // 威慑(Entry_ZhenShe.cs:18-22):每层 -3%,封顶 -66%.
-  const weiShePct = Math.min(3 * (opts.weiShe ?? 0),66);
-  // 武松神转职攻击桶 +20% / 3技能伤害加成 +35%:只有武松在队且解锁时才生效.
-  const wuSongAtkPct = COMBO.includes(WU_SONG) ? (opts.wuSongAtkPct ?? 0) : 0;
-  const wuSongDmgAdd = COMBO.includes(WU_SONG) ? (opts.wuSongDmgAdd ?? 0) : 0;
-  // Mark:孙悟空3技能每命中一个目标 +1 层,下一个目标 +10%/层.
-  const markPct = 10 * (opts.mark ?? 0);
+  const mark = opts.mark ?? 0;
+  const enemyCount = opts.enemyCount ?? 5;
+  const zhenFaID = team.zhenFaID;
+  const zhenFaLevel = team.zhenFaLevel;
+  const jibanLevel = (type: number): number => team.jiban.get(type) ?? 0;
+
+  // 孙悟空神转职命中 = 面板命中 + 唐三藏3技能 30 + 幸运/100×5.
+  const carryHit = panel.hit + team.tangSanZangHit + Math.trunc(panel.lucky / 100) * 5;
+  // 命中率:MingZhong_Recorder.Final_MZ = 100 + 命中 − 闪避,Roll ∈ [0,101].
+  const enemyDodge = Math.trunc(enemy.dodge) - (team.badStacks > 0 ? ZHU_BA_JIE_DODGE_DOWN : 0);
+  const finalMZ = 100 + carryHit - enemyDodge;
+  const hitRate = Math.max(0,Math.min(1,(finalMZ + 1) / 101));
 
   // 鸟翔阵(8):min(我方速度 − 敌速, 21_4748_3646) 进百分比乘区.
   const speedDiff = zhenFaID === ZHENFA_NIAOXIANG
     ? Math.max(0,Math.min(Math.round(panel.speed) - Math.round(enemy.speed),NIAOXIANG_DAMAGE_CAP))
     : 0;
-  const speedDiffFactor = 1 + speedDiff / 100;
 
-  // 孙悟空神转职命中 = 面板命中 + 唐三藏 30 + 幸运/100×5.
-  const carryHit = panel.hit +
-    (COMBO.includes(TANG_SAN_ZANG) ? TANG_SAN_ZANG_HIT : 0) +
-    Math.trunc(panel.lucky / 100) * 5;
-  // 命中率:MingZhong_Recorder.Final_MZ = 100 + 命中 − 闪避,Roll ∈ [0,101].
-  const finalMZ = 100 + carryHit - Math.round(enemy.dodge);
-  const hitRate = Math.max(0,Math.min(1,(finalMZ + 1) / 101));
+  const buckets: DamageBuckets = {
+    hit:         Math.min(carryHit,INT_CAP),
+    mark:        MARK_PCT * mark,
+    shenGui:     Math.trunc(Math.max(0,panel.dodge - enemy.hit) * (0.2 + 0.2 * jibanLevel(JI_BAN_SHEN_GUI))),
+    shenTong15:  team.shenTong15 > 0 ? Math.min(carryHit * team.shenTong15 / 10,INT_CAP) : 0,
+    shenTong19:  SHEN_TONG_19_BASE * team.shenTong19,
+    shenTong27:  team.shenTong27 > 0 ? team.badStacks : 0,
+    skill:       SKILL_76_PCT,
+    speedDiff,
+    tuJian:      tuJianDamagePct,
+    xiXing:      Math.trunc(Math.max(0,carryHit - enemyDodge) * (0.25 + 0.25 * jibanLevel(JI_BAN_XI_XING)))
+  };
+  // 万人敌(层数×敌人数) 与 三国群英((100−敌HP%)/(4−0.5×级)):首击敌人满血 → 三国群英为 0.
+  const sanGuoLevel = jibanLevel(JI_BAN_SAN_GUO);
+  const extra = [
+    jibanLevel(JI_BAN_WAN_REN_DI) * enemyCount,
+    sanGuoLevel > 0 ? Math.trunc((100 - 100) / (4 - 0.5 * sanGuoLevel)) : 0
+  ];
 
-  // 开战负面:猪八戒 +2 层流血 → 神通27 每层 +1%.
-  const negative = COMBO.includes(ZHU_BA_JIE) ? LIU_XUE_STACKS : 0;
+  let percent = 1;
+  for (const value of [...Object.values(buckets),...extra]) {percent *= (100 + value) / 100;}
 
-  const skillFactor = (1 - RAGE_SKILL_REDUCE / 100) * (1 + carryHit / 100);
-  const shenTong15 = Math.min(carryHit,INT_CAP);
-  const xiXing = Math.trunc(Math.max(0,carryHit - (enemy.dodge - ZHU_BA_JIE_DODGE_DOWN)) * XI_XING_RATE);
-  const sources =
-    (1 + shenTong15 / 100) *
-    (1 + xiXing / 100) *
-    (1 + SHEN_TONG_19_PCT / 100) *
-    (1 + negative / 100) *
-    (1 + markPct / 100) *
-    (1 - weiShePct / 100);
-
-  const atkFactor = (100 + panel.atkPct + wuSongAtkPct) / 100;
+  const atkFactor = (100 + panel.atkPct + team.wuSongAtkPct) / 100;
   const zhenFaFactor = zhenFaID === ZHENFA_TIANFU ? 1 + zhenFaLevel / 100 : 1;
-  const damageAdditionFactor = (100 + panel.dmgAdd + wuSongDmgAdd) / 100;
-  const total = atkFactor * skillFactor * damageAdditionFactor * zhenFaFactor * sources * speedDiffFactor;
-
   // K 用实际攻击(含攻击桶与天覆阵)与穿防后防御算.
   const atkForK = panel.atkFlat * atkFactor * zhenFaFactor;
-  const defAfterPen = Math.max(1,enemy.def - panel.pen);
-  const k = culDamagePercent(atkForK,defAfterPen);
+  const k = culDamagePercent(atkForK,Math.max(1,enemy.def - panel.pen));
 
   const nonCrit =
-    panel.atkFlat * total * (k / 100) * ((100 - reduce) / 100) * (1 + tuJianDamagePct / 100);
+    atkForK * percent * (k / 100) *
+    (100 + panel.dmgAdd + team.wuSongDmgAdd) / 100 *
+    (100 - reduce) / 100;
   const critRate = Math.max(0,Math.min(1,(panel.crit - enemy.critResist + 1) / 101));
   const critMultiplier = panel.critDamage / 100;
   const crit = nonCrit * critMultiplier;
@@ -679,6 +789,7 @@ export function damageRangeOf (
       : `${String(zhenFaID)} 号阵(首击无阵法加成)`;
   return {
     atkForK,
+    buckets,
     carryHit,
     crit,
     critMultiplier,
@@ -688,18 +799,15 @@ export function damageRangeOf (
     hitRate,
     k,
     layer,
-    markPct,
+    mark,
     nonCrit,
     nonCritRange:    [nonCrit * BATTERY_MIN,nonCrit * BATTERY_MAX],
     pen:             panel.pen,
     reduce,
     scene:           scene === "tower" ? "通天塔" : scene === "trial" ? "试炼" : "终局",
-    speedDiff,
-    total,
-    tuJianDamagePct,
-    weiShePct,
-    wuSongAtkPct,
-    wuSongDmgAdd,
+    total:           atkFactor * percent * zhenFaFactor,
+    wuSongAtkPct:    team.wuSongAtkPct,
+    wuSongDmgAdd:    team.wuSongDmgAdd,
     zhenFaNote:      `${zhenFaNote}｜灵器 ${weaponName}`
   };
 }
@@ -718,7 +826,7 @@ export function printDamageRange (
   console.log(`御灵装备(存档实际): ${equips}`);
   console.log(
     `阵法:${report.zhenFaNote}  减伤:${String(report.reduce)}%  图鉴增伤:${String(tuJian.pct)}%（${tuJian.source}）` +
-    `  威慑:${String(report.weiShePct)}%  Mark:${String(report.markPct)}%  武松攻击桶:+${String(report.wuSongAtkPct)}%  武松增伤:+${String(report.wuSongDmgAdd)}%`
+    `  Mark:${String(report.mark)} 层 武松攻击桶:+${String(report.wuSongAtkPct)}%  武松增伤:+${String(report.wuSongDmgAdd)}%`
   );
   console.log(
     `敌人: HP=${formatSuoXie(enemy.hp)}  防御=${formatSuoXie(enemy.def)}  ` +
@@ -729,69 +837,89 @@ export function printDamageRange (
     `命中链=${formatSuoXie(report.carryHit)}  命中率=${(report.hitRate * 100).toFixed(2)}%  ` +
     `暴击率=${(report.critRate * 100).toFixed(2)}%  暴伤倍率=${report.critMultiplier.toFixed(2)}  K=${String(report.k)}`
   );
+  const {buckets} = report;
+  console.log(
+    `乘区(全部进百分比数组,逐项 ×(100+x)/100): 技能${String(buckets.skill)}  命中+${formatSuoXie(report.carryHit)}` +
+    `  神通15+${formatSuoXie(buckets.shenTong15)}  神通19+${String(buckets.shenTong19)}` +
+    `  神通27+${String(buckets.shenTong27)}  Mark+${String(buckets.mark)}` +
+    `  鸟翔速度差+${formatSuoXie(buckets.speedDiff)}  西行取经+${formatSuoXie(buckets.xiXing)}` +
+    `  神鬼志异+${String(buckets.shenGui)}  图鉴+${String(buckets.tuJian)}`
+  );
   console.log(`非暴击: ${formatSuoXie(report.nonCritRange[0])} ~ ${formatSuoXie(report.nonCritRange[1])}  (期望 ${formatSuoXie(report.nonCrit)})`);
   console.log(`暴击后: ${formatSuoXie(report.critRange[0])} ~ ${formatSuoXie(report.critRange[1])}  (期望 ${formatSuoXie(report.crit)})`);
 }
 
 /**
- * 通天塔同一层 5 只怪的完整伤害表 + 首领各 Mark 层数表.
- * 源码依据:MapRecorder.GetEnemyCount(品质分布)/GetEnemtID(图鉴预设)/Character_Enemy.cs:125-131.
+ * 通天塔同一层 5 只怪的完整伤害表 + 三种敌人各 Mark 层数的伤害表.
+ * 源码依据:MapRecorder.GetEnemyCount(品质分布)/GetEnemtID(图鉴预设)/Character_Enemy.cs:125-131/
+ * Entry_Skill_76.AfterAttakEnemy(Mark 每命中一个目标 +1).
  */
 function printTowerLayerTable (
   save: SaveBundle,
   layer: number,
   panel: CarryPanel,
-  zhenFa: {id: number; level: number},
-  opts: {wuSongAtkPct: number; wuSongDmgAdd: number; tuJianArg: number | undefined; reducePct: number | undefined}
+  team: TeamContext,
+  opts: {tuJianArg: number | undefined; reducePct: number | undefined}
 ): void {
   const presets = towerPresets();
-  const qualities = TOWER_QUALITY[layer % 5] ?? TOWER_QUALITY[1] ?? [1,1,1,1,1];
-  console.log(`\n--- 本层敌人顺序(MapRecorder.GetEnemyCount,层数%5=${String(layer % 5)})---`);
-  console.log(`  ${qualities.map((item,index) => `${String(index + 1)}.${QUALITY_NAME[item] ?? String(item)}`).join("  ")}`);
+  const spawnOrder = TOWER_QUALITY[layer % 5] ?? TOWER_QUALITY[1] ?? [1,1,1,1,1];
+  // 出手顺序:Battle_Action_Manager.ActionOrder 用 OrderByMin 按速度降序排整张角色表,
+  // 之后 Entry_Skill_76.WhenCulTarget 取 GetCha_Dead_Alive(不排序) 直接沿用该顺序,
+  // 所以敌人按速度从高到低 首领(2175) → 精英(2174) → 小怪(2173) 被依次命中.
+  const qualities = [...spawnOrder].sort((left,right) => towerEnemy(layer,right).speed - towerEnemy(layer,left).speed);
+  console.log(`\n--- 本层刷怪(MapRecorder.GetEnemyCount,层数%5=${String(layer % 5)})---`);
+  console.log(`  ${spawnOrder.map((item,index) => `${String(index + 1)}.${QUALITY_NAME[item] ?? String(item)}`).join("  ")}`);
+  console.log(`  实际命中顺序(速度降序): ${qualities.map(item => QUALITY_NAME[item] ?? String(item)).join("  ")}`);
 
-  console.log("\n--- 同一次怒气技能内(0 层威慑)按出手顺序 ---");
-  console.log("  位置 品级  图鉴增伤%  Mark层  敌HP        非暴击(期望)  非暴击范围              暴击(期望)    暴击范围                暴击率 命中率 K");
+  console.log("\n--- 同一轮怒气技能内(按命中顺序,Mark 每命中一个目标 +1)---");
+  console.log(
+    "  位置 品级  图鉴增伤%  Mark层  敌HP      非暴击范围                非暴击期望  暴击范围                  暴击期望    暴击率 命中率 K"
+  );
   for (let index = 0; index < qualities.length; index++) {
     const quality = qualities[index] ?? 1;
     const preset = quality === 3 ? presets.boss : quality === 2 ? presets.elite : presets.normal;
     const tuJian = opts.tuJianArg ?? tuJianDamagePctOf(save,preset).pct;
-    const enemy = towerEnemy(layer,quality);
-    const range = damageRangeOf("tower",layer,panel,enemy,{
+    const range = damageRangeOf("tower",layer,panel,towerEnemy(layer,quality),team,{
       mark:           index,
       reducePct:      opts.reducePct,
-      tuJianDamagePct:tuJian,
-      wuSongAtkPct:   opts.wuSongAtkPct,
-      wuSongDmgAdd:   opts.wuSongDmgAdd,
-      zhenFaID:       zhenFa.id,
-      zhenFaLevel:    zhenFa.level
+      tuJianDamagePct:tuJian
     });
-    const nonRange = `${formatSuoXie(range.nonCritRange[0])} ~ ${formatSuoXie(range.nonCritRange[1])}`;
+    const nonCritRng = `${formatSuoXie(range.nonCritRange[0])} ~ ${formatSuoXie(range.nonCritRange[1])}`;
     const critRng = `${formatSuoXie(range.critRange[0])} ~ ${formatSuoXie(range.critRange[1])}`;
     console.log(
       `  ${String(index + 1).padStart(3)}  ${(QUALITY_NAME[quality] ?? "?").padEnd(4)}  ` +
       `${String(tuJian).padStart(6)}%   ${String(index).padStart(4)}层  ` +
-      `${formatSuoXie(enemy.hp).padEnd(10)}  ${formatSuoXie(range.nonCrit).padEnd(12)}  ` +
-      `${nonRange.padEnd(22)}  ${formatSuoXie(range.crit).padEnd(12)}  ${critRng.padEnd(22)}  ` +
+      `${formatSuoXie(range.enemy.hp).padEnd(8)}  ${nonCritRng.padEnd(24)}  ` +
+      `${formatSuoXie(range.nonCrit).padEnd(10)}  ${critRng.padEnd(24)}  ` +
+      `${formatSuoXie(range.crit).padEnd(10)}  ` +
       `${(range.critRate * 100).toFixed(0)}%  ${(range.hitRate * 100).toFixed(0)}%  ${String(range.k)}`
     );
   }
 
-  const bossTuJian = opts.tuJianArg ?? tuJianDamagePctOf(save,presets.boss).pct;
-  const boss = damageRangeOf("tower",layer,panel,towerEnemy(layer,3),{
-    reducePct:      opts.reducePct,
-    tuJianDamagePct:bossTuJian,
-    wuSongAtkPct:   opts.wuSongAtkPct,
-    wuSongDmgAdd:   opts.wuSongDmgAdd,
-    zhenFaID:       zhenFa.id,
-    zhenFaLevel:    zhenFa.level
-  });
-  console.log(`\n--- 首领(idx${String(presets.boss)} 图鉴 ${String(bossTuJian)}%,HP ${formatSuoXie(boss.enemy.hp)})不同 Mark 层数 ---`);
-  const rows: string[] = [];
-  for (let stack = 0; stack <= 15; stack++) {
-    rows.push(`${String(stack).padStart(2)}层 ${formatSuoXie(boss.crit * (1 + 10 * stack / 100))}`);
-  }
-  for (let index = 0; index < rows.length; index += 4) {
-    console.log(`  ${rows.slice(index,index + 4).join("   ")}`);
+  console.log("\n--- 本层各位置 × Mark 层数(Mark 每次命中 +1,可跨多轮怒气技能累加)---");
+  const positionsOf = (quality: number): string => qualities
+    .map((item,index) => item === quality ? `第${String(index + 1)}位` : "")
+    .filter(item => item !== "")
+    .join("/");
+  for (const [name,quality,preset] of [["首领",3,presets.boss],["精英",2,presets.elite],["小怪",1,presets.normal]] as const) {
+    if (!qualities.includes(quality)) {continue;}
+    const tuJian = opts.tuJianArg ?? tuJianDamagePctOf(save,preset).pct;
+    const enemy = towerEnemy(layer,quality);
+    console.log(`\n${name} ${positionsOf(quality)}(图鉴增伤 ${String(tuJian)}%, HP ${formatSuoXie(enemy.hp)})`);
+    console.log("  Mark  非暴击范围                非暴击期望  暴击范围                  暴击期望");
+    for (let stack = 0; stack <= 12; stack++) {
+      const range = damageRangeOf("tower",layer,panel,enemy,team,{
+        mark:           stack,
+        reducePct:      opts.reducePct,
+        tuJianDamagePct:tuJian
+      });
+      const nonCritRng = `${formatSuoXie(range.nonCritRange[0])} ~ ${formatSuoXie(range.nonCritRange[1])}`;
+      const critRng = `${formatSuoXie(range.critRange[0])} ~ ${formatSuoXie(range.critRange[1])}`;
+      console.log(
+        `  ${String(stack).padStart(4)}  ${nonCritRng.padEnd(24)}  ` +
+        `${formatSuoXie(range.nonCrit).padEnd(10)}  ${critRng.padEnd(24)}  ${formatSuoXie(range.crit)}`
+      );
+    }
   }
 }
 
@@ -848,27 +976,21 @@ export function verifyFinalDamage (sceneText: string,layerText?: string | number
   const layer = scene === "zhongju" ? 0 : parseLayerText(String(layerText ?? (scene === "trial" ? 100 : 10000)));
   const save = loadSave(resolveSaveDir(args));
   const panel = loadCarryPanel(save);
-  const zhenFa = currentZhenFa(save);
+  const team = teamContextOf(save);
   const presets = towerPresets();
   const presetIdx = argNumber(args,"preset") ?? presets.normal;
   const tuJianArg = argNumber(args,"tujian");
   const reducePct = argNumber(args,"reduce");
-  const wuSongAtkPct = hasShen(save,WU_SONG) ? WU_SONG_ATK_PCT : 0;
-  const wuSongDmgAdd = WU_SONG_DMG_ADD;
   const tuJian = scene === "tower" ? tuJianDamagePctOf(save,presetIdx) : {level: 0,pct: 0,research: 0};
   const tuJianDamagePct = tuJianArg ?? tuJian.pct;
 
   printRageCheck(save,panel);
+  printTeamContext(save,team);
 
-  const report = damageRangeOf(scene,layer,panel,enemyOf(scene,layer,challenge),{
+  const report = damageRangeOf(scene,layer,panel,enemyOf(scene,layer,challenge),team,{
     mark:           argNumber(args,"mark") ?? 0,
     reducePct,
-    tuJianDamagePct,
-    weiShe:         argNumber(args,"weishe") ?? 0,
-    wuSongAtkPct,
-    wuSongDmgAdd,
-    zhenFaID:       zhenFa.id,
-    zhenFaLevel:    zhenFa.level
+    tuJianDamagePct
   });
   const presetName = presetIdx === presets.boss ? "首领" : presetIdx === presets.elite ? "精英" : "小怪";
   printDamageRange(report,panel,{
@@ -877,12 +999,31 @@ export function verifyFinalDamage (sceneText: string,layerText?: string | number
       ? "非通天塔无图鉴增伤"
       : tuJianArg !== undefined
         ? "手动 --tujian"
-        : `${presetName}(idx${String(presetIdx)}) 图鉴Lv.${String(tuJian.level)}×研究54 Lv.${String(tuJian.research)}`
+        : `${presetName}图鉴 Lv.${String(tuJian.level)}×研究54 Lv.${String(tuJian.research)}`
   });
   if (scene === "tower") {
-    printTowerLayerTable(save,layer,panel,zhenFa,{reducePct,tuJianArg,wuSongAtkPct,wuSongDmgAdd});
+    printTowerLayerTable(save,layer,panel,team,{reducePct,tuJianArg});
   }
   return report;
+}
+
+// 打印阵容、羁绊档位与队友开战效果(全部来自存档 + config).
+function printTeamContext (save: SaveBundle,team: TeamContext): void {
+  const names = loadConfig<NamesConfig>("names");
+  const lineup = lineupOf(save).map(index => names.yingLing[String(index)] ?? `英灵${String(index)}`);
+  const jibanName = loadConfig<{type: number}[]>("jiban");
+  const list: string[] = [];
+  for (const [type,level] of team.jiban) {
+    const name = ["三国群英","梁山群雄","倾国倾城","千古流芳","神鬼志异","万人敌","神谋鬼算","济世名医","忠肝义胆","桀骜不逊","义无反顾","西行取经"][jibanName.findIndex(item => item.type === type)] ?? `类型${String(type)}`;
+    list.push(`${name} Lv.${String(level)}`);
+  }
+  console.log(`\n阵容: ${lineup.join(" / ")}`);
+  console.log(`生效羁绊: ${list.length > 0 ? list.join("，") : "无"}`);
+  console.log(
+    `孙悟空词条: 神通15 Lv.${String(team.shenTong15)}  神通19 Lv.${String(team.shenTong19)}  神通27 Lv.${String(team.shenTong27)}` +
+    `   |  唐三藏命中+${String(team.tangSanZangHit)}  武松攻击+${String(team.wuSongAtkPct)}% 武松增伤+${String(team.wuSongDmgAdd)}%` +
+    `   敌人开战负面 ${String(team.badStacks)} 层`
+  );
 }
 
 // 首回合怒气:孙悟空神转职 +25,人皇印开战 +50,门槛 100;不满则首击不是怒气技能.
