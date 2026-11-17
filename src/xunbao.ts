@@ -4,7 +4,7 @@
  * 源码依据(src/源码/YingLing.KeJinSystem/XunBaoManager.cs):
  * - MaxTiLi = 150 + 铭商科技 MingShang_XunBao_TiLi_Limit 的 makeCount(:70-74)
  * - AddTimer:TiLiRecovery += timer×(100+min(Wing_CB_4,250)×2)/100;超过 300 则 Cur_TuLi++ 且归零(:86-102)
- * - CulGameTime > RefreTime_min×60(=600×60=36000s)→ Initial() 把 Cur_TuLi 补满到 MaxTiLi(:103-107,:185-188)
+ * - CulGameTime > RefreTime_min×60(=600×60=36000s)→ 结算 Initial() 补满到 MaxTiLi 并把层数重置为 1(:103-107,:178-188),属下一轮;本轮按结算前自然恢复值算
  * - 仙葫药(prop 155)每个 +10 寻宝体力(PropEffect_Add_XunBaoTiLi.cs:23-26;config/mingshang.json 1888 元宝/个)
  * - 跑完一次寻宝体力 = 前9层期望 + 第10层全开 = 固定 488(见 src/xunbao-tili.ts)
  * 运行:pnpm xunbao
@@ -54,25 +54,28 @@ function main (): void {
   // 计时结束前还能自然回的体力:(当前累加值 + 剩余秒×倍率) 每满 300 回 1 点
   const gainBeforeEnd = Math.floor((recovery + Math.max(0,remainSeconds) * recoveryRate) / RECOVER_SECONDS);
 
-  // 结算时 Initial() 补满到上限;自然恢复不会让体力超过上限(超过部分在补满时不额外增加)
-  const tiliAtEnd = Math.max(curTuli + gainBeforeEnd,curTuli);
-  const tiliAfterSettle = tiliAtEnd >= maxTili ? tiliAtEnd : maxTili;
+  // 本轮结束前体力 = 当前 + 自然恢复(源码 Cur_TuLi++ 不检查上限,可超 MaxTiLi).
+  // 计时到 36000s 结算时 Initial() 会补满到 MaxTiLi 并把层数重置为 1,那是下一轮;
+  // 本轮要走完寻宝必须在结算前,所以这里按结算前的自然恢复值算,不按补满后的数值.
+  const tiliAtEnd = curTuli + gainBeforeEnd;
   console.log("\n=== 本次寻宝计时 ===");
   console.log(`  当前体力 Cur_TuLi = ${String(curTuli)} / 上限 ${String(maxTili)}`);
   console.log(`  已计时 ${gameTime.toFixed(1)}s / 周期 ${String(REFRE_SECONDS)}s，剩余 ${remainSeconds.toFixed(1)}s（${remainHours.toFixed(2)} 小时）`);
   console.log(`  恢复累加 TiLiRecovery = ${recovery.toFixed(1)} / ${String(RECOVER_SECONDS)}；Wing_CB_4 = ${String(wing)}，恢复倍率 ×${recoveryRate.toFixed(2)}`);
-  console.log(`  结算前自然恢复 +${String(gainBeforeEnd)} → 体力 ${String(tiliAtEnd)}；结算 Initial() 补满到 ${String(tiliAfterSettle)}`);
-  console.log("\n=== 本次计时结束能获得的体力 ===");
-  console.log(`  当前 ${String(curTuli)} → 结束可到 ${String(tiliAfterSettle)}，净增 ${String(tiliAfterSettle - curTuli)}`);
+  console.log(`  本轮结算前自然恢复 +${String(gainBeforeEnd)} → 体力 ${String(tiliAtEnd)}`);
+  console.log(`  注:计时满 36000s 会结算 Initial() 补满到 ${String(maxTili)} 并把层数重置为 1(下一轮),本轮寻宝须在结算前走完,故不按补满后的 ${String(maxTili)} 计算`);
+  console.log("\n=== 本轮结束前获得的体力 ===");
+  console.log(`  当前 ${String(curTuli)} → 本轮结束前可到 ${String(tiliAtEnd)}，本轮还能补 ${String(gainBeforeEnd)}`);
   console.log(`\n=== 距跑完一次寻宝(需 ${String(needTili)} 体力:前9层期望+第10层全开) ===`);
   console.log(`  仙葫药 ${String(xianhuNums)} 个 × ${String(TILI_PER_XIANHU)} = 仙葫芦体力 ${String(xianhuTili)}`);
-  const totalTili = tiliAfterSettle + xianhuTili;
-  console.log(`  总体力(结算后 ${String(tiliAfterSettle)}) + 仙葫芦体力(${String(xianhuTili)}) = ${String(totalTili)}`);
+  const totalTili = tiliAtEnd + xianhuTili;
+  console.log(`  总体力(本轮结束前 ${String(tiliAtEnd)}) + 仙葫芦体力(${String(xianhuTili)}) = ${String(totalTili)}`);
   const need = needTili - totalTili;
   if (need > 0) {
-    console.log(`  还差 ${String(need)} 体力 → 约需 ${String(Math.ceil(need / TILI_PER_XIANHU))} 个仙葫药（${String(Math.ceil(need / TILI_PER_XIANHU) * 1888)} 元宝）`);
+    const needPills = Math.ceil(need / TILI_PER_XIANHU);
+    console.log(`  走完本轮还差 ${String(need)} 体力 → 需再用 ${String(needPills)} 个仙葫芦（${String(needPills * 1888)} 元宝）`);
   } else {
-    console.log(`  已够（多 ${String(-need)} 体力）`);
+    console.log(`  已够（多 ${String(-need)} 体力，无需再用仙葫芦）`);
   }
 }
 runMain(main);
