@@ -81,7 +81,9 @@ export function towerEnemy (layer: number,pinzhi = 3): EnemyStats {
   return {
     crit:         stat,
     critResist:   stat,
-    damageReduce: stat,
+    // 通天塔敌人减伤恒为 0:Character_Enemy.RefineProperty 只设置 命中/闪避/暴击/抗暴(stat),
+    // 从不设置 DamageReduce;此前写成 stat 会让打印行(减伤 266%)与实际按 0 计算自相矛盾.
+    damageReduce: 0,
     def:          Math.round(roundBase * addition * (100 + 2 * refine) / 100),
     dodge:        stat,
     hit:          stat,

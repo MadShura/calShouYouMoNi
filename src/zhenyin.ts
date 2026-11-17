@@ -17,15 +17,16 @@ interface InvestJump {
 }
 
 interface InvestPlan {
-  baseRank:  number;
-  bestKind:  "rank" | "share";
-  bestNet:   number;
-  bestRank:  number;
-  bestX:     number;
-  cap:       number;
-  lingLi:    number;
-  rankJumps: InvestJump[];
-  yuanbao:   number;
+  baseRank:    number;
+  bestKind:    "rank" | "share";
+  bestNet:     number;
+  bestRank:    number;
+  bestX:       number;
+  bestYuanbao: number;
+  cap:         number;
+  lingLi:      number;
+  rankJumps:   InvestJump[];
+  yuanbao:     number;
 }
 
 interface Settlement {
@@ -98,6 +99,7 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
   let bestCost = 0;
   let bestNet = 0;
   let bestRank = base.rank;
+  let bestYuanbao = base.yuanbao;
   const byRank = new Map<number,InvestJump>();
   for (let cost = 1; cost <= cap; cost += 1) {
     const next = settle(score,members,cost,round,wingLevel);
@@ -106,6 +108,7 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
       bestCost = cost;
       bestNet = net;
       bestRank = next.rank;
+      bestYuanbao = next.yuanbao;
     }
 
     // 每个名次保留最便宜的投入点,供买名次清单展示
@@ -122,7 +125,8 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
     bestKind,
     bestNet,
     bestRank,
-    bestX:     bestCost,
+    bestX:       bestCost,
+    bestYuanbao,
     cap,
     lingLi,
     rankJumps: [...byRank.values()].toSorted((left,right) => left.cost - right.cost),
@@ -257,9 +261,9 @@ function planLines (plan: InvestPlan): string[] {
     `扫描 0 ~ ${formatSuoXie(plan.cap)} 元宝逐点试算，取净收益最大的精确整数投入（含取整阶梯与名次跳变）`
   ];
   if (plan.bestX > 0 && plan.bestKind === "rank") {
-    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献）→ 名次 第 ${String(plan.baseRank)} 名 → 第 ${String(plan.bestRank)} 名，净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
+    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献）→ 名次 第 ${String(plan.baseRank)} 名 → 第 ${String(plan.bestRank)} 名，净赚 ${formatSuoXie(plan.bestNet)} 元宝，投入后结算可得 ${formatSuoXie(plan.bestYuanbao)} 元宝`);
   } else if (plan.bestX > 0) {
-    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献，净收益最大的精确整数点）→ 名次不变（第 ${String(plan.baseRank)} 名），净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
+    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献，净收益最大的精确整数点）→ 名次不变（第 ${String(plan.baseRank)} 名），净赚 ${formatSuoXie(plan.bestNet)} 元宝，投入后结算可得 ${formatSuoXie(plan.bestYuanbao)} 元宝`);
   } else {
     lines.push("建议投入 0 元宝：全区间扫描后没有净收益为正的投入点");
   }

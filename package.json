@@ -15,7 +15,7 @@
     "compare2": "pnpm exec tsx src/composite-compare.ts",
     "dev": "vite",
     "enemy": "pnpm exec tsx src/enemy-stats.ts",
-    "fsame": "pnpm fsame",
+    "fsame": "axl fsame",
     "lianqi": "pnpm exec tsx src/lianqi.ts",
     "lint": "run-s --continue-on-error lint:ox lint:es",
     "lint-rules": "axl lint-rules",
