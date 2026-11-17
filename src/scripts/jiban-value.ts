@@ -1,7 +1,6 @@
 import {existsSync,mkdirSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
-import {fileURLToPath} from "node:url";
-import {argFlag,argNumber,argString,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {argNumber,argString,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {loadConfig,runMain} from "../tools.ts";
 import type {YingLingConfig} from "../tools.ts";
 import type {BattleDataRecorder} from "../readSave.ts";
@@ -132,8 +131,9 @@ interface SceneInfo {
 // 羁绊等级:达到哪个 Count 就取那一档(按 ZhenRongJiBanTypeEnum 匹配)
 function bondLevel (jiban: JiBanConfig[],bondType: number,count: number): number {
   const config = jiban.find(item => item.type === bondType);
+  if (!config) {return 0;}
   let level = 0;
-  for (const item of config?.levels ?? []) {
+  for (const item of config.levels) {
     if (count >= item.count && item.level > level) {
       level = item.level;
     }
@@ -146,30 +146,26 @@ function bondMultiplier (bondType: number,level: number,ctx: BondContext): numbe
   if (level <= 0) {
     return 1;
   }
-  switch (bondType) {
-    case 0: {
-      const gain = Math.trunc((100 - ctx.enemyHpPercent) / (4 - 0.5 * level));
-      return 1 + Math.max(0,gain) / 100;
-    }
-    case 11: {
-      const gain = Math.max(0,ctx.mingZhong - ctx.enemyShanBi) * (0.25 + 0.25 * level);
-      return 1 + gain / 100;
-    }
-    case 4: {
-      const gain = Math.max(0,ctx.shanBi - ctx.enemyMingZhong) * (0.2 + 0.2 * level);
-      return 1 + gain / 100;
-    }
-    case 5: {
-      return 1 + level * ctx.enemyCount / 100;
-    }
-    case 6: {
-      const after = ctx.critMultiplier + 20 * level / 100;
-      return (1 + ctx.critRate * (after - 1)) / (1 + ctx.critRate * (ctx.critMultiplier - 1));
-    }
-    default: {
-      return 1;
-    }
+  if (bondType === 0) {
+    const gain = Math.trunc((100 - ctx.enemyHpPercent) / (4 - 0.5 * level));
+    return 1 + Math.max(0,gain) / 100;
   }
+  if (bondType === 11) {
+    const gain = Math.max(0,ctx.mingZhong - ctx.enemyShanBi) * (0.25 + 0.25 * level);
+    return 1 + gain / 100;
+  }
+  if (bondType === 4) {
+    const gain = Math.max(0,ctx.shanBi - ctx.enemyMingZhong) * (0.2 + 0.2 * level);
+    return 1 + gain / 100;
+  }
+  if (bondType === 5) {
+    return 1 + level * ctx.enemyCount / 100;
+  }
+  if (bondType === 6) {
+    const after = ctx.critMultiplier + 20 * level / 100;
+    return (1 + ctx.critRate * (after - 1)) / (1 + ctx.critRate * (ctx.critMultiplier - 1));
+  }
+  return 1;
 }
 function clamp01 (value: number): number {
   if (value < 0) {
@@ -220,7 +216,9 @@ function evaluateCombo (
 ): Omit<ComboResult,"carry" | "damage"> {
   const bondCounts = new Map<number,number>();
   for (const index of combo) {
-    for (const bond of bondOf.get(index) ?? []) {
+    const bonds = bondOf.get(index);
+    if (!bonds) {continue;}
+    for (const bond of bonds) {
       bondCounts.set(bond,(bondCounts.get(bond) ?? 0) + 1);
     }
   }
@@ -261,7 +259,7 @@ function formatDamage (value: number): string {
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
-  if (argFlag(args,"help")) {
+  if (isArgOn(args,"help")) {
     console.log(
       [
         "用法：pnpm exec tsx src/scripts/jiban-value.ts [参数]",
@@ -367,7 +365,7 @@ function main (): void {
   const zhenFaAtkPct = zhenFaId === 1 ? zhenFaLevel : 0;
   const baseAtk = Math.round(atkBase * (100 + atkPct) / 100);
   const atkWithZhenFa = baseAtk + Math.trunc(baseAtk * zhenFaAtkPct / 100);
-  const ownedList = [...owned].sort((left,right) => left - right);
+  const ownedList = [...owned].toSorted((left,right) => left - right);
 
   // 群攻/怒气判定:普攻全体直接能当输出；怒气全体要看全队开局怒气(初始30,怒气技需要100)
   const skillTexts = loadConfig<Record<string,string>>("skill-text");
@@ -486,14 +484,12 @@ function main (): void {
           best = candidate;
         }
       }
-      if (info.rageAoe) {
-        const startSp = info.fill ? 100 : 30 + teamStart + teamRound + info.selfRoundSp;
-        if (startSp >= 100) {
-          const candidate = {index,mode: "怒气" as const,pct: info.ragePct};
-          if (!best || candidate.pct > best.pct) {
-            best = candidate;
-          }
-        }
+      if (!info.rageAoe) {continue;}
+      const startSp = info.fill ? 100 : 30 + teamStart + teamRound + info.selfRoundSp;
+      if (startSp < 100) {continue;}
+      const candidate = {index,mode: "怒气" as const,pct: info.ragePct};
+      if (!best || candidate.pct > best.pct) {
+        best = candidate;
       }
     }
     return best;
@@ -503,10 +499,10 @@ function main (): void {
   const comboSupport = (
     combo: number[]
   ): {atkBuff: number; damageBuff: number} => {
-    const has = (index: number): boolean => combo.includes(index);
+    const hasWuSong = combo.includes(6);
     return {
-      atkBuff:    has(6) ? 20 : 0, // 武松神形态 1011:最高攻 +20% 攻击 3 回合(加到攻击百分比)
-      damageBuff: has(6) ? 35 : 0 // 武松三技能:最高攻 +35% 增伤 3 回合(加到伤害加成)
+      atkBuff:    hasWuSong ? 20 : 0, // 武松神形态 1011:最高攻 +20% 攻击 3 回合(加到攻击百分比)
+      damageBuff: hasWuSong ? 35 : 0 // 武松三技能:最高攻 +35% 增伤 3 回合(加到伤害加成)
     };
   };
 
@@ -560,8 +556,7 @@ function main (): void {
       key:               "manual",
       title:             "手动场景"
     });
-  }
-  if (scenes.length === 0) {
+  } else if (scenes.length === 0) {
     throw new Error(`未知场景：${sceneArg}（可用 tower / shilian / both / manual）`);
   }
   const contextOf = (scene: SceneInfo): BondContext => ({
@@ -576,7 +571,7 @@ function main (): void {
     mingZhong,
     shanBi
   });
-  const isRequireAoe = !argFlag(args,"no-aoe");
+  const isRequireAoe = !isArgOn(args,"no-aoe");
   const rankScene = (scene: SceneInfo): {ctx: BondContext; results: ComboResult[]} => {
     const ctx = contextOf(scene);
     const results: ComboResult[] = [];
@@ -631,7 +626,7 @@ function main (): void {
     throw new Error("没有可计算的场景");
   }
   const currentZhenRong = save.cha.ZhenRongManager?.ZhenRong?.ZhenRong ?? [];
-  const currentCombo = currentZhenRong.filter(index => index > 0).sort((left,right) => left - right);
+  const currentCombo = currentZhenRong.filter(index => index > 0).toSorted((left,right) => left - right);
   const currentResult =
     currentCombo.length === SLOT_COUNT
       ? evaluateCombo(currentCombo,bondOf,jiban,first.ctx)
@@ -641,7 +636,8 @@ function main (): void {
   const yingLingName = (index: number): string => names.yingLing[String(index)] ?? `英灵${String(index)}`;
   const describe = (result: Pick<ComboResult,"bondCounts" | "bondLevels">): string => {
     const parts: string[] = [];
-    for (const [bondId,count] of [...result.bondCounts].sort((left,right) => left[0] - right[0])) {
+    const sortedBonds = [...result.bondCounts].toSorted((left,right) => left[0] - right[0]);
+    for (const [bondId,count] of sortedBonds) {
       const level = result.bondLevels.get(bondId) ?? 0;
       parts.push(`${bondName(bondId)}×${String(count)}(Lv.${String(level)})`);
     }
@@ -727,7 +723,8 @@ function roundBaseValue (level: number): number {
  * 目标等级 = 10000 + (层数-1)×250×(层数/10+1),升级成长每级 +15 防御,
  * 防御 PercentAddition = 10000 + 层数×500.基础按初始 400 起算(实际取玩家自己的英灵,
  * 但升级成长项占 99.9% 以上,基础差异小于 0.1%).
- */
+  * @returns number.
+*/
 function shiLianEnemyDef (ceng: number): number {
   const targetLevel = 10000 + (ceng - 1) * 250 * (Math.trunc(ceng / 10) + 1);
   let totalBase = 0;
@@ -747,7 +744,8 @@ function towerEnemyDef (level: number,trueRound: number): number {
 /**
  * 命中口径(用户指定):默认 100 命中,不考虑命中率/闪避判定；
  * 后羿弓 Lv.15 只按伤害 ×0.8 计入.
- */
+  * @returns number.
+*/
 function withBowHit (): number {
   return BOW_HIT_DAMAGE;
 }
@@ -755,7 +753,8 @@ function withBowHit (): number {
 /**
  * 把 15 级御灵装备(后羿弓 + 金玉令 + 6 颗宝石)加到英灵属性上.
  * BattleData_Recorder.ChangeValue:百分比属性一律加 Base_Value；其它属性 percent 时加 PercentAddition.
- */
+  * @returns RawStats.
+*/
 function withEquipment (raw: RawStats): RawStats {
   const base = [...raw.base];
   const pct = [...raw.pct];

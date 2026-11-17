@@ -1,8 +1,6 @@
-import {dirname,join} from "node:path";
-import {fileURLToPath} from "node:url";
-import {argFlag,argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {argNumber,culPercentToInt,formatNumber,formatScore,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {loadConfig,runMain} from "../tools.ts";
-import type {BattleDataRecorder,SaveBundle} from "../readSave.ts";
+import type {BattleDataRecorder} from "../readSave.ts";
 
 /**
  * 物资性价比:卖冥商换元宝买属性药 VS 直接用来强化 统一口径是「期望伤害变化率」,公式来自反编译代码:
@@ -261,7 +259,14 @@ function emptyRaw (): RawStats {
 /**
  * 期望伤害(不含随机浮动 0.95~1.05,固定倍率对比较没有影响)
  * 阵法只实现 1/6/8 三个对输出有直接影响的 Entry
- */
+  * @param own 自身属性.
+  * @param master 主角属性.
+  * @param target 目标参数.
+  * @param zhenFa 阵法上下文.
+  * @param bond 羁绊上下文.
+  * @param percentProps 百分比属性集合.
+  * @returns number.
+*/
 function expectedDamage (
   own: RawStats,
   master: null | RawStats,
@@ -389,7 +394,7 @@ function gainText (gains: Gain[],percentProps: Set<number>): string {
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
-  if (argFlag(args,"help")) {
+  if (isArgOn(args,"help")) {
     console.log(
       [
         "用法：pnpm exec tsx src/scripts/power-value.ts [参数]",
@@ -468,12 +473,14 @@ function main (): void {
 
   // 当前阵型激活的伤害类羁绊
   const bondCounts = new Map<number,number>();
-  for (const index of save.cha.ZhenRongManager?.ZhenRong?.ZhenRong ?? []) {
+  const zhenRongIndexes = save.cha.ZhenRongManager?.ZhenRong?.ZhenRong ?? [];
+  for (const index of zhenRongIndexes) {
     if (index <= 0) {
       continue;
     }
     const config = yingLingConfig.find(item => item.index === index);
-    for (const bondType of config?.bonds ?? []) {
+    const bonds = config?.bonds ?? [];
+    for (const bondType of bonds) {
       bondCounts.set(bondType,(bondCounts.get(bondType) ?? 0) + 1);
     }
   }
@@ -481,7 +488,8 @@ function main (): void {
     const config = jiBanConfig.find(item => item.type === bondType);
     const count = bondCounts.get(bondType) ?? 0;
     let level = 0;
-    for (const item of config?.levels ?? []) {
+    const levels = config?.levels ?? [];
+    for (const item of levels) {
       if (count >= item.count && item.level > level) {
         level = item.level;
       }
@@ -496,7 +504,7 @@ function main (): void {
     xiXing:  bondLevelOf(11)
   };
   const baseDamage = expectedDamage(unitRaw,master,target,zhenFa,bond,percentProps);
-  if (argFlag(args,"debug")) {
+  if (isArgOn(args,"debug")) {
     const final = (prop: number): number => finalValue(prop,unitRaw,master,percentProps);
     let atk = final(P.ATK);
     if (zhenFa.id === 1 && zhenFa.level > 0) {
@@ -519,11 +527,11 @@ function main (): void {
   }
 
   // 计算一组属性改动带来的伤害变化率
-  const damageDelta = (gains: Gain[],onUnit: boolean): {after: number; before: number; percent: number} => {
-    const nextMaster = onUnit ? master : cloneRaw(master);
-    const nextUnit = onUnit ? cloneRaw(unitRaw) : unitRaw;
+  const damageDelta = (gains: Gain[],isOnUnit: boolean): {after: number; before: number; percent: number} => {
+    const nextMaster = isOnUnit ? master : cloneRaw(master);
+    const nextUnit = isOnUnit ? cloneRaw(unitRaw) : unitRaw;
     for (const gain of gains) {
-      applyGain(onUnit ? nextUnit : nextMaster,gain,percentProps);
+      applyGain(isOnUnit ? nextUnit : nextMaster,gain,percentProps);
     }
     const after = expectedDamage(nextUnit,nextMaster,target,zhenFa,bond,percentProps);
     return {
@@ -667,7 +675,7 @@ function main (): void {
       propWeight.set(prop,(propWeight.get(prop) ?? 0) + 1 / candidates.length);
     }
   }
-  const weightSum = [...propWeight.values()].reduce((sum,value) => sum + value,0);
+  const weightSum = propWeight.values().reduce((sum,value) => sum + value,0);
   const craftGains: Gain[] = [{percent: false,prop: P.ATK,value: Math.round(expectedAtk)}];
   const ciTiaoDetail: string[] = [];
   if (weightSum > 0 && expectedCiTiao > 0) {
@@ -742,7 +750,7 @@ function main (): void {
   });
   const bestPill = [...pillReports]
     .filter(pill => OUTPUT_PROPS.has(pill.propType))
-    .sort((left,right) => right.deltaPercent / right.price - left.deltaPercent / left.price)[0];
+    .toSorted((left,right) => right.deltaPercent / right.price - left.deltaPercent / left.price)[0];
   if (!bestPill) {
     throw new Error("冥商配置里找不到输出类属性药，请先跑 extract-config.py");
   }
@@ -764,7 +772,7 @@ function main (): void {
           .map(value => Number(value.trim()))
           .filter(value => Number.isFinite(value))
       : undefined;
-  const isShowAll = argFlag(args,"all");
+  const isShowAll = isArgOn(args,"all");
   interface MaterialSummary {
     best?:            {deltaPercent: number; route: Route};
     owned:            number;
@@ -931,14 +939,13 @@ function pinZhiDistribution (qiLuLevel: number,table: EquipPercentEntry[]): numb
     if (used >= 1000) {
       break;
     }
-    if (entry.initialLevel < qiLuLevel) {
-      let add = (qiLuLevel - entry.initialLevel) * entry.percentLevelAdd;
-      const remain = 1000 - used;
-      if (remain <= add) {
-        add = remain;
-      }
-      percent[index] = add;
+    if (entry.initialLevel >= qiLuLevel) {continue;}
+    let add = (qiLuLevel - entry.initialLevel) * entry.percentLevelAdd;
+    const remain = 1000 - used;
+    if (remain <= add) {
+      add = remain;
     }
+    percent[index] = add;
   }
   return percent;
 }

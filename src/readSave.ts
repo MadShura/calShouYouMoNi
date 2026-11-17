@@ -149,11 +149,6 @@ export interface ZhenFaRecord {
   ZhenFaID: number;
 }
 
-// 取布尔开关
-export function argFlag (args: CliArgs,key: string): boolean {
-  return args.get(key) === true || argString(args,key) === "1";
-}
-
 // 取数字参数
 export function argNumber (args: CliArgs,key: string): number | undefined {
   const value = argString(args,key);
@@ -171,8 +166,8 @@ export function argString (args: CliArgs,key: string): string | undefined {
 }
 
 // C# ToolClass.Cul_Percent_ToInt:四舍五入,远离零
-export function culPercentToInt (baseValue: number,percentage: number,reduce: boolean): number {
-  const factor = reduce ? 100 - percentage : 100 + percentage;
+export function culPercentToInt (baseValue: number,percentage: number,hasReduce: boolean): number {
+  const factor = hasReduce ? 100 - percentage : 100 + percentage;
   const value = baseValue * factor / 100;
   return value < 0 ? -Math.round(-value) : Math.round(value);
 }
@@ -183,6 +178,11 @@ export function formatNumber (value: number): string {
     return String(value);
   }
   return Math.round(value).toLocaleString("zh-CN");
+}
+
+// 取布尔开关
+export function isArgOn (args: CliArgs,key: string): boolean {
+  return args.get(key) === true || argString(args,key) === "1";
 }
 
 // ToolClass.TranslateNumsToSuoXie:10 万以下直接显示整数,之后按 万/亿/兆/京... 每四位递进
@@ -216,7 +216,10 @@ export function formatSuoXie (value: number): string {
     scaled /= 10000;
     unit += 1;
   }
-  const digits = scaled >= 1000 ? 0 : scaled >= 100 ? 1 : scaled >= 10 ? 2 : 3;
+  let digits = 3;
+  if (scaled >= 10) {digits = 2;}
+  if (scaled >= 100) {digits = 1;}
+  if (scaled >= 1000) {digits = 0;}
   const text = scaled.toFixed(digits);
   return `${value < 0 ? "-" : ""}${text}${CN_UNITS[unit] ?? ""}`;
 }
@@ -304,7 +307,7 @@ function readJsonObject<T> (file: string): T {
 
 // 读取"每行一个 JSON"的存档文件,自动跳过第一行类名
 function readJsonObjects<T> (file: string): T[] {
-  const text = readFileSync(file,"utf8").replace(/^\uFEFF/,"");
+  const text = readFileSync(file,"utf8").replace(/^\u{FEFF}/u,"");
   const objects: T[] = [];
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim();

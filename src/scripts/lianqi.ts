@@ -1,4 +1,4 @@
-import {argFlag,formatSuoXie,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {formatSuoXie,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {runMain} from "../tools.ts";
 
 /**
@@ -11,7 +11,7 @@ const STONE_PROP = 2;
 const DEFAULT_TARGET = 1000;
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
-  if (argFlag(args,"help")) {
+  if (isArgOn(args,"help")) {
     console.log(
       [
         "用法：pnpm lianqi [目标等级] [参数]",
@@ -25,7 +25,7 @@ function main (): void {
   }
   const targetArg = process.argv.slice(2).find(item => !item.startsWith("--"));
   const target = targetArg === undefined ? DEFAULT_TARGET : Number(targetArg);
-  if (!Number.isInteger(target) || target < 1) {
+  if (!Number.isSafeInteger(target) || target < 1) {
     throw new Error(`第一个参数应为目标等级，收到：${String(targetArg)}`);
   }
   const dir = resolveSaveDir(args);
@@ -47,8 +47,8 @@ function main (): void {
   // 研究20(省吃俭用)按项目分析口径点满=50
   const reducePercent = 50;
   const heldStones = getPropNums(game,STONE_PROP);
-  const stoneForTarget = qiLuTotalStone(1,target,reducePercent);
-  const stoneForCurrent = qiLuTotalStone(1,curLevel,reducePercent);
+  const stoneForTarget = qiLuTotalStone(target,reducePercent);
+  const stoneForCurrent = qiLuTotalStone(curLevel,reducePercent);
   const needStones = Math.max(0,stoneForTarget - stoneForCurrent - heldStones);
   if (needStones <= 0) {
     console.log(`够了（持有五彩神石 ${formatSuoXie(heldStones)} 已够升到器鼎 Lv.${String(target)}）`);
@@ -77,10 +77,10 @@ function qiLuCost (level: number,reducePercent = 0): number {
   );
 }
 
-// 从 levelFrom 升到 levelTo(不含)共需五彩神石
-function qiLuTotalStone (levelFrom: number,levelTo: number,reducePercent = 0): number {
+// 从 1 级升到 levelTo(不含)共需五彩神石
+function qiLuTotalStone (levelTo: number,reducePercent = 0): number {
   let total = 0;
-  for (let level = levelFrom; level < levelTo; level += 1) {
+  for (let level = 1; level < levelTo; level += 1) {
     total += qiLuCost(level,reducePercent);
   }
   return total;

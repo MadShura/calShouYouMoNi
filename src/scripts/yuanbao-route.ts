@@ -18,7 +18,6 @@
 import {existsSync,readFileSync} from "node:fs";
 import {join} from "node:path";
 import {argNumber,argString,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
-import type {GameRecord} from "../readSave.ts";
 import {yuLingLevelCost} from "./game-formulas.ts";
 import {trialEnemy,trialEnemyHp} from "./enemy-stats.ts";
 import type {ShiLianSave} from "../tools.ts";
@@ -36,7 +35,6 @@ const PROP_BOOK = 84;
 const PROP_TAOWA_LV6 = 75;
 const PROP_TAOWA_LV10 = 79;
 const PROP_ZIXUAN_BAOSHI_LV6 = 45;
-const PROP_MIBAO = 96;
 const PROP_TUPO = 81;
 const PROP_WUGUI = 157;
 const MARK_SHILIANCHOU_ADD = 22;
@@ -267,11 +265,6 @@ function loadProps (gameDir: string): Map<number,PropDef> {
   return result;
 }
 function main (): void {
-  type SaveGame = {
-    ChouJiangCount?:    number;
-    Cur_JiangChiIndex?: number;
-    ShiLian_Manger?:    ShiLianSave;
-  } & GameRecord;
   const args = parseArgs(process.argv.slice(2));
   const gameDir = argString(args,"game-dir") ?? DEFAULT_GAME_DIR;
   const atkShare = argNumber(args,"atk-share") ?? 1;
@@ -306,8 +299,8 @@ function main (): void {
   if (!bookParams1) {
     throw new Error("Prop_Data_Json.txt 里读不到御灵宝典的 Params_1");
   }
-  const addCount = Math.min(getMarkCount(game,MARK_SHILIANCHOU_ADD),19);
-  const bonus = 1 + addCount / 10;
+  const bonusCount = Math.min(getMarkCount(game,MARK_SHILIANCHOU_ADD),19);
+  const bonus = 1 + bonusCount / 10;
   const ctx: Context = {
     bonus,
 bookParams1,
@@ -331,17 +324,17 @@ lv15Sellable:   lv15Prices.length,
   const ticketsHeld = getPropNums(game,PROP_TICKET);
   const tickets = argNumber(args,"tickets") ?? ticketsHeld;
   const lines: string[] = [];
-  lines.push("=== 6 级抽奖：两条拿元宝路线对比 ===","",`存档：${save.dir}`,`抽奖累计 ${fmt(game.ChouJiangCount ?? 0)} 次 → 6 级；当前奖池 #${String(game.Cur_JiangChiIndex ?? 0)}（奖池 #${String(poolB.ChouJiangIndex)} 是套娃池，#${String(poolA.ChouJiangIndex)} 是御灵宝典池）`,`持有抽奖卷 ${fmt(ticketsHeld)}，元宝 ${fmt(ctx.yuanbaoHeld)}，御灵师 Lv.${String(ctx.curLevel)}，试炼第 ${String(ctx.shiLian.Cur_CengShu ?? 1)} 层，疲劳 ${String(ctx.shiLian.Cur_PiLao ?? 0)}/100`,`十连赠送 Mark=${String(addCount)} → 每张卷实际抽 ${fmt(bonus)} 次；御灵宝典每本 ${fmt(bookParams1 * (100 + ctx.yuLingExpMark) / 100)} 御力；奖池每 ${fmt(ctx.refreshMinutes)} 分钟轮换一次，手动刷新需五鬼运财符（持有 ${fmt(ctx.wugui)}）`,`冥商 Lv15 收购 ${String(ctx.lv15Sellable)} 种，单价 ${fmt(lv15Price)} 元宝；收购格子 ${String(MINGSHANG_GRIDS)}/${String(mingShang.buy.length)}，NPC 每 ${fmt(NPC_SHOUGOU_SECONDS / 60)} 分钟收走 1 格`,"","--- 路线 A（御灵宝典 → 战力 → 试炼）---");
+  lines.push("=== 6 级抽奖：两条拿元宝路线对比 ===","",`存档：${save.dir}`,`抽奖累计 ${fmt(game.ChouJiangCount ?? 0)} 次 → 6 级；当前奖池 #${String(game.Cur_JiangChiIndex ?? 0)}（奖池 #${String(poolB.ChouJiangIndex)} 是套娃池，#${String(poolA.ChouJiangIndex)} 是御灵宝典池）`,`持有抽奖卷 ${fmt(ticketsHeld)}，元宝 ${fmt(ctx.yuanbaoHeld)}，御灵师 Lv.${String(ctx.curLevel)}，试炼第 ${String(ctx.shiLian.Cur_CengShu ?? 1)} 层，疲劳 ${String(ctx.shiLian.Cur_PiLao ?? 0)}/100`,`十连赠送 Mark=${String(bonusCount)} → 每张卷实际抽 ${fmt(bonus)} 次；御灵宝典每本 ${fmt(bookParams1 * (100 + ctx.yuLingExpMark) / 100)} 御力；奖池每 ${fmt(ctx.refreshMinutes)} 分钟轮换一次，手动刷新需五鬼运财符（持有 ${fmt(ctx.wugui)}）`,`冥商 Lv15 收购 ${String(ctx.lv15Sellable)} 种，单价 ${fmt(lv15Price)} 元宝；收购格子 ${String(MINGSHANG_GRIDS)}/${String(mingShang.buy.length)}，NPC 每 ${fmt(NPC_SHOUGOU_SECONDS / 60)} 分钟收走 1 格`,"","--- 路线 A（御灵宝典 → 战力 → 试炼）---");
   const a = routeA(tickets,ctx,atkShare);
   lines.push(`${fmt(tickets)} 张卷 → 御灵宝典 ${fmt(a.books)} 本 → Lv.${String(ctx.curLevel)} → Lv.${String(a.levelTo)}（突破 ${String(a.breakthroughs)} 次，存档忘情水 ${fmt(ctx.yaoShui)} 可支撑 ${String(ctx.tuPoAvailable)} 次）`,`攻击倍率上界 ${fmt(a.atkMultiplier)}（--atk-share=${fmt(atkShare)}）→ 试炼 ${String(a.layersFrom)} → ${String(a.layersTo)} 层，胜 ${String(a.layersTo - a.layersFrom)} 场`,`敌方速度 ${fmt(a.speedFrom)} → ${fmt(a.speedTo)}（御灵宝典不加速度，只有每 10 级突破给速度；这是 A 的额外硬门槛）`,`元宝：毛 ${fmt(a.yuanbaoGross)}，扣补疲劳 ${fmt(PILAO_BUY_COST)} 元宝/场后净 ${fmt(a.yuanbaoNet)}；试炼秘宝 ${fmt(a.mibao)} 个（自选 Lv15 宝石）再折 ${fmt(a.mibaoYuanbao)}`,`每抽 ${fmt(totalA(a) / tickets)} 元宝，合计 ${fmt(totalA(a))} 元宝`,"");
   const oneLv15Tickets = ticketsForOneLv15(ctx);
   const b = routeB(tickets,ctx);
-  const chain = taoWaChain(PROP_TAOWA_LV6,ctx.props);
-  lines.push(`原始投入：${fmt(tickets)} 张卷 → 套娃宝箱Lv6 ${fmt(b.taowaLv6)} 个、自选宝石匣Lv6 ${fmt(b.ziXuan)} 个`,`套娃链（每个 Lv6 宝箱）期望：${[...chain].map(([pinzhi,count]) => `Lv${String(pinzhi)} ${fmt(count)}`).join(" / ")}；共得 Lv10 宝箱 ${fmt(b.boxesLv10)} 个`,"","--- 路线 B（套娃池 → 直接卖 Lv10 套娃宝箱）---",`卖 Lv10 宝箱：${fmt(b.boxesLv10)} 个 × ${fmt(bestUnitPrice(ctx.buy,PROP_TAOWA_LV10))} 元宝/个 = ${fmt(b.yuanbaoFromBox)} 元宝（开箱即卖，不合成）`,`奖池附带基础材料卖冥商 ${fmt(b.yuanbaoFromMaterial)} 元宝`,`每抽 ${fmt(b.yuanbaoFromBox / tickets)} 元宝，合计 ${fmt(b.yuanbaoFromBox + b.yuanbaoFromMaterial)} 元宝`,"","--- 路线 C（套娃池 → 5合1 合成到 Lv15 宝石 → 冥商回收）---",`Lv6→Lv15 需 ${fmt(mergeRatio(6,ctx.props))} 件同系列（5^9）；开箱候选 ${String(candidateCount(6,ctx.props,ctx.lingQiWeapons))} 种/品质，仅 ${String(ctx.lv15Sellable)} 种 Lv15 能卖`,`连续期望上界：可凑 ${fmt(b.lv15Expected)} 个 Lv15 → ${fmt(b.lv15Expected * ctx.lv15Price)} 元宝（取整实际 ${fmt(b.lv15Real)} 个 → ${fmt(b.yuanbaoFromLv15)} 元宝）`,`每抽 ${fmt(b.lv15Expected * ctx.lv15Price / tickets)} 元宝；但凑出第 1 个完整 Lv15 需约 ${fmt(oneLv15Tickets)} 张卷`,"");
+  const chain = taoWaChain(ctx.props);
+  lines.push(`原始投入：${fmt(tickets)} 张卷 → 套娃宝箱Lv6 ${fmt(b.taowaLv6)} 个、自选宝石匣Lv6 ${fmt(b.ziXuan)} 个`,`套娃链（每个 Lv6 宝箱）期望：${[...chain].map(([pinzhi,count]) => `Lv${String(pinzhi)} ${fmt(count)}`).join(" / ")}；共得 Lv10 宝箱 ${fmt(b.boxesLv10)} 个`,"","--- 路线 B（套娃池 → 直接卖 Lv10 套娃宝箱）---",`卖 Lv10 宝箱：${fmt(b.boxesLv10)} 个 × ${fmt(bestUnitPrice(ctx.buy,PROP_TAOWA_LV10))} 元宝/个 = ${fmt(b.yuanbaoFromBox)} 元宝（开箱即卖，不合成）`,`奖池附带基础材料卖冥商 ${fmt(b.yuanbaoFromMaterial)} 元宝`,`每抽 ${fmt(b.yuanbaoFromBox / tickets)} 元宝，合计 ${fmt(b.yuanbaoFromBox + b.yuanbaoFromMaterial)} 元宝`,"","--- 路线 C（套娃池 → 5合1 合成到 Lv15 宝石 → 冥商回收）---",`Lv6→Lv15 需 ${fmt(mergeRatio(ctx.props))} 件同系列（5^9）；开箱候选 ${String(candidateCount(6,ctx.props,ctx.lingQiWeapons))} 种/品质，仅 ${String(ctx.lv15Sellable)} 种 Lv15 能卖`,`连续期望上界：可凑 ${fmt(b.lv15Expected)} 个 Lv15 → ${fmt(b.lv15Expected * ctx.lv15Price)} 元宝（取整实际 ${fmt(b.lv15Real)} 个 → ${fmt(b.yuanbaoFromLv15)} 元宝）`,`每抽 ${fmt(b.lv15Expected * ctx.lv15Price / tickets)} 元宝；但凑出第 1 个完整 Lv15 需约 ${fmt(oneLv15Tickets)} 张卷`,"");
   const enoughCount = mingShang.buy.filter(entry => getPropNums(game,entry.prop) >= entry.nums).length;
   const tp = mingshangThroughput(mingShang.sell,ctx,b.boxesLv10,enoughCount);
   lines.push("--- 冥商变现吞吐（决定「快不快」）---",`收购表 ${String(ctx.buy.length)} 条，存档当前能满足 Enough() 的只有 ${String(enoughCount)} 条；每轮 ${String(MINGSHANG_GRIDS)} 格中套娃Lv10 档位期望 ${fmt(tp.expectedGrids)} 格 → 可卖 ${fmt(tp.boxesPerRound)} 个宝箱 ≈ ${fmt(tp.yuanbaoPerRound)} 元宝`,`卖完 ${fmt(b.boxesLv10)} 个宝箱需约 ${fmt(tp.rounds)} 轮刷新：`,`· 一键回收 + 等 NPC 补满剩余格子 → 约 ${fmt(tp.hoursAuto)} 小时`,`· 手动用冥君令刷新（最低 ${fmt(tp.unitLingPrice)} 元宝/个，存档持有 ${fmt(getPropNums(game,161))} 个）→ 成本 ${fmt(tp.manualCost)} 元宝，B 净剩 ${fmt(tp.netManual + b.yuanbaoFromMaterial)} 元宝`,`关键纠正：套娃宝箱最高只出品质 10 装备，开不出 Lv15 宝石；实际凑出第 1 个可卖 Lv15 需要约 ${fmt(oneLv15Tickets)} 张抽奖卷`,"","--- 不同抽数下的元宝（A 试炼 / B 卖Lv10 / C 合Lv15）---");
-  const scales = [...new Set([1e3,1e4,tickets,1e6,1e8].filter(value => value > 0))].sort((x,y) => x - y);
+  const scales = [...new Set([1e3,1e4,tickets,1e6,1e8].filter(value => value > 0))].toSorted((x,y) => x - y);
   for (const scale of scales) {
     const ra = routeA(scale,ctx,atkShare);
     const rb = routeB(scale,ctx);
@@ -355,15 +348,15 @@ lv15Sellable:   lv15Prices.length,
   const target = lv15Price;
   const ticketsA = ticketsForA(target,ctx,atkShare);
   const ticketsB = perB > 0 ? target / perB : Infinity;
-  const ticketsC = perC > 0 ? target / perC : Infinity;
   const netBManual = tp.netManual + b.yuanbaoFromMaterial;
   const winner = perB >= perA && perB >= perC ? "套娃池卖Lv10（B）" : perC >= perA ? "合Lv15（C）" : "御灵宝典池（A）";
   lines.push("--- 结论 ---",`口径 1｜每张抽奖卷的毛元宝：A ${fmt(perA)} / B ${fmt(perB)} / C(合Lv15) ${fmt(perC)}`,`→ B 是 A 的 ${perA > 0 ? fmt(perB / perA) : "∞"} 倍、是 C 的 ${perC > 0 ? fmt(perB / perC) : "∞"} 倍；综合最优 = ${winner}`,`口径 2｜扣掉冥商手动刷新成本后的净额：A ${fmt(totalA(a))}（打 ${String(a.layersTo - a.layersFrom)} 场即到账） / B ${fmt(netBManual)}（要 ${fmt(tp.rounds)} 轮刷新，等 NPC 自动约 ${fmt(tp.hoursAuto)} 小时）；C 同样受格子限制且更慢`,`口径 3｜攒到 1 个 Lv15 等额元宝 ${fmt(target)}：A 需 ${fmt(ticketsA)} 张卷，B 需 ${fmt(ticketsB)} 张卷，C 自身凑 1 个完整 Lv15 需 ${fmt(oneLv15Tickets)} 张卷`,`关键结论：套娃池真正能换元宝的是直接卖 Lv10 宝箱（路线 B）；路线 C（硬合 Lv15）因 5^9 合成损耗，每张券期望元宝最低，凑出第 1 个 Lv15 需约 ${fmt(oneLv15Tickets)} 张券，当前及可预见体量下都最差`,`综合：按单位资源产出选 ${winner}；按「立刻到账」A 更快（打 ${String(a.layersTo - a.layersFrom)} 场 vs B 的 ${fmt(tp.rounds)} 轮冥商刷新）。不要走 C 路线`,"","--- 时间/吞吐约束（两条路线共同）---",`· 试炼疲劳每 ${String(PILAO_RECOVER_MINUTES)} 分钟恢复 1 点，或花 ${String(PILAO_BUY_COST)} 元宝补 1 点；每层奖励 ${String(TRIAL_PER_LAYER)}×层数+${String(TRIAL_BASE_YUANBAO)} 元宝且每层只能赢一次`,`· 奖池每 ${fmt(ctx.refreshMinutes)} 分钟自动换到下一个（1→2→3→4→1），刷新还会免费给 ${String(getMarkCount(game,MARK_REFRESH_CHOUJIANG_GET))} 次当前池产出；想固定选中某个池，须在其窗口内一次批量抽完`,`· 冥商收购只有 ${String(MINGSHANG_GRIDS)} 个格子、每格一次性，全部用完才自动刷新；手动刷新要 1 个冥君令，或等 NPC 每 ${fmt(NPC_SHOUGOU_SECONDS / 60)} 分钟收走 1 格`,"· A 的伤害倍率是「攻击全部来自御灵师等级」的乐观上界，且忽略速度/命中门槛；B 的 Lv15 产量已按同系列 5 合 1 向下取整，均未计入收购格子等待时间");
   console.log(lines.join("\n"));
 }
 
-// 沿合成链把 1 件品质 p 装备升到 Lv15 需要多少件同级装备(配置里逐级读 Nums).
-function mergeRatio (pinzhi: number,props: Map<number,PropDef>): number {
+// 沿合成链把 1 件品质 6 装备升到 Lv15 需要多少件同级装备(配置里逐级读 Nums).
+function mergeRatio (props: Map<number,PropDef>): number {
+  const pinzhi = 6;
   let id = 200 + pinzhi - 1;
   let ratio = 1;
   for (let level = pinzhi; level < 15; level += 1) {
@@ -383,7 +376,12 @@ function mergeRatio (pinzhi: number,props: Map<number,PropDef>): number {
  * 冥商收购变现吞吐:10 个格子从收购表随机抽取,每格一次性,10 格全满才刷新.
  * MingShang_Manager.RefreShouGou:151-159 / CheckShouGouRefre:79-89 / AddTime:50-61,
  * UIPanel_MingShang.RefreShouGouEvent:283-293 手动刷新消耗 1 个冥君令(161).
- */
+  * @param sell 出售记录.
+  * @param ctx 上下文.
+  * @param boxesLv10 Lv10 宝箱数.
+  * @param enoughCount 满足 Enough 的条数.
+  * @returns Throughput.
+*/
 function mingshangThroughput (
   sell: MingShangEntry[],
   ctx: Context,
@@ -429,7 +427,7 @@ function readLines (gameDir: string,fileName: string): string[] {
   if (!existsSync(path)) {
     throw new Error(`找不到游戏配置：${path}（用 --game-dir 指定游戏目录）`);
   }
-  return readFileSync(path,"utf8").replace(/^\uFEFF/,"")
+  return readFileSync(path,"utf8").replace(/^\u{FEFF}/u,"")
 .split(/\r?\n/);
 }
 
@@ -437,7 +435,11 @@ function readLines (gameDir: string,fileName: string): string[] {
  * 路线 A:御灵宝典 → 御力 → 御灵师等级 → 攻击 → 推试炼层数 → 元宝.
  * 伤害倍率按「玩家攻击全部来自御灵师等级」计算,并用 --atk-share 缩放, 这是路线 A 的乐观上界:真实面板还有装备/阵法/图鉴/研究,占比越小路线 A 越差.
  * 仅按敌方 HP 门槛推层(忽略速度/命中门槛),同样是上界.
- */
+  * @param tickets 参数 tickets.
+ * @param ctx 参数 ctx.
+ * @param atkShare 参数 atkShare.
+ * @returns RouteAResult.
+*/
 function routeA (tickets: number,ctx: Context,atkShare: number): RouteAResult {
   const books = expectedPerTicket(ctx.poolA,PROP_BOOK,ctx.bonus) * tickets;
 
@@ -511,11 +513,14 @@ yuanbaoNet:   net
 /**
  * 路线 B:套娃宝箱 Lv6 → 逐级 50% 套出 Lv10 → 开箱出同品质装备 → 5 合 1 升到 Lv15 → 冥商收购.
  * 开箱候选按品质均匀分布；同系列才能合成,因此按每个系列「等效品质 6 件数」向下取整, 同时给出不做取整的连续期望上界.
- */
+  * @param tickets 参数 tickets.
+ * @param ctx 参数 ctx.
+ * @returns RouteBResult.
+*/
 function routeB (tickets: number,ctx: Context): RouteBResult {
   const taowaLv6 = expectedPerTicket(ctx.poolB,PROP_TAOWA_LV6,ctx.bonus) * tickets;
   const ziXuan = expectedPerTicket(ctx.poolB,PROP_ZIXUAN_BAOSHI_LV6,ctx.bonus) * tickets;
-  const chain = taoWaChain(PROP_TAOWA_LV6,ctx.props);
+  const chain = taoWaChain(ctx.props);
   let equivPerSeries = 0;
   for (const [pinzhi,boxes] of chain) {
     const candidates = candidateCount(pinzhi,ctx.props,ctx.lingQiWeapons);
@@ -523,7 +528,7 @@ function routeB (tickets: number,ctx: Context): RouteBResult {
     // 品质 p 的 1 件 = 5^(p-6) 件品质 6 的等效材料
     equivPerSeries += boxes * 5 ** (pinzhi - 6) / candidates;
   }
-  const ratio = mergeRatio(6,ctx.props);
+  const ratio = mergeRatio(ctx.props);
   const equiv = equivPerSeries * taowaLv6;
 
   // 自选宝石匣可全部指定同一系列,只给该系列叠加
@@ -553,10 +558,10 @@ ziXuan
 }
 
 // 套娃链:每开 1 个宝箱出 1 件同品质装备,并以 50% 概率再给 1 个 NextPropID 宝箱.
-function taoWaChain (startID: number,props: Map<number,PropDef>): Map<number,number> {
+function taoWaChain (props: Map<number,PropDef>): Map<number,number> {
   const boxes = new Map<number,number>();
   const visited = new Set<number>();
-  let id: number | undefined = startID;
+  let id: number | undefined = PROP_TAOWA_LV6;
   let expected = 1;
   while (id !== undefined && id !== 0 && !visited.has(id)) {
     visited.add(id);
@@ -604,11 +609,6 @@ low = 0;
 // 路线 A 的总元宝(含试炼秘宝自选 Lv15 宝石的折算).
 function totalA (result: RouteAResult): number {
   return result.yuanbaoNet + result.mibaoYuanbao;
-}
-
-// 路线 B 取「开箱合 Lv15」与「直接卖 Lv10 套娃宝箱」中较优的一种(两者互斥).
-function totalB (result: RouteBResult): number {
-  return Math.max(result.yuanbaoFromLv15,result.yuanbaoFromBox) + result.yuanbaoFromMaterial;
 }
 
 // #endregion

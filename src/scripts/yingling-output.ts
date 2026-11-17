@@ -1,6 +1,5 @@
 import {existsSync,mkdirSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
-import {fileURLToPath} from "node:url";
 import {argNumber,argString,parseArgs} from "../readSave.ts";
 import {hitRate,TOWER_ENEMY_10000,TRIAL_ENEMY_100,ZHONG_JU} from "./enemy-stats.ts";
 import type {CliArgs} from "../readSave.ts";
@@ -486,7 +485,9 @@ interface TongGuanEntry {
 export function bondMultiplier (combo: number[],bondOf: Map<number,number[]>,jiban: JiBanConfig[]): number {
   const counts = new Map<number,number>();
   for (const index of combo) {
-    for (const bond of bondOf.get(index) ?? []) {
+    const bonds = bondOf.get(index);
+    if (!bonds) {continue;}
+    for (const bond of bonds) {
       counts.set(bond,(counts.get(bond) ?? 0) + 1);
     }
   }
@@ -1070,7 +1071,8 @@ function buildResearchPlan (): ResearchResult {
   const planned = new Set(RESEARCH_STEPS.map(step => step.id));
   const unresearched: string[] = [];
   const partial: string[] = [];
-  for (const config of [...configs].sort((left,right) => left.id - right.id)) {
+  const sortedConfigs = [...configs].toSorted((left,right) => left.id - right.id);
+  for (const config of sortedConfigs) {
     const effect = RESEARCH_EFFECT[config.id] ?? `效果 ${String(config.effectName)}/${String(config.property)}`;
     if (!planned.has(config.id)) {
       unresearched.push(
@@ -1184,11 +1186,11 @@ function main (): void {
   const names = loadConfig<NamesConfig>("names");
   const lingQi = loadConfig<LingQiConfig>("lingqi");
   const skillTexts = loadConfig<Record<string,string>>("skill-text");
-  const WEAPON_LEVEL = 15;
   const bowWeapon = lingQi.weapons.find(weapon => weapon.entry === "HouYiGong");
   if (!bowWeapon) {
     throw new Error("lingqi.json 里找不到后羿弓");
   }
+  const WEAPON_LEVEL = 15;
   const bondOf = new Map<number,number[]>();
   for (const config of yingLingConfig) {
     bondOf.set(config.index,config.bonds);
@@ -1207,8 +1209,8 @@ function main (): void {
     [Y.WU_SONG]:        "神",
     [Y.ZHANG_LIANG]:    "神"
   };
-  const comboText = (combo: number[],carryIndex?: number,excludeCarry = false): string => combo
-      .filter(index => !excludeCarry || index !== carryIndex)
+  const comboText = (combo: number[],carryIndex?: number,shouldExcludeCarry = false): string => combo
+      .filter(index => !shouldExcludeCarry || index !== carryIndex)
       .map(index => {
         const transfer = index === carryIndex ? undefined : TEAM_TRANSFER[index];
         return `${nameOf(index)}${transfer ? `（${transfer}）` : ""}`;
@@ -1243,8 +1245,6 @@ function main (): void {
   const panel = buildResourcePanel(args);
 
   // 阵法 1:面板攻击 +15%(已算进 panel.atkPct)；Entry_ZhenFa_1 给最高攻单位 +阵法等级% 攻击
-  const zhenFaEntryFactor = 1 + panel.zhenfaLevel / 100;
-
   // 组合里某个羁绊类型的等级
   const comboBondLevel = (combo: number[],bondType: number): number => {
     let count = 0;
@@ -1341,6 +1341,10 @@ function main (): void {
    * 开战:时迁3技能 全队 +30;张良3技能 全队 +10(神转职 +20)
    * 回合开始(先于第一次行动):孙悟空神转职 +25,孟婆魔转职 +50,项羽魔转职 +15;张良自己额外 +10/+20
    * 满怒:孙悟空魔转职;项羽3技能把 MaxSP 降到 51,门槛变 50
+   * @param combo 组合.
+   * @param carry 输出位.
+   * @param weapon 武器.
+   * @returns 能否攒满怒气.
    */
   const canRage = (combo: number[],carry: CarryVariant,weapon: LingQiWeapon): boolean => {
     if (carry.mode !== "怒气") {
@@ -1382,6 +1386,12 @@ function main (): void {
    * 基础伤害 = 实际攻击 × K / 100
    * 最终 = 基础伤害 × 技能% × 后羿弓 × Π(各 PercentAddition 来源) × 羁绊 × (100 + 伤害加成 + 武松35)/100
    * 注意:武松 20% 攻击进攻击桶,35% 增伤进伤害加成桶；其余每一条 PercentAddition 都是独立乘区.
+   * @param combo 组合.
+   * @param carry 输出位.
+   * @param bond 羁绊倍率.
+   * @param weapon 武器.
+   * @param zhenfaMode 阵法模式.
+   * @returns 输出倍率结果.
    */
   const outputMultiplier = (
     combo: number[],
@@ -1405,12 +1415,12 @@ function main (): void {
     | "weaponNote"
     | "zhenfaFactor"
   > => {
-    const has = (index: number): boolean => combo.includes(index);
+    const isInCombo = (index: number): boolean => combo.includes(index);
 
     // 唐三藏3技能:全体我方 +30 命中；孙悟空神转职:按幸运/100×5 加自己命中
     const carryHit =
       panel.hit +
-      (has(Y.TANG_SAN_ZANG) ? TANG_SAN_ZANG_HIT : 0) +
+      (isInCombo(Y.TANG_SAN_ZANG) ? TANG_SAN_ZANG_HIT : 0) +
       (carry.index === Y.SUN_WU_KONG && carry.form === "shen"
         ? Math.trunc(panel.lucky / 100) * 5
         : 0);
@@ -1418,11 +1428,11 @@ function main (): void {
     if (carry.index === Y.SUN_WU_KONG) {
       skillSources.push({skill: 78,value: carryHit});
     }
-    const zhenShe = has(Y.GUAN_YU) ? ZHEN_SHE_STACKS : 0;
-    const liuXue = has(Y.ZHU_BA_JIE) ? LIU_XUE_STACKS : 0;
-    const meiHuo = has(Y.XI_SHI) ? MEI_HUO_STACKS : 0;
-    const qieNuo = has(Y.LU_ZHI_SHEN) ? QIE_NUO_STACKS : 0;
-    const hasSiMa = has(Y.SI_MA_YI);
+    const zhenShe = isInCombo(Y.GUAN_YU) ? ZHEN_SHE_STACKS : 0;
+    const liuXue = isInCombo(Y.ZHU_BA_JIE) ? LIU_XUE_STACKS : 0;
+    const meiHuo = isInCombo(Y.XI_SHI) ? MEI_HUO_STACKS : 0;
+    const qieNuo = isInCombo(Y.LU_ZHI_SHEN) ? QIE_NUO_STACKS : 0;
+    const hasSiMa = isInCombo(Y.SI_MA_YI);
 
     // 司马懿做队友时按神转职提供全队光环；自己做输出位时按所选转职算
     const isSiMaAura = hasSiMa && (carry.index !== Y.SI_MA_YI || carry.form === "shen");
@@ -1432,11 +1442,11 @@ function main (): void {
     // 阵法7 没有阵法1 的 +15% 攻击面板,也没有阵法1 的最高攻 +等级% 攻击
     const isHpZhenfa = zhenfaMode === "hp";
     const zhenFaFactor = isHpZhenfa ? 1 : 1 + panel.zhenfaLevel / 100;
-    const atkPct = panel.atkPct + (has(Y.WU_SONG) ? 20 : 0) - (isHpZhenfa ? 15 : 0);
+    const atkPct = panel.atkPct + (isInCombo(Y.WU_SONG) ? 20 : 0) - (isHpZhenfa ? 15 : 0);
     const atkFactor = (100 + atkPct) / 100;
 
     // 伤害加成桶:资源面板伤害加成(装备 + 神通25)+ 武松3技能 +35%
-    const damageAddition = panel.damageAddition + (has(Y.WU_SONG) ? 35 : 0);
+    const damageAddition = panel.damageAddition + (isInCombo(Y.WU_SONG) ? 35 : 0);
     const damageAdditionFactor = (100 + damageAddition) / 100;
     const sources: DamageFactor[] = [];
     const addSource = (name: string,percent: number,detail: string): void => {
@@ -1457,7 +1467,7 @@ function main (): void {
     }
 
     // 公孙胜:神转职 全队每层怯懦 +15%；3技能 自身每层怯懦 +15%(两形态都有)
-    if (has(Y.GONG_SUN_SHENG) && carry.index !== Y.GONG_SUN_SHENG) {
+    if (isInCombo(Y.GONG_SUN_SHENG) && carry.index !== Y.GONG_SUN_SHENG) {
       addSource("公孙胜神转职增伤",15 * qieNuo,`每层怯懦 +15% × ${String(qieNuo)} 层`);
     }
     if (carry.index === Y.GONG_SUN_SHENG) {
@@ -1492,7 +1502,7 @@ function main (): void {
 
     // 西行取经:伤害% += max(0, 命中 - 敌闪避) × (0.25 + 0.25×等级)
     const xiXingLevel = comboBondLevel(combo,11);
-    const dodgeDown = has(Y.ZHU_BA_JIE) ? ZHU_BA_JIE_DODGE_DOWN : 0;
+    const dodgeDown = isInCombo(Y.ZHU_BA_JIE) ? ZHU_BA_JIE_DODGE_DOWN : 0;
     const towerDodge = TOWER_ENEMY_DODGE - dodgeDown;
     const xiXingTower = Math.max(0,carryHit - towerDodge);
     const xiXingRate = 0.25 + 0.25 * xiXingLevel;
@@ -1533,10 +1543,10 @@ function main (): void {
     // 后羿弓 Lv.15 只在「本来会 miss」时触发:非孙悟空神按 ×0.8 计;
     // 孙悟空神命中 100%,后羿弓的转命中分支不会触发,任何武器都不乘 0.8
     const isWukongShen = carry.index === Y.SUN_WU_KONG && carry.form === "shen";
-    const bowFactor = isWukongShen ? 1 : BOW_DAMAGE;
     if (!isWukongShen && weapon.entry !== "HouYiGong") {
       throw new Error("非孙悟空神必须带后羿弓");
     }
+    const bowFactor = isWukongShen ? 1 : BOW_DAMAGE;
 
     // 河图:攻击时把 防御×8×等级/100 直接加到 BaseAttack.
     // 防御要按 GetFinalValue(DEF) 算:御灵装备(灵器/灵牌/宝石)flat + 金玉令 +600% + 防御研究
@@ -1564,32 +1574,24 @@ function main (): void {
       const atkBase = panel.atkFlat * atkFactor * zhenFaFactor;
       total *= (atkBase + extraBaseAttack) / atkBase;
     }
-    const weaponNote =
-      weapon.entry === "HeTu"
-? `防御 ${String(Math.trunc(heTuDef))} ×8×15% = +${String(heTuAttack)}` :
-      weapon.entry === "FuXiQin"
-? "每种负面 +30%" :
-      weapon.entry === "RenHuangYin"
-? "开战 +50 怒气，回合结束 +45" :
-      weapon.entry === "PanGuanBi"
-? "回合开始 45% 行动+1（首击不计）" :
-      weapon.entry === "XuanYuanJian"
-? "回合结束 +45% 攻击（首击不计）" :
-      weapon.entry === "KunLunJing"
-? "攻击后 90% +1 魅惑（首击不计）" :
-      weapon.entry === "LeiGongChui"
-? "攻击后 45% 麻痹（首击不计）" :
-      weapon.entry === "HouYiGong"
-? "命中 100% 时不触发" :
-      weapon.entry === "HunYuanJinDou"
-? "闪避后才加命中（不触发）" :
-      weapon.entry === "XingTianDun"
-? "仅反击/反伤（首击不计）" :
-      weapon.entry === "YingLongLin" || weapon.entry === "WuJinHuoHuLu"
-? "仅连击/反击（首击不计）" :
-      "首击无增伤";
+    const weaponNoteMap: Record<string,string> = {
+      FuXiQin:       "每种负面 +30%",
+      HouYiGong:     "命中 100% 时不触发",
+      HunYuanJinDou: "闪避后才加命中（不触发）",
+      KunLunJing:    "攻击后 90% +1 魅惑（首击不计）",
+      LeiGongChui:   "攻击后 45% 麻痹（首击不计）",
+      PanGuanBi:     "回合开始 45% 行动+1（首击不计）",
+      RenHuangYin:   "开战 +50 怒气，回合结束 +45",
+      WuJinHuoHuLu:  "仅连击/反击（首击不计）",
+      XingTianDun:   "仅反击/反伤（首击不计）",
+      XuanYuanJian:  "回合结束 +45% 攻击（首击不计）",
+      YingLongLin:   "仅连击/反击（首击不计）"
+    };
+    const weaponNote = weapon.entry === "HeTu"
+      ? `防御 ${String(Math.trunc(heTuDef))} ×8×15% = +${String(heTuAttack)}`
+      : weaponNoteMap[weapon.entry] ?? "首击无增伤";
     const formula = [
-      `攻击桶(基础100+资源${panel.atkPct.toFixed(3)}${isHpZhenfa ? "-阵法1面板15" : ""}+武松${String(has(Y.WU_SONG) ? 20 : 0)})/100=${atkFactor.toFixed(3)}`,
+      `攻击桶(基础100+资源${panel.atkPct.toFixed(3)}${isHpZhenfa ? "-阵法1面板15" : ""}+武松${String(isInCombo(Y.WU_SONG) ? 20 : 0)})/100=${atkFactor.toFixed(3)}`,
       `技能来源[${skillParts.length > 0 ? `${skillParts.join("，")}，小计=${skillFactor.toFixed(3)}` : "无来源，100%=1.000"}]`,
       `武器=${weapon.name}（${weaponNote}）`,
       bowFactor === 1 ? "后羿弓不触发(命中100%)" : `后羿弓(100-20)/100=${bowFactor.toFixed(3)}`,
@@ -1619,7 +1621,7 @@ function main (): void {
   };
 
   // 组合池 = 全部英灵,不按是否增伤过滤；输出位限制只作用在 carriesOf
-  const indexes = yingLingConfig.map(item => item.index).sort((left,right) => left - right);
+  const indexes = yingLingConfig.map(item => item.index).toSorted((left,right) => left - right);
   const resultsTower: ComboResult[] = [];
   const resultsShilian: ComboResult[] = [];
 
@@ -1633,10 +1635,6 @@ function main (): void {
   // 孙悟空神转职:每种武器各记一份最好组合
   const bestByWeaponTower = new Map<string,ComboResult>();
   const bestByWeaponShilian = new Map<string,ComboResult>();
-  let combosWithCarry = 0;
-
-  // (组合 × 输出位 × 转职 × 普攻/怒气) 的候选次数
-  let candidateCases = 0;
   for (let a = 0; a < indexes.length; a += 1) {
     for (let b = a + 1; b < indexes.length; b += 1) {
       for (let c = b + 1; c < indexes.length; c += 1) {
@@ -1659,7 +1657,6 @@ function main (): void {
                     if (!canRage(combo,carry,weapon)) {
                       continue;
                     }
-                    candidateCases += 1;
                     const calc = outputMultiplier(combo,carry,bond,weapon,zhenfaMode);
 
                   // 带后羿弓的输出位按 100% 命中(伤害已经乘 0.8)；孙悟空神命中 100%,用实际命中和红拂女下限
@@ -1668,7 +1665,7 @@ function main (): void {
                     combo.includes(Y.HONG_FU_NV) &&
                     !(carry.index === Y.HONG_FU_NV && carry.form === "mo")
                       ? 65
-                      : Number.NEGATIVE_INFINITY;
+                      : -Infinity;
                   const hitRateTower = hasBow
                     ? 1
                     : hitRate(calc.carryHit,TOWER_ENEMY_DODGE,mingZhongFloor);
@@ -1760,19 +1757,17 @@ function main (): void {
                       bestByWeaponTower.set(weaponKey,result);
                     }
                   }
-                  if (hasMengPo && hitRateShilian > 0) {
-                    const weaponKey = `${String(weapon.index)}:${weapon.entry}`;
-                    const weaponShilian = bestByWeaponShilian.get(weaponKey);
-                    if (!weaponShilian || result.total > weaponShilian.total) {
-                      bestByWeaponShilian.set(weaponKey,result);
-                    }
+                  if (!hasMengPo || hitRateShilian <= 0) {continue;}
+                  const weaponKey = `${String(weapon.index)}:${weapon.entry}`;
+                  const weaponShilian = bestByWeaponShilian.get(weaponKey);
+                  if (!weaponShilian || result.total > weaponShilian.total) {
+                    bestByWeaponShilian.set(weaponKey,result);
                   }
                   }
                 }
               }
             }
             if (bestTower) {
-              combosWithCarry += 1;
               resultsTower.push(bestTower);
             }
             if (bestShilian) {
@@ -1882,7 +1877,9 @@ function main (): void {
     }
     const bondCounts = new Map<number,number>();
     for (const comboIndex of result.combo) {
-      for (const bond of bondOf.get(comboIndex) ?? []) {
+      const bonds = bondOf.get(comboIndex);
+      if (!bonds) {continue;}
+      for (const bond of bonds) {
         bondCounts.set(bond,(bondCounts.get(bond) ?? 0) + 1);
       }
     }
@@ -1893,14 +1890,14 @@ function main (): void {
         continue;
       }
       const bondName = names.jiBan[String(bondType + 1)] ?? `羁绊${String(bondType + 1)}`;
-      const effect =
-        bondType === 5
-          ? `，+${String(level * 5)}%`
-          : bondType === 6
-            ? `，暴伤+${String(SHEN_MOU_CRIT_PER_LEVEL * level)}（暴击时生效）`
-            : bondType === 11
-              ? "，计入西行取经增伤"
-              : "，首击不计";
+      let effect = "，首击不计";
+      if (bondType === 5) {
+        effect = `，+${String(level * 5)}%`;
+      } else if (bondType === 6) {
+        effect = `，暴伤+${String(SHEN_MOU_CRIT_PER_LEVEL * level)}（暴击时生效）`;
+      } else if (bondType === 11) {
+        effect = "，计入西行取经增伤";
+      }
       bondParts.push(`${bondName}×${String(count)}(Lv.${String(level)}${effect})`);
     }
     out.push(`// 羁绊：${bondParts.length > 0 ? bondParts.join("；") : "无"}`,`let 羁绊 = ${result.bond.toFixed(3)}`,`// 神谋鬼算：${result.shenMouLevel > 0 ? `Lv.${String(result.shenMouLevel)}，+${String(SHEN_MOU_CRIT_PER_LEVEL * result.shenMouLevel)} 暴伤` : "未激活"}`,`let 神谋等级 = ${String(result.shenMouLevel)}`,`let 暴伤 = (${round3(panel.critDamage)} + ${String(SHEN_MOU_CRIT_PER_LEVEL)} * 神谋等级) / 100 // ${result.critMultiplier.toFixed(3)}`,`let 伤害加成 = ${round3(panel.damageAddition)}`,`let 武松增伤 = ${String(wusongDamage)}`,`let 伤害加成桶 = (100 + 伤害加成 + 武松增伤) / 100 // ${result.damageAdditionFactor.toFixed(3)}`);
@@ -2009,8 +2006,8 @@ function main (): void {
     "shilian"
   );
   lines.push("--- 转职（魔/神）对比（只列首回合能打全体的；没列出的转职没有可用群攻或开局怒气不足）---");
-  const formIndexes = [...new Set([...bestByForm.keys()].map(key => Number(key.split(":",1)[0])))];
-  for (const index of formIndexes.sort((left,right) => left - right)) {
+  const formIndexes = [...new Set([...bestByForm.keys()].map(key => Number(key.split(":",1)[0])))].sort((left,right) => left - right);
+  for (const index of formIndexes) {
     const both = (["mo","shen"] as const)
       .map(form => ({form,result: bestByForm.get(`${String(index)}:${form}`)}))
       .filter((item): item is {form: "mo" | "shen"; result: ComboResult} => item.result !== undefined);

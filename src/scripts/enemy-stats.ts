@@ -1,6 +1,5 @@
  import {existsSync,mkdirSync,readFileSync,writeFileSync} from "node:fs";
 import {dirname,join} from "node:path";
-import {fileURLToPath} from "node:url";
 import {argString,formatSuoXie,parseArgs} from "../readSave.ts";
 import {runMain} from "../tools.ts";
 
@@ -53,11 +52,15 @@ const zhongJuRecords = JSON.parse(
  * 命中率.源码:MingZhong_Recorder.Final_MZ = 100 + 命中 - 闪避 + MZ_Addition,
  * 判定 Random.Range(0,101) <= Final_MZ,所以命中率是 (Final_MZ+1)/101,上限 100%.
  * floor 是 MZ_Addition 形成的下限(红拂女神转职:Final_MZ 至少 65).
- */
+  * @param attackerHit 攻击方命中.
+  * @param defenderDodge 防守方闪避.
+  * @param floor 命中下限.
+  * @returns number.
+*/
 export function hitRate (
   attackerHit: number,
   defenderDodge: number,
-  floor = Number.NEGATIVE_INFINITY
+  floor = -Infinity
 ): number {
   const finalMz = Math.max(100 + attackerHit - defenderDodge,floor);
   return Math.max(0,Math.min(1,(finalMz + 1) / 101));

@@ -132,7 +132,8 @@ interface CoinRow {
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
  * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
- */
+  * @returns { 攻击: string; 数量: string; 方法: string; 材料: string; 结果: { [k: string]: string; }; }[].
+*/
 export function compareByCoin (
   money = 1_0000_0000,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
@@ -150,7 +151,8 @@ export function compareByCoin (
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
  * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
- */
+  * @returns CoinRow[].
+*/
 function buildRows (
   money = 1_0000_0000,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
@@ -203,7 +205,7 @@ function buildRows (
     make("三味真火","sanweizhenhuoTozhanli",n => sanweizhenhuoTozhanli(n,wanted)),
     make("五彩神石","wucaishenshiTozhanli",wucaishenshiTozhanli),
     make("历史本纪","lishibenjiTozhanli",lishibenjiTozhanli),
-    make("寒铁","hantieTozhanli",n => hantieTozhanli(n,0,0)),
+    make("寒铁","hantieTozhanli",n => hantieTozhanli(n,0)),
     make("强化石·单槽强化","qianghuazhiTozhanli1",qianghuazhiTozhanli1,"强化石"),
     make("强化石·平均强化","qianghuazhiTozhanli2",qianghuazhiTozhanli2,"强化石"),
     make("御灵宝典","yulingbaodianTozhanli",yulingbaodianTozhanli),
@@ -224,7 +226,7 @@ function buildRows (
         (n: number) => baoxiangTozhanli(item.id,n),
         item.unit
       ))
-  ].sort((a,b) => b.攻击 - a.攻击);
+  ].toSorted((a,b) => b.攻击 - a.攻击);
 }
 
 // 把一条原始结果转成中文展示结果:数值经 formatSuoXie 变成带单位字符串,字段名译成中文.

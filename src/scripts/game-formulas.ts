@@ -35,7 +35,7 @@
  * 3. PropHelper.cs:396 有 Random.Range(1f,1.1f) 装备主属性浮动,本库按 DESIGN.md §装备口径 取期望 1.05；
  * 源码结果还经 (long) 截断,且 :400-401 把 DEF/HP 覆盖成 ATK 值,本库只算攻击主属性.
  * 4. 源码另有 2147483646 上限截断,批量路径下限 1 等边界,见各函数注释.
- * 5. oneShotDamage 的 skillReduce / addBeDamage / tuJianDamagePct 是本项目扩展桶:
+ * 5. oneShotDamage 的 skillReduce / extraBeDamage / tuJianDamagePct 是本项目扩展桶:
  * 源码只有单一 DamageReduce(封顶80),这三个来自 DESIGN.md §图鉴口径(研究54)等,按倍率外挂.
  * 资源 PropID 速查:寒铁1 / 五彩神石2 / 破境石3 / 御力4 / 强化石5 / 神通卷轴6 / 灵纹7 / 灵晶8 / 历史本纪9 / 抽奖卷10 / 升仙令93 / 元宝95 / 御灵宝典84 / 忘情水81 / 三味真火85 / 炼器宝典86 / 神速符92 / 图鉴道具901-915.
  */
@@ -67,22 +67,22 @@ export function culDamagePercent (atk: number,def: number): number {
 
 // 单点非暴击伤害.修正记录:此前误写 (dmgAdd/100),与源码 (:86-87) 及 yingling-output.ts:1470
 // 的 (100+damageAddition)/100 不符,已改回 (100+dmgAdd)/100.
-export function oneShotDamage (atk: number,enemy: EnemyStats,opt: ShotOpt,skillReduce = 0,addBeDamage = 0): number {
+export function oneShotDamage (atk: number,enemy: EnemyStats,opt: ShotOpt,skillReduce = 0,extraBeDamage = 0): number {
   const def = Math.max(1,enemy.def - (opt.pen ?? 0));
   const k = culDamagePercent(atk,def);
   const reduce = Math.min(enemy.damageReduce,80);
   return atk * (opt.atkPct / 100) * opt.skillMult * (k / 100) *
     opt.pctBucket * (100 + opt.dmgAdd) / 100 * (1 + (opt.tuJianDamagePct ?? 0) / 100) *
-    (100 + addBeDamage) / 100 * (100 - reduce) / 100 * (100 - skillReduce) / 100;
+    (100 + extraBeDamage) / 100 * (100 - reduce) / 100 * (100 - skillReduce) / 100;
 }
 
 // 求解工具(非游戏机制):二分最小基础攻击使一击必杀
-export function requiredAtk (enemy: EnemyStats,baseAtk: number,opt: ShotOpt,skillReduce = 0,addBeDamage = 0): number {
+export function requiredAtk (enemy: EnemyStats,baseAtk: number,opt: ShotOpt,skillReduce = 0,extraBeDamage = 0): number {
   let hi = 1e40,
 lo = baseAtk;
   for (let i = 0; i < 200; i++) {
     const mid = (lo + hi) / 2;
-    if (oneShotDamage(mid,enemy,opt,skillReduce,addBeDamage) >= enemy.hp) {hi = mid;} else {lo = mid;}
+    if (oneShotDamage(mid,enemy,opt,skillReduce,extraBeDamage) >= enemy.hp) {hi = mid;} else {lo = mid;}
   }
   return hi;
 }
@@ -391,7 +391,6 @@ function table (title: string,rows: [string,string][]): void {
 }
 
 // 直接运行则演示；被 import 时只导出函数
-import {fileURLToPath} from "node:url";
 import process from "node:process";
 
 const isMain = process.argv[1] !== undefined && import.meta.filename === process.argv[1];

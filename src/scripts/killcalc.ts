@@ -33,16 +33,16 @@ interface Meets {first: boolean; hit100: boolean; oneshot: boolean}
 function carryHit (panel: ResourcePanel): number {
   return panel.hit + TANG_SAN_ZANG_HIT;
 }
-function meets (panel: ResourcePanel,enemy: EnemyStats,applyTuJian: boolean): Meets {
+function meets (panel: ResourcePanel,enemy: EnemyStats,shouldApplyTuJian: boolean): Meets {
   return {
     first:   panel.speed > enemy.speed,
     hit100:  carryHit(panel) >= enemy.dodge,
-    oneshot: shot(panel,enemy,applyTuJian) >= enemy.hp
+    oneshot: shot(panel,enemy,shouldApplyTuJian) >= enemy.hp
   };
 }
 
 // 敌方 → 我方 单点非暴击伤害(用真实面板驱动)
-function shot (panel: ResourcePanel,enemy: EnemyStats,applyTuJian: boolean): number {
+function shot (panel: ResourcePanel,enemy: EnemyStats,shouldApplyTuJian: boolean): number {
   return oneShotDamage(
     panel.finalAtk,
     enemy,
@@ -52,7 +52,7 @@ function shot (panel: ResourcePanel,enemy: EnemyStats,applyTuJian: boolean): num
       pctBucket:       SUN_WU_KONG.pctBucket,
       pen:             panel.penetration,
       skillMult:       SUN_WU_KONG.skillMult,
-      tuJianDamagePct: applyTuJian ? panel.tuJianDamagePct : 0
+      tuJianDamagePct: shouldApplyTuJian ? panel.tuJianDamagePct : 0
     },
     SKILL_REDUCE,
     ADD_BE_DAMAGE
@@ -61,8 +61,8 @@ function shot (panel: ResourcePanel,enemy: EnemyStats,applyTuJian: boolean): num
 
 // buildResourcePanel 较重(每次读配置),按资源预算缓存避免重复计算
 const panelCache = new Map<number,null | ResourcePanel>();
-function ok (panel: ResourcePanel,enemy: EnemyStats,applyTuJian: boolean): boolean {
-  const m = meets(panel,enemy,applyTuJian);
+function isOk (panel: ResourcePanel,enemy: EnemyStats,shouldApplyTuJian: boolean): boolean {
+  const m = meets(panel,enemy,shouldApplyTuJian);
   return m.first && m.hit100 && m.oneshot;
 }
 function panelAt (resource: number): null | ResourcePanel {
@@ -94,7 +94,7 @@ function main (): void {
 .filter(n => !isNaN(n));
   if (scene === "tower") {
     const ls = layers.length > 0 ? layers : [1000,5000,10000,20000,50000,10_0000];
-    for (const l of ls) {reportOne(`通天塔 首领 ${fmtShort(l)}层`,towerEnemy(l,3),true);}
+    for (const l of ls) {reportOne(`通天塔 首领 ${fmtShort(l)}层`,towerEnemy(l),true);}
   } else if (scene === "trial") {
     const from = argNumber(args,"from") ?? 1;
     const to = argNumber(args,"to") ?? (layers[0] ?? 100);
@@ -109,13 +109,13 @@ function main (): void {
   console.log("\n参数：--scene=tower|trial|zhongju  --layer=10000  --from/--to=层数  --skillReduce=N(敌人技能减伤%)  --addBeDamage=N(我方图鉴减益%)  --resource=N(指定预算直接查看,跳过二分)");
   console.log("覆盖规则：通天塔仅算首领(属性最高,且计入图鉴增伤);试炼/终局每波5个敌人共用该属性集(以最强计),满足即整波全部一击必杀。");
 }
-function minResource (enemy: EnemyStats,applyTuJian: boolean): {panel: null | ResourcePanel; resource: number} {
+function minResource (enemy: EnemyStats,shouldApplyTuJian: boolean): {panel: null | ResourcePanel; resource: number} {
   let hi = 1,
 lo = 0;
   let hiPanel: null | ResourcePanel = null;
   while (hi <= RES_HI) {
     hiPanel = panelAt(hi);
-    if (hiPanel !== null && ok(hiPanel,enemy,applyTuJian)) {break;}
+    if (hiPanel !== null && isOk(hiPanel,enemy,shouldApplyTuJian)) {break;}
     lo = hi;
     hi *= 2;
   }
@@ -124,7 +124,7 @@ ansPanel = hiPanel;
   for (let i = 0; i < 60; i++) {
     const mid = Math.floor((lo + hi) / 2);
     const panel = panelAt(mid);
-    if (panel !== null && ok(panel,enemy,applyTuJian)) {
+    if (panel !== null && isOk(panel,enemy,shouldApplyTuJian)) {
       ans = mid; ansPanel = panel; hi = mid;
     } else {
       lo = mid + 1;
@@ -134,20 +134,20 @@ ansPanel = hiPanel;
 }
 
 // ---------- 输出单个敌人 ----------
-function reportOne (tag: string,enemy: EnemyStats,applyTuJian: boolean): void {
+function reportOne (tag: string,enemy: EnemyStats,shouldApplyTuJian: boolean): void {
   console.log(`\n=== ${tag} ===`);
   const reduce = Math.min(enemy.damageReduce,80);
   console.log(`敌人: HP=${fmtShort(enemy.hp)} 防御=${fmtShort(enemy.def)} 速度=${fmtShort(enemy.speed)} 闪避=${fmtShort(enemy.dodge)} 减伤=${String(reduce)}%(封顶80)${SKILL_REDUCE ? ` +技能减伤${String(SKILL_REDUCE)}%` : ""}${ADD_BE_DAMAGE ? ` 我方图鉴减益+${String(ADD_BE_DAMAGE)}%` : ""}`);
   const fixed = argNumber(parseArgs(process.argv.slice(2)),"resource");
   const {panel,resource} = fixed == null
-    ? minResource(enemy,applyTuJian)
+    ? minResource(enemy,shouldApplyTuJian)
     : {panel: panelAt(fixed),resource: fixed};
   if (panel === null) {
     console.log(`⚠ 资源预算 ${fmtShort(RES_HI)} 下仍无法构建面板(可能配置/模型异常)。`);
     return;
   }
-  const m = meets(panel,enemy,applyTuJian);
-  const os = shot(panel,enemy,applyTuJian);
+  const m = meets(panel,enemy,shouldApplyTuJian);
+  const os = shot(panel,enemy,shouldApplyTuJian);
   console.log(`先手    : 我方速度 ${fmtShort(panel.speed)} ${m.first ? "✓" : `✗(需 > ${fmtShort(enemy.speed)})`}`);
   console.log(`100%命中: 我方命中 ${fmtShort(carryHit(panel))} ${m.hit100 ? "✓" : `✗(需 >= ${fmtShort(enemy.dodge)})`}`);
   console.log(`一击必杀: 单点非暴击 ${fmtShort(os)} ${m.oneshot ? "✓" : `✗(需 >= ${fmtShort(enemy.hp)})`}`);

@@ -15,8 +15,7 @@
  * 作为保守的统一预算估算,可用 --resource=N 覆盖(N 为「每项初始资源」预算值).
  * 用法:pnpm exec tsx src/scripts/gen-diagnose-trial.ts [--resource=N] [--save=1]
  */
-import {join} from "node:path";
-import {argNumber,argString,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {argNumber,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import type {GameRecord} from "../readSave.ts";
 import {trialEnemy} from "./enemy-stats.ts";
 import type {EnemyStats} from "./enemy-stats.ts";
@@ -26,7 +25,6 @@ import type {ShiLianSave} from "../tools.ts";
 import {buildResourcePanel} from "./yingling-output.ts";
 import type {ResourcePanel} from "./yingling-output.ts";
 
-const DEFAULT_GAME_DIR = String.raw`D:\game\steam\steamapps\common\MoNiShouYou`;
 const TANG_SAN_ZANG_HIT = 30; // 唐三藏 3 技能开战全体 +30 命中(孙悟空配队常驻)
 
 // 养成资源 PropID:寒铁1/五彩神石2/破境石3/御力4/强化石5/神通卷轴6/灵纹7/灵晶8/历史本纪9/忘情水81/三味真火85
@@ -101,7 +99,6 @@ function main (): void {
     ShiLian_Manger?:    ShiLianSave;
   } & GameRecord;
   const args = parseArgs(process.argv.slice(2));
-  const gameDir = argString(args,"game-dir") ?? DEFAULT_GAME_DIR;
   const save = loadSave(resolveSaveDir(args));
   const game = save.game as SaveGame;
   const from = game.ShiLian_Manger?.Cur_CengShu ?? 1;

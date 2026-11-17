@@ -49,7 +49,7 @@ import {
 } from "./game-formulas.ts";
 import {trialEnemy,ZHONG_JU} from "./enemy-stats.ts";
 import type {EnemyStats} from "./enemy-stats.ts";
-import {argNumber,argString,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {argString,parseArgs,resolveSaveDir} from "../readSave.ts";
 import type {CliArgs} from "../readSave.ts";
 import {buildResearchPlan} from "./research-plan.ts";
 import type {ResearchResult} from "./research-plan.ts";
@@ -153,7 +153,7 @@ function loadStorePrices (args: CliArgs): {prices: Map<number,number>; source: s
   try {
     const file = join(resolveSaveDir(args),"Prop_Data.Save");
     const prices = new Map<number,number>();
-    for (const line of readFileSync(file,"utf8").replace(/^\uFEFF/,"")
+    for (const line of readFileSync(file,"utf8").replace(/^\u{FEFF}/u,"")
 .split(/\r?\n/)) {
       const t = line.trim();
       if (!t.startsWith("{")) {continue;}
@@ -176,7 +176,7 @@ function shenBingNextCost (amount: number): number {
 }
 
 // 研究 44「价廉物美」:商店买价 -30%(Cul_Percent_ToInt 四舍五入远离零)
-const shopPrice = (base: number,researchOn: boolean): number => Math.round(base * (100 - (researchOn ? RESEARCH.shopReduce : 0)) / 100);
+const shopPrice = (base: number,isResearchOn: boolean): number => Math.round(base * (100 - (isResearchOn ? RESEARCH.shopReduce : 0)) / 100);
 
 // ---------------- 初始资源池 ----------------
 interface PoolRow {amount: number; fromCode: number; fromPoint: number; name: string; prop: number}
@@ -238,7 +238,8 @@ function buildInitialPool (): {pointPrice: number; property: Map<number,number>;
   }
   const total = new Map<number,number>();
   const rows: PoolRow[] = [];
-  for (const [prop,v] of [...acc].sort((a,b) => a[0] - b[0])) {
+  const sortedAcc = [...acc].toSorted((a,b) => a[0] - b[0]);
+  for (const [prop,v] of sortedAcc) {
     const amount = v.fromCode + v.fromPoint;
     total.set(prop,amount);
     rows.push({name: propName(prop),prop,...v,amount});
@@ -305,11 +306,10 @@ function expectedPinZhi (qiluLevel: number): number {
     const e = EQUIP_TABLE[i];
     if (!e) {continue;}
     if (used >= 1000) {break;}
-    if (e.initialLevel < qiluLevel) {
-      const p = Math.min((qiluLevel - e.initialLevel) * e.percentLevelAdd,1000 - used);
-      percent[i] = p;
-      used += p;
-    }
+    if (e.initialLevel >= qiluLevel) {continue;}
+    const p = Math.min((qiluLevel - e.initialLevel) * e.percentLevelAdd,1000 - used);
+    percent[i] = p;
+    used += p;
   }
   let pinzhi = 0;
   for (const [i,element] of EQUIP_TABLE.entries()) {
@@ -378,8 +378,8 @@ interface Panel {
   damageAddition:  number;
   finalAtk:        number;
   hit:             number;
+  isResearchOn:    boolean;
   penetration:     number;
-  researchOn:      boolean;
   speed:           number;
   tuJianDamagePct: number;
 }
@@ -460,7 +460,6 @@ function panelOf (final: Map<number,number>,property: Map<number,number>): Panel
   const sumBreakthrough = (n: number): number => 2 * n + 7 * n * (n + 1) / 2;
   const luckyN = luckyBreakthroughs();
   const luckyCount = Math.min(breakthroughCount,luckyN);
-  const lucky = sumBreakthrough(luckyCount);
   const breakpointSpeed = breakthroughCount > luckyCount
     ? sumBreakthrough(breakthroughCount) - sumBreakthrough(luckyCount)
     : 0;
@@ -602,7 +601,7 @@ vipSpent = 0;
   const hit = 10 + tgHit + vipHit + fireLevel + e.hit + (isShenTongOk ? 10 : 0);
   const speed = breakpointSpeed + historySpeed;
   const damageAddition = equipDamageAddition + e.dmgAdd + waterLevel + (isShenTongOk ? 15 : 0) + tgDamage;
-  return {atkFlat,atkPct,breakdown,damageAddition,finalAtk,hit,penetration,researchOn: isResearchOn,speed,tuJianDamagePct};
+  return {atkFlat,atkPct,breakdown,damageAddition,finalAtk,hit,isResearchOn,penetration,speed,tuJianDamagePct};
 }
 const TANG_SAN_ZANG_HIT = 30;
 const SUN_WU_KONG = {pctBucket: 1,skillMult: 1};
@@ -643,9 +642,6 @@ interface SolveResult {
   trace:      {margin: number; name: string; step: number}[];
 }
 interface Target {enemy: EnemyStats; name: string}
-function allMeet (p: Panel,targets: readonly Target[]): boolean {
-  return targets.every(t => ratiosOf(p,t.enemy).every(r => r >= 1));
-}
 
 // 幸运满后,第 from+1 次起的突破全给速度,求达到 target 速度所需总突破次数
 function breakthroughsForSpeed (from: number,target: number): number {
@@ -717,6 +713,9 @@ function damageOf (p: Panel,enemy: EnemyStats): number {
     skillMult: SUN_WU_KONG.skillMult
   });
 }
+function isAllMeet (p: Panel,targets: readonly Target[]): boolean {
+  return targets.every(t => ratiosOf(p,t.enemy).every(r => r >= 1));
+}
 
 // 突破先堆幸运到 50000(DESIGN.md §御灵师突破口径),返回需要多少次突破
 function luckyBreakthroughs (): number {
@@ -780,9 +779,9 @@ function solve (base: Map<number,number>,property: Map<number,number>,targets: r
   let cost = 0,
 iterations = 0;
   const MAX_ITER = 600;
-  while (!allMeet(panel,targets) && iterations < MAX_ITER) {
+  while (!isAllMeet(panel,targets) && iterations < MAX_ITER) {
     let best: {gain: number; price: number; res: AllocRes; step: number} | null = null;
-    const isResearchOn = panel.researchOn;
+    const isResearchOn = panel.isResearchOn;
     for (const res of alloc) {
       const price = shopPrice(res.baseCost,isResearchOn);
       const cur = added.get(res.prop) ?? 0;
@@ -814,8 +813,8 @@ iterations = 0;
 // 单独追加一种资源,二分求「两批敌人都可一击必杀」的最小追加量.
 // 前置(速度/命中/研究)已完成,这里只需伤害 >= 两批 HP.
 function solveSingleNeed (final: Map<number,number>,property: Map<number,number>,
-  targets: readonly Target[],prop: number,price: number): {count: number; feasible: boolean} {
-  const meets = (n: number): boolean => {
+  targets: readonly Target[],prop: number,_price: number): {count: number; feasible: boolean} {
+  const isMeets = (n: number): boolean => {
     const t = new Map(final);
     t.set(prop,(t.get(prop) ?? 0) + n);
     const p = panelOf(t,property);
@@ -825,22 +824,22 @@ function solveSingleNeed (final: Map<number,number>,property: Map<number,number>
 
   // 探测上限由目标 HP/DEF 动态给出(见 NEED_PROBE_MAX):平方级杠杆可能需要极大资源量.
   // 突破/曲线/寒铁均已闭式化,探测不会卡死.
-  while (hi < needProbeMax(targets) && !meets(hi)) {hi *= 2;}
-  if (!meets(hi)) {return {count: Infinity,feasible: false};}
+  while (hi < needProbeMax(targets) && !isMeets(hi)) {hi *= 2;}
+  if (!isMeets(hi)) {return {count: Infinity,feasible: false};}
   let lo = 0;
 
   // 二分次数按区间量级动态给出,保证能收敛到个位
   const steps = Math.ceil(Math.log2(Math.max(2,hi))) + 2;
   for (let i = 0; i < steps; i += 1) {
     const mid = Math.floor((lo + hi) / 2);
-    if (meets(mid)) {hi = mid;} else {lo = mid + 1;}
+    if (isMeets(mid)) {hi = mid;} else {lo = mid + 1;}
   }
   return {count: hi,feasible: true};
 }
 const PROBE_COUNT = 1e6; // 统一探测量:每种资源追加 100 万个,再归一化到「每钱币」
 function buildMarginalTable (final: Map<number,number>,property: Map<number,number>,
   targets: readonly Target[],alloc: AllocRes[],prices: Map<number,number>,
-  withNeed: boolean): {base: Panel; baseT: number; baseZ: number; rows: MarginRow[]} {
+  hasNeed: boolean): {base: Panel; baseT: number; baseZ: number; rows: MarginRow[]} {
   const base = panelOf(final,property);
   const baseZ = damageOf(base,targets[0]!.enemy);
   const baseT = damageOf(base,targets[1]!.enemy);
@@ -856,7 +855,7 @@ function buildMarginalTable (final: Map<number,number>,property: Map<number,numb
     const perCoinZ = (dmgZ - baseZ) / coins;
 
     // 单独达标量是可选的重计算(--need=1)；默认只出边际表,保持秒级
-    const need = withNeed && perCoinZ > 0
+    const need = hasNeed && perCoinZ > 0
       ? solveSingleNeed(final,property,targets,res.prop,price)
       : {count: Infinity,feasible: false};
     rows.push({
@@ -935,7 +934,7 @@ function main (): void {
   console.log("  不可购买（锁定为初始水平）：图鉴卡片901-915、御力(4)、钱币(80)、元宝(95)、御力宝箱(21/29)");
   const basePanel = panelOf(base,property);
   console.log("\n--- 四、仅用初始资源的面板（「根本不够」）---");
-  console.log(`  研究状态：${basePanel.researchOn ? "已点满" : "未点满"}（初始历史本纪 ${fmtShort(base.get(9) ?? 0)} < ${fmtShort(RESEARCH.cost)}）`);
+  console.log(`  研究状态：${basePanel.isResearchOn ? "已点满" : "未点满"}（初始历史本纪 ${fmtShort(base.get(9) ?? 0)} < ${fmtShort(RESEARCH.cost)}）`);
   console.log(`  攻击 ${fmtShort(basePanel.finalAtk)}  命中 ${fmtShort(basePanel.hit + TANG_SAN_ZANG_HIT)}  速度 ${fmtShort(basePanel.speed)}  穿透 ${fmtShort(basePanel.penetration)}`);
   for (const t of targets) {
     const r = ratiosOf(basePanel,t.enemy);
@@ -943,7 +942,7 @@ function main (): void {
   }
   const result = solve(base,property,targets,alloc);
   console.log(`\n--- 五、还需追加的资源分配（贪心 ${String(result.iterations)} 轮，总花费 ${fmtShort(result.cost)} 钱币）---`);
-  console.log(`  研究状态：${result.panel.researchOn ? "已点满（收入倍率与减免已生效）" : "仍未点满"}`);
+  console.log(`  研究状态：${result.panel.isResearchOn ? "已点满（收入倍率与减免已生效）" : "仍未点满"}`);
   let isAny = false;
   for (const a of alloc) {
     const add = result.added.get(a.prop) ?? 0;
@@ -974,7 +973,7 @@ function main (): void {
     console.log(`    100%命中: 我方命中 ${fmtShort(p.hit + TANG_SAN_ZANG_HIT)} ${isOkHit ? "✓" : `✗ 需 >= ${fmtShort(e.dodge)}`}`);
     console.log(`    一击必杀: 单点非暴击 ${fmtShort(dmg)} ${isOkShot ? "✓" : `✗ 需 >= ${fmtShort(e.hp)}`}`);
   }
-  console.log(`  结论：${allMeet(p,targets) ? "★ 6 项约束全部达标，两批敌人可同时击杀" : "✗ 仍有约束未达标（可能已达迭代上限或资源模型无法再提升）"}`);
+  console.log(`  结论：${isAllMeet(p,targets) ? "★ 6 项约束全部达标，两批敌人可同时击杀" : "✗ 仍有约束未达标（可能已达迭代上限或资源模型无法再提升）"}`);
   console.log(`  最弱一环余量 ${marginOf(p,targets).toExponential(3)}（>=1 即全部达标）`);
   if (result.trace.length > 0) {
     console.log("\n--- 九、边际分配轨迹（前 8 轮 + 末 3 轮）---");
@@ -1030,7 +1029,7 @@ function printAnalysis (): void {
   console.log(`  前置合计 ${fmtShort(preCoins)} 钱币`);
   const prePanel = panelOf(final,property);
   console.log("\n--- 二、前置完成后的基线面板 ---");
-  console.log(`  研究 ${prePanel.researchOn ? "已点满" : "未点满"}  最终攻击 ${fmtShort(prePanel.finalAtk)}  穿透 ${fmtShort(prePanel.penetration)}  命中 ${fmtShort(prePanel.hit + TANG_SAN_ZANG_HIT)}  速度 ${fmtShort(prePanel.speed)}  伤害加成 ${String(prePanel.damageAddition)}`);
+  console.log(`  研究 ${prePanel.isResearchOn ? "已点满" : "未点满"}  最终攻击 ${fmtShort(prePanel.finalAtk)}  穿透 ${fmtShort(prePanel.penetration)}  命中 ${fmtShort(prePanel.hit + TANG_SAN_ZANG_HIT)}  速度 ${fmtShort(prePanel.speed)}  伤害加成 ${String(prePanel.damageAddition)}`);
   for (const t of targets) {
     const r = ratiosOf(prePanel,t.enemy);
     console.log(`  ${t.name}：伤害比 ${r[0].toExponential(3)}  速度比 ${r[1].toExponential(3)}  命中比 ${r[2].toExponential(3)}`);
@@ -1069,10 +1068,9 @@ function printAnalysis (): void {
       console.log(`    ${t.name} 伤害比 ${(before / t.enemy.hp).toExponential(3)} → ${(after / t.enemy.hp).toExponential(3)}（伤害增量 ${fmtShort(after - before)}）`);
     }
     console.log(`    每 1 钱币伤害增量：${targets[0]!.name} ${r.perCoinZ.toExponential(3)} / ${targets[1]!.name} ${r.perCoinT.toExponential(3)}`);
-    if (isWithNeed) {
-      const cap = fmtShort(needProbeMax(targets));
-      console.log(`    单独靠它达标：${r.feasible ? `需 ${fmtShort(r.needCount)} 个 = ${fmtShort(r.needCoins)} 钱币` : `追加到 ${cap} 个仍不达标`}`);
-    }
+    if (!isWithNeed) {continue;}
+    const cap = fmtShort(needProbeMax(targets));
+    console.log(`    单独靠它达标：${r.feasible ? `需 ${fmtShort(r.needCount)} 个 = ${fmtShort(r.needCoins)} 钱币` : `追加到 ${cap} 个仍不达标`}`);
   }
   const isSameDamage = Math.abs(baseZ - baseT) < Math.max(baseZ,baseT) * 1e-9;
   const allK = targets.map(t => culDamagePercent(prePanel.finalAtk,Math.max(1,t.enemy.def - prePanel.penetration)));
@@ -1086,7 +1084,7 @@ function printAnalysis (): void {
   console.log("       必须靠「最终攻击 + 穿透」把 k 拉出最低档（见二·补的实算门槛）。");
   if (isWithNeed) {
     console.log("\n--- 四、按「单独达标所需钱币」排序（越少越好）---");
-    const byNeed = [...rows].sort((x,y) => x.needCoins - y.needCoins);
+    const byNeed = [...rows].toSorted((x,y) => x.needCoins - y.needCoins);
     for (const [i,element] of byNeed.entries()) {
       const r = element;
       const cost = r.feasible ? `${fmtShort(r.needCoins)} 钱币（${fmtShort(r.needCount)} 个）` : "不可单独达标";

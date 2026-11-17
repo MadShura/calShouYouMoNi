@@ -55,7 +55,7 @@ const sumGain = (n: bigint): bigint => (n <= 0n ? 0n : 2n * n + 7n * n * (n + 1n
 const hitOf = (lucky: bigint): bigint => WUKONG_TANG_HIT + lucky / 100n * 5n;
 
 // 命中率是否 100%(源码 (100+命中-闪避+1)/101≥1 ⇔ 命中≥闪避);值域小用 number 包装 hitRate 判定.
-const fullHit = (hit: bigint): boolean => hitRate(Number(hit),ENEMY_5.dodge) >= 1;
+const isFullHit = (hit: bigint): boolean => hitRate(Number(hit),ENEMY_5.dodge) >= 1;
 
 // 御灵宝典本数 → 御灵等级/四维攻击/突破次数(等价 calzhanli.ts:yulingbaodianTozhanli).
 // 逐级御力门槛闭式:前 N 级门槛之和 = 完整十级组 + 当前十级组部分(BigInt 整除).
@@ -95,7 +95,7 @@ function zhenLevel (lingwen: bigint): {atk: bigint; level: bigint} {
 // 命中100%所需最小幸运(BigInt 步进100,用 hitRate 判定).
 let luckyForFullHit = 0n;
 for (let lucky = 0n; lucky <= 1_0000_0000n; lucky += 100n) {
-  if (fullHit(hitOf(lucky))) {luckyForFullHit = lucky; break;}
+  if (isFullHit(hitOf(lucky))) {luckyForFullHit = lucky; break;}
 }
 
 // 达到某累计增益所需的最小突破次数.
@@ -128,11 +128,11 @@ lo = 1n;
 function minTotalBreaksTianfu (): bigint {
   let hi = TIANFU_SPEED_BREAKS * 2n,
 lo = TIANFU_SPEED_BREAKS;
-  const ok = (total: bigint): boolean => sumGain(total) - sumGain(TIANFU_SPEED_BREAKS) >= luckyForFullHit;
-  while (!ok(hi)) {hi *= 2n;}
+  const isOk = (total: bigint): boolean => sumGain(total) - sumGain(TIANFU_SPEED_BREAKS) >= luckyForFullHit;
+  while (!isOk(hi)) {hi *= 2n;}
   while (lo < hi) {
     const mid = (lo + hi) / 2n;
-    if (ok(mid)) {hi = mid;} else {lo = mid + 1n;}
+    if (isOk(mid)) {hi = mid;} else {lo = mid + 1n;}
   }
   return lo;
 }
@@ -202,24 +202,24 @@ zhenSpeedDmg:    0n
 });
 
 // 反推满足三条件的最小总金币(单位 0.1钱币);无解则 coin=-1n.
-export function reverseWukongCoin (bird: boolean): ReverseRow {
-  const name = bird ? "全速度+鸟翔阵(补命中)" : "全幸运+天覆阵(补速度)";
-  const maxRow = bestSplitForCoin(bird,MAX_COIN);
+export function reverseWukongCoin (isBird: boolean): ReverseRow {
+  const name = isBird ? "全速度+鸟翔阵(补命中)" : "全幸运+天覆阵(补速度)";
+  const maxRow = bestSplitForCoin(isBird,MAX_COIN);
   if (!maxRow.feasible) {return {name,...maxRow,coin: -1n};}
-  let lo = bird ? MIN_BOOK_BIRD : MIN_BOOK_TIANFU;
+  let lo = isBird ? MIN_BOOK_BIRD : MIN_BOOK_TIANFU;
   let hi = MAX_COIN;
 
   // BigInt 二分:金币越多越容易达标(feasible 单调),while(lo<hi) 精确终止,无需浮点补丁.
   while (lo < hi) {
     const mid = (lo + hi) / 2n;
-    if (bestSplitForCoin(bird,mid).feasible) {hi = mid;} else {lo = mid + 1n;}
+    if (bestSplitForCoin(isBird,mid).feasible) {hi = mid;} else {lo = mid + 1n;}
   }
-  return {name,...bestSplitForCoin(bird,hi)};
+  return {name,...bestSplitForCoin(isBird,hi)};
 }
 
 // 给定总金币,整数三分搜索找伤害最大的御灵宝典/灵纹拆分(伤害关于拆分单峰).
-function bestSplitForCoin (bird: boolean,coin: bigint): Omit<ReverseRow,"name"> {
-  const minBook = bird ? MIN_BOOK_BIRD : MIN_BOOK_TIANFU;
+function bestSplitForCoin (isBird: boolean,coin: bigint): Omit<ReverseRow,"name"> {
+  const minBook = isBird ? MIN_BOOK_BIRD : MIN_BOOK_TIANFU;
   let hi = coin,
 lo = minBook;
   for (let i = 0; i < 200; i++) {
@@ -227,20 +227,20 @@ lo = minBook;
     const m1 = lo + third,
 m2 = hi - third;
     if (m1 <= lo || m2 >= hi) {break;}
-    if (evalSplit(bird,m1,coin - m1).damage < evalSplit(bird,m2,coin - m2).damage) {lo = m1;} else {hi = m2;}
+    if (evalSplit(isBird,m1,coin - m1).damage < evalSplit(isBird,m2,coin - m2).damage) {lo = m1;} else {hi = m2;}
   }
   const coinBook = (lo + hi) / 2n;
-  return evalSplit(bird,coinBook,coin - coinBook);
+  return evalSplit(isBird,coinBook,coin - coinBook);
 }
 
 // 给定拆分与方案算三条件与伤害.bird=true 鸟翔(补命中),false 天覆(补速度).
-function evalSplit (bird: boolean,coinBook: bigint,coinZhen: bigint): Omit<ReverseRow,"name"> {
+function evalSplit (isBird: boolean,coinBook: bigint,coinZhen: bigint): Omit<ReverseRow,"name"> {
   const books = coinBook / BOOK_COST;
   const yu = yulingLevel(books);
   const zhen = zhenLevel(coinZhen / LINGWEN_COST);
   const totalBreaks = yu.breaks;
   let lucky: bigint,shortBreaks: bigint,speed: bigint;
-  if (bird) {
+  if (isBird) {
     if (totalBreaks < BIRD_HIT_BREAKS + TIANFU_SPEED_BREAKS) {return zeroRow(coinBook,coinZhen,yu,zhen);}
     shortBreaks = BIRD_HIT_BREAKS;
     lucky = sumGain(shortBreaks);
@@ -267,14 +267,13 @@ function evalSplit (bird: boolean,coinBook: bigint,coinZhen: bigint): Omit<Rever
   const pen = baseAtk;
 
   // 攻击%先乘进攻击得 finalAtk(源码 GetFinal),再让 K 用 finalAtk 算.
-  const atkPct = bird
+  const atkPct = isBird
     ? WU_SONG_ATK_PERCENT
     : WU_SONG_ATK_PERCENT + TIANFU_PANEL_ATK + zhen.level;
   const finalAtk = baseAtk * (100n + atkPct) / 100n;
-  const zhenSpeedDmg = bird
-    ? (speed > ENEMY_SPEED ? speed - ENEMY_SPEED : 0n) > BIRD_DAMAGE_CAP
-      ? BIRD_DAMAGE_CAP
-: speed > ENEMY_SPEED ? speed - ENEMY_SPEED : 0n
+  const speedDiff = speed > ENEMY_SPEED ? speed - ENEMY_SPEED : 0n;
+  const zhenSpeedDmg = isBird
+    ? speedDiff > BIRD_DAMAGE_CAP ? BIRD_DAMAGE_CAP : speedDiff
     : 0n;
   const dmgAdd = WU_SONG_DAMAGE_ADD + zhenSpeedDmg;
 

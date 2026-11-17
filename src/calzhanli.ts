@@ -47,7 +47,8 @@ export {MATERIAL_COST_PER_UNIT};
  * @param hantie 投入的寒铁数量
  * @param wingLevel 翅膀 Wing_CB_2 印记等级(0 = 没翅膀)
  * @param wucaiStones 投入的五彩神石数量(把器鼎从 Lv.1700 继续升级;默认 0 即保持 1700)
- */
+  * @returns HantieToZhanliResult.
+*/
 export function hantieTozhanli (
   hantie: number,
   wingLevel: number,
@@ -90,7 +91,7 @@ export function hantieTozhanli (
   };
 
   // ③ 经验倍率:翅膀 >0 时整行覆盖研究16(NPC_EquipManager.cs:141-149),不是叠加
-  const expScale = (wingLevel > 0 ? PERCENT_BASE + WING_EXP_PER_LEVEL * wingLevel : PERCENT_BASE + RESEARCH_16_EXP_ADD) / PERCENT_BASE;
+  const expScale = (PERCENT_BASE + (wingLevel > 0 ? WING_EXP_PER_LEVEL * wingLevel : RESEARCH_16_EXP_ADD)) / PERCENT_BASE;
 
   // ④ 逐级模拟制造:每次按当时的炼器等级扣寒铁,结算经验,连升等级
   // 同时记录每件装备的等级(源码 GenrateRandomEquip 在 AddLianQiExp 之前,故装备等级 = 升级前的炼器等级)
@@ -211,7 +212,8 @@ export function hantieTozhanli (
  * 每升到 1,251,501... 级给 Property3 +1%(源码 (CurStrength+249)%250==0),记在 specialPercent.
  * 等级上限取通天塔 1 万层 maxRound(CheckMaxOK :166-174);阵法解锁数不单列,消耗已计入 used.
  * @param lingjing 投入的灵晶数量
- */
+  * @returns ToZhanliResult.
+*/
 export function lingjingTozhanli (lingjing: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(lingjing,"灵晶");
@@ -253,7 +255,8 @@ export function lingjingTozhanli (lingjing: number): ToZhanliResult {
  * 每级消耗 10+10L 个历史本纪(源码 GetStrengthRemand 直接 new PropRecorder(9,num),无研究减免),
  * 每级 HP/ATK/DEF/穿透 各 +(20+50L) 固定值,速度 +1(:21-33).
  * @param history 投入的历史本纪数量
- */
+  * @returns ToZhanliResult.
+*/
 export function lishibenjiTozhanli (history: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(history,"历史本纪");
@@ -305,7 +308,8 @@ export function materialCost (quantity = 1): Record<string,number> {
  * @param lingwen 投入的灵纹数量
  * @param mySpeed 我方速度(默认 0)
  * @param enemySpeed 敌方速度(默认 0)
- */
+  * @returns ToZhanliResult.
+*/
 export function niaoxiangzhenTozhanli (
   lingwen: number,
   mySpeed = 0,
@@ -329,7 +333,8 @@ export function niaoxiangzhenTozhanli (
  * 速度 +1 固定值,LevelUpStartEffect[Star/5]=暴击 +1 固定值(Character_YingLing.cs:51-61).
  * 破境无硬上限,maxLevel 记本次达到的最终等级上限.
  * @param pojing 投入的破境石数量
- */
+  * @returns ToZhanliResult.
+*/
 export function pojingshiTozhanli (pojing: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(pojing,"破境石");
@@ -415,7 +420,8 @@ export function research (): ResearchReduce {
  * 默认 wanted=命中/速度 是 8 条命中轨 + 2 条速度轨;只传 命中 即复现 DESIGN.md:52 的 8 轨口径.
  * @param sanwei 投入的三味真火数量
  * @param wanted 想要的属性中文名数组(默认 命中,速度),可带 % 后缀
- */
+  * @returns ToZhanliResult.
+*/
 export function sanweizhenhuoTozhanli (
   sanwei: number,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
@@ -453,7 +459,8 @@ export function shengShou (level: number): SystemGain {
  * LearnShenTong(Character_YingLing.cs:462-466) 每级给 effectRecoders.Params_2 固定值到 Params_1 属性,
  * effectName=1 的 EntryEffect 类不进面板属性,进 GetZhanLi 的 Level×PinZhi 战力乘区(:401-411).
  * @param scrolls 投入的神通卷轴数量
- */
+  * @returns ToZhanliResult.
+*/
 export function shentongjuanzhouTozhanli (scrolls: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(scrolls,"神通卷轴");
@@ -506,15 +513,15 @@ export function shentongjuanzhouTozhanli (scrolls: number): ToZhanliResult {
 /**
  * 模拟主动刷怪:按时间算出怒气/普攻两边各能清多少波,并分别给数学期望掉落.
  * 一次执行 = 清一波 5 只怪；次数 = floor(小时×3600/周期),最后一次不足周期直接丢弃.
- * @param useRage true 为怒气(1.1 秒/波),false 为普通攻击(0.85 秒/波)
+ * @param isRage true 为怒气(1.1 秒/波),false 为普通攻击(0.85 秒/波)
  * @param hours 限定时间,单位小时,必传
  * @param map 地图 1-5,默认 5 通天塔
  * @param wingLevel 翅膀 1(Wing_CB_1)等级,默认 0；只影响元宝
  * @param wanHunFanLevel 万魂帆 Entry 等级,默认 0；每级给御力掉落 +10%
- * @returns 两份并列结果；主模式由 useRage 标记,两边掉落都完整计算
+ * @returns 两份并列结果；主模式由 isRage 标记,两边掉落都完整计算
  */
 export function simulateFarm (
-  useRage: boolean,
+  isRage: boolean,
   hours: number,
   map: MapID = 5,
   wingLevel = 0,
@@ -525,7 +532,7 @@ export function simulateFarm (
   const safeWingLevel = assertWholeAtLeast(wingLevel,0,"翅膀等级");
   const safeWanHunFanLevel = assertWholeAtLeast(wanHunFanLevel,0,"万魂帆等级");
   return {
-    主模式:  useRage ? "怒气" : "普通攻击",
+    主模式:  isRage ? "怒气" : "普通攻击",
     怒气:   simulateMode(safeHours,RAGE_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel),
     普通攻击: simulateMode(safeHours,NORMAL_SECONDS,mapConfig,safeWingLevel,safeWanHunFanLevel)
   };
@@ -538,7 +545,8 @@ export function simulateFarm (
  * @param round 层数(CurRound),默认 1；影响御力波次系数与已触发的扫荡加成
  * @param power 扫荡阵容战力,默认 0；按 MapRecorder.GetZhanLiAddition 折算速度
  * @param map 地图 1-5,默认 5 通天塔
- */
+  * @returns SweepResult.
+*/
 export function simulateSweep (
   hours: number,
   round = 1,
@@ -576,7 +584,8 @@ export function simulateSweep (
  * DESIGN.md:35 / MoNiShouYou_伤害计算与加成上限.md:139).
  * Entry_ZhenFa_1.cs:18-26 战斗开始给全场最高攻单位 +阵法等级% 攻击,这是乘区而非固定值, 按确认口径不伪造攻击基数,只把 Lv 记进 zhenFaAttackPercent 过程量,atk 仍是四维增量.
  * @param lingwen 投入的灵纹数量
- */
+  * @returns ToZhanliResult.
+*/
 export function tianfuzhenTozhanli (lingwen: number): ToZhanliResult {
   const result = lingwenLevelUp(lingwen);
   result.atkPercent = ZHENFA_TIANFU_ATK_PERCENT;
@@ -615,7 +624,8 @@ export function tuJian (level: number): SystemGain {
  * 传 伤害加成,暴伤 即选中 DESIGN.md:52 的 2 条伤害加成 + 6 条暴伤轨(仍按平均分配,与该文档的边际收益分配不同).
  * @param water 投入的忘情水数量
  * @param wanted 想要的属性中文名数组(默认 命中,速度),可带 % 后缀
- */
+  * @returns ToZhanliResult.
+*/
 export function wangqingshuiTozhanli (
   water: number,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
@@ -633,7 +643,8 @@ export function wangqingshuiTozhanli (
  * 器鼎等级经 GetEqui_PropertyAddition(PropHelper.cs:424-438) 进装备主属性倍率,
  * 故按 hantieTozhanli 同一套主属性公式(固定炼器 Lv.1,品质 15,10 槽)折算攻/防/血三维增量.
  * @param wucai 投入的五彩神石数量
- */
+  * @returns ToZhanliResult.
+*/
 export function wucaishenshiTozhanli (wucai: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(wucai,"五彩神石");
@@ -693,7 +704,8 @@ export function yuLing (level: number): SystemGain {
  * @param books 投入的御灵宝典本数
  * @param tuPoDir 突破方向(PropertyTypeEnum):0 攻击 / 1 防御 / 2 生命 / 15 穿透 / 9 速度 / 11 幸运(默认 0)
  * @param tuPoPinZhi 突破品质:1 白 / 2 蓝 / 3 紫 / 4 金,金加成 1.75(默认 4)
- */
+  * @returns ToZhanliResult.
+*/
 export function yulingbaodianTozhanli (
   books: number,
   tuPoDir = 0,
@@ -801,7 +813,8 @@ function applyYuLingTuPo (
   pinZhi: number,
   k: number
 ): void {
-  const factor = pinZhi >= 4 ? 1.75 : pinZhi === 3 ? 1.5 : pinZhi === 2 ? 1.25 : 1;
+  const pinZhiFactor = [1,1,1.25,1.5,1.75];
+  const factor = pinZhiFactor[Math.min(Math.max(pinZhi,0),4)] ?? 1;
   const fields = result as unknown as Record<string,number>;
   if (dir === 9 || dir === 11) {
     const gain = 2 + Math.floor(4 * k * factor);
@@ -813,15 +826,8 @@ function applyYuLingTuPo (
     return;
   }
   const gain = Math.floor((8 + 4 * (k - 1)) * factor);
-  const key = dir === 0
-? "atkPercent"
-    : dir === 1
-? "defPercent"
-    : dir === 2
-? "hpPercent"
-    : dir === 15
-? "ignoreDefPercent"
-    : undefined;
+  const dirKey: Record<number,string> = {0: "atkPercent",1: "defPercent",15: "ignoreDefPercent",2: "hpPercent"};
+  const key = dirKey[dir];
   if (key !== undefined) {
     fields[key] = (fields[key] ?? 0) + gain;
   }
@@ -835,7 +841,8 @@ function applyYuLingTuPo (
  * 每级 HP/ATK/DEF/穿透 各 +(200+35L) 固定值(:85-89),不给速度.
  * 研究 27/28/29 的攻/防/穿 +100% 属初始态 PercentAddition,不重复计入本次增量.
  * @param lingwen 投入的灵纹数量
- */
+  * @returns ToZhanliResult.
+*/
 function lingwenLevelUp (lingwen: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(lingwen,"灵纹");
@@ -883,7 +890,7 @@ const GAIN_FIELDS = new Set([
 
 // 固定箱(11-16,20-29)的 TargetPropID → 已有的 tozhanli 方法;御力(4)另用 yuliTozhanli.
 const FIX_TARGET_METHODS: Record<number,(n: number) => object> = {
-  1: n => hantieTozhanli(n,0,0),
+  1: n => hantieTozhanli(n,0),
   2: wucaishenshiTozhanli,
   4: yuliTozhanli,
   5: qianghuazhiTozhanli1,
@@ -901,7 +908,8 @@ const FIX_TARGET_METHODS: Record<number,(n: number) => object> = {
  * 88「随机英灵宝箱」不属于任一 Prop_Chest_* 类(TaskData.cs:121-137 只是任务奖励标记),故不在表内.
  * @param propID 宝箱道具 ID
  * @param count 开启的宝箱个数
- */
+  * @returns ToZhanliResult.
+*/
 export function baoxiangTozhanli (propID: number,count: number): ToZhanliResult {
   const def = CHEST_BY_ID.get(propID);
   if (def === undefined) {
@@ -945,7 +953,8 @@ export function baoxiangTozhanli (propID: number,count: number): ToZhanliResult 
  * 按「默认只算一个英灵」口径,只统计该英灵分到的期望残念 count/29,其余 28 个英灵不计.
  * @param count 残念锦囊个数
  * @param startStar 该英灵的起始星级(默认 0)
- */
+  * @returns ToZhanliResult.
+*/
 export function cannianjinnangTozhanli (
   count: number,
   startStar = 0
@@ -961,7 +970,8 @@ export function cannianjinnangTozhanli (
  * 与 yulingbaodianTozhanli 同一套 CulLevel_Up_Remand 与每级四维 +L×250(GameRecorder.cs:659-711),
  * 但御力宝箱直接给 AssetType.YuLi 的御力,不再按「每本宝典 200 御力」换算.
  * @param yuli 投入的御力数量
- */
+  * @returns ToZhanliResult.
+*/
 export function yuliTozhanli (yuli: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(yuli,"御力");
@@ -998,7 +1008,8 @@ export function yuliTozhanli (yuli: number): ToZhanliResult {
  * 所以 1 个锦囊 = 1 个该英灵专属残念;默认只算这一个英灵,乘区里没有英灵数量倍数.
  * @param count 自选残念锦囊个数
  * @param startStar 该英灵的起始星级(默认 0)
- */
+  * @returns ToZhanliResult.
+*/
 export function zixuancannianjinnangTozhanli (
   count: number,
   startStar = 0
@@ -1023,7 +1034,7 @@ function addDrop (drops: Record<string,number>,propID: number,amount: number): v
 function addGain (result: ToZhanliResult,gain: object,scale = 1): void {
   const fields = result as unknown as Record<string,number>;
   for (const [key,value] of Object.entries(gain as Record<string,unknown>)) {
-    if (GAIN_FIELDS.has(key) && typeof value === "number" && Number.isFinite(value)) {
+    if (typeof value === "number" && Number.isFinite(value) && GAIN_FIELDS.has(key)) {
       fields[key] = (fields[key] ?? 0) + value * scale;
     }
   }
@@ -1078,7 +1089,7 @@ function assertMaterial (amount: number,name: string): number {
   return assertWholeAtLeast(amount,0,`${name}数量`);
 }
 function assertWholeAtLeast (value: number,min: number,label: string): number {
-  if (!Number.isInteger(value) || value < min) {
+  if (!Number.isSafeInteger(value) || value < min) {
     throw new Error(`${label}必须是 ≥${String(min)} 的整数，收到 ${String(value)}`);
   }
   return value;
@@ -1232,11 +1243,11 @@ function getYuLiDrop (
   round: number,
   baseRound: number,
   wanHunFanLevel: number,
-  withAddition: boolean
+  hasAddition: boolean
 ): number {
   let value = Math.trunc(150 * (1 + pinZhi * 0.5));
   value *= Math.trunc((round + baseRound + 1000) / 1000);
-  if (withAddition) {
+  if (hasAddition) {
     value = culPercentToInt(value,RESEARCH.addDropYuLi);
     value = culPercentToInt(value,VIP_YU_LI_DROP);
     value = culPercentToInt(value,wanHunFanLevel * 10);

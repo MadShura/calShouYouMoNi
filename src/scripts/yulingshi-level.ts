@@ -1,4 +1,4 @@
-import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {runMain} from "../tools.ts";
 
 /**
@@ -29,7 +29,7 @@ function levelCost (level: number): number {
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
-  if (argFlag(args,"help")) {
+  if (isArgOn(args,"help")) {
     console.log(
       [
         "用法：pnpm yuling [目标等级] [参数]",
@@ -43,14 +43,13 @@ function main (): void {
   }
   const targetArg = process.argv.slice(2).find(item => !item.startsWith("--"));
   const target = targetArg === undefined ? DEFAULT_TARGET : Number(targetArg);
-  if (!Number.isInteger(target) || target < 1) {
+  if (!Number.isSafeInteger(target) || target < 1) {
     throw new Error(`第一个参数应为目标等级，收到：${String(targetArg)}`);
   }
   const dir = resolveSaveDir(args);
   const save = loadSave(dir);
   const {game} = save;
   const curLevel = game.CurYuLingShiLv ?? 0;
-  const curExp = game.YuLingExp ?? 0;
   if (curLevel < 1) {
     throw new Error("存档里没有御灵师等级（CurYuLingShiLv），可能存档未初始化");
   }
@@ -58,6 +57,7 @@ function main (): void {
     console.log(`当前 Lv.${String(curLevel)} 已达到目标 Lv.${String(target)}，不需要升级`);
     return;
   }
+  const curExp = game.YuLingExp ?? 0;
   const book = save.props.get(BOOK_PROP);
   if (!book) {
     throw new Error("存档里没有御灵宝典（Prop 84）的定义，无法读取每本经验与单价");
@@ -78,14 +78,14 @@ function main (): void {
   }
   const remainExp = Math.max(0,totalExp - curExp);
   const books = expPerBook > 0 ? Math.ceil(remainExp / expPerBook) : 0;
-  const haveBooks = getPropNums(game,BOOK_PROP);
-  const haveMoney = getPropNums(game,MONEY_PROP);
-  const haveTupo = getPropNums(game,TUPO_PROP);
-  const needBooks = Math.max(0,books - haveBooks);
+  const booksOwned = getPropNums(game,BOOK_PROP);
+  const moneyOwned = getPropNums(game,MONEY_PROP);
+  const tupoOwned = getPropNums(game,TUPO_PROP);
+  const needBooks = Math.max(0,books - booksOwned);
 
   // 批量购买整批一次取整
   const buyMoney = percentToInt(book.valueCost * needBooks,sellMark,true);
-  const needMoney = Math.max(0,buyMoney - haveMoney);
+  const needMoney = Math.max(0,buyMoney - moneyOwned);
   const needTupo = breakthroughs * TUPO_COST;
   const lines: string[] = [];
   lines.push(
@@ -100,21 +100,21 @@ function main (): void {
     "--- 御灵宝典 ---",
     `每本经验：${formatSuoXie(book.params1 ?? 0)} × (100 + 研究 ${String(expMark)})% = ${formatSuoXie(expPerBook)}`,
     `需要本数：${formatSuoXie(books)} 本（剩余经验 ÷ 每本 ${formatSuoXie(expPerBook)}，向上取整）`,
-    `已持有 ${formatSuoXie(haveBooks)} 本，还差 ${formatSuoXie(needBooks)} 本`,"",
+    `已持有 ${formatSuoXie(booksOwned)} 本，还差 ${formatSuoXie(needBooks)} 本`,"",
     "--- 钱币（整批购买一次取整）---",
     `一次买 ${formatSuoXie(needBooks)} 本 → 整批结算 ${formatSuoXie(buyMoney)} 钱币（折合 ${String(rawPrice)}/本）`,
-    `已持有 ${formatSuoXie(haveMoney)} 钱币，还差 ${formatSuoXie(needMoney)}`,"",
+    `已持有 ${formatSuoXie(moneyOwned)} 钱币，还差 ${formatSuoXie(needMoney)}`,"",
     "--- 突破 ---",
     `需要突破 ${String(breakthroughs)} 次（Lv.${String(curLevel)} → Lv.${String(target)} 之间所有 10 的倍数等级）`,
-    `消耗：${String(breakthroughs)} × ${String(TUPO_COST)} = ${formatSuoXie(needTupo)} 突破丹（Prop ${String(TUPO_PROP)}），已持有 ${formatSuoXie(haveTupo)}`,"",
+    `消耗：${String(breakthroughs)} × ${String(TUPO_COST)} = ${formatSuoXie(needTupo)} 突破丹（Prop ${String(TUPO_PROP)}），已持有 ${formatSuoXie(tupoOwned)}`,"",
     "说明：突破不消耗经验，但等级卡在 10 的倍数且突破丹不足时无法继续升级。"
   );
   console.log(lines.join("\n"));
 }
 
 // ToolClass.Cul_Percent_ToInt:四舍五入远离零
-function percentToInt (baseValue: number,percentage: number,reduce: boolean): number {
-  const factor = reduce ? 100 - percentage : 100 + percentage;
+function percentToInt (baseValue: number,percentage: number,hasReduce: boolean): number {
+  const factor = hasReduce ? 100 - percentage : 100 + percentage;
   const value = baseValue * factor / 100;
   return value < 0 ? -Math.round(-value) : Math.round(value);
 }

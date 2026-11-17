@@ -1,4 +1,4 @@
-import {argFlag,argNumber,formatSuoXie,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
+import {argNumber,formatSuoXie,getMarkCount,getPropNums,isArgOn,loadSave,parseArgs,resolveSaveDir} from "../readSave.ts";
 import {loadConfig,runMain} from "../tools.ts";
 import type {CampData,CampPlayerRecord,SaveBundle} from "../readSave.ts";
 
@@ -103,7 +103,7 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
   const needScore = spare === 0 ? 0 : 2 * base.total ** 2 / (mul * spare);
   const marginal = base.total === 0 ? 0 : mul * score / 2 * spare / base.total ** 2;
   const jumps: InvestJump[] = [];
-  const ranked = [...members].sort((left,right) => right.GongXun - left.GongXun);
+  const ranked = [...members].toSorted((left,right) => right.GongXun - left.GongXun);
   const myIndex = ranked.findIndex(record => record.Cha_ID === MY_CHA_ID);
   for (let index = 0; index < myIndex; index += 1) {
     const target = ranked[index];
@@ -139,7 +139,7 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
     }
   }
   const sharePick = jumps.find(item => item.kind === "share");
-  const options = [...byRank.values(),...sharePick ? [sharePick] : []].sort((left,right) => left.net - right.net);
+  const options = [...byRank.values(),...sharePick ? [sharePick] : []].toSorted((left,right) => left.net - right.net);
   const best = options.at(-1);
   const isProfit = best !== undefined && best.net > 0;
   return {
@@ -152,7 +152,7 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
     lingLi,
     marginal,
     needScore,
-    rankJumps: [...byRank.values()].sort((left,right) => left.cost - right.cost),
+    rankJumps: [...byRank.values()].toSorted((left,right) => left.cost - right.cost),
     yuanbao
   };
 }
@@ -160,7 +160,7 @@ function investTable (plan: InvestPlan,score: number,members: readonly CampPlaye
   const lines: string[] = ["","--- 元宝投入扫描表 ---"," 投入元宝      名次      产出元宝        增量       净收益  每 1 元宝回报"];
   const samples = [...new Set([50,100,200,500,1000,2000,5000,10000,20000,50000]
     .filter(item => item <= plan.cap)
-    .concat(plan.cap))].sort((left,right) => left - right);
+    .concat(plan.cap))].toSorted((left,right) => left - right);
   for (const extra of samples) {
     const next = settle(score,members,extra,round,wingLevel);
     const delta = next.yuanbao - base.yuanbao;
@@ -172,7 +172,7 @@ function investTable (plan: InvestPlan,score: number,members: readonly CampPlaye
 }
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
-  if (argFlag(args,"help")) {
+  if (isArgOn(args,"help")) {
     console.log(
       [
         "用法：pnpm yuanbao [每分钟积分增加值] [参数]",
@@ -195,7 +195,6 @@ function main (): void {
     throw new Error("存档里没有 zhenYingZhenDou_Manager，可能还没解锁阵营");
   }
   const tiles = loadConfig<DiKuaiTile[]>("dikuai");
-  const allRate = 71; // 全部占领 加的积分
   const mySide = camp.PlayZhenYing;
   const sideTiles = (camp.diKuaiData_Recorders ?? []).filter(
     tile => tile.ZhenYingBelong === mySide
@@ -216,7 +215,7 @@ function main (): void {
   // 手工指定剩余分钟时,存档里的 JifenCulTime 相位不再适用
   const jifenCulTime = minutesOverride === undefined ? camp.JifenCulTime : 0;
   const remainMinutes = minutesOverride ?? Math.max(0,ROUND_SECONDS - camp.OpenGameTime) / 60;
-  const usedRate = argFlag(args,"auto") ? autoRate : rateInput;
+  const usedRate = isArgOn(args,"auto") ? autoRate : rateInput;
   const ticks = countTicks(remainMinutes * 60,jifenCulTime);
   const currentScore = mySide === 2 ? camp.Jifen_West : camp.Jifen_East;
   const projectedScore = currentScore + ticks * usedRate;
@@ -240,7 +239,8 @@ function main (): void {
   lines.push("=== 阵营元宝计算 ===",camp.HasOpen
     ? `本轮状态：进行中，已运行 ${(camp.OpenGameTime / 60).toFixed(1)} 分钟，剩余 ${remainMinutes.toFixed(1)} 分钟`
     : "本轮状态：未开启（不点选阵营不会开始，也不会有积分）");
-  const rateNote = rateArg !== undefined && !argFlag(args,"auto")
+  const allRate = 71; // 全部占领 加的积分
+  const rateNote = rateArg !== undefined && !isArgOn(args,"auto")
     ? `手工指定；当前归属己方 ${String(sideTiles.length)} 块地实际 ${String(autoRate)}，全图基准 ${String(allRate)}`
     : `默认按当前归属己方的 ${String(sideTiles.length)} 块地求和，全图基准 ${String(allRate)}`;
   lines.push(
@@ -262,7 +262,7 @@ function main (): void {
   }
   const plan = investPlan(camp,save,projectedScore,members,round,wingLevel,result);
   lines.push(...planLines(plan,projectedScore));
-  if (argFlag(args,"invest")) {
+  if (isArgOn(args,"invest")) {
     lines.push(...investTable(plan,projectedScore,members,round,wingLevel,result));
   }
   console.log(lines.join("\n"));
