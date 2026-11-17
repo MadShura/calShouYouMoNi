@@ -171,7 +171,36 @@ function clamp01 (value: number): number {
   if (value < 0) {
     return 0;
   }
-  return value > 1 ? 1 : value;
+  return Math.min(value,1);
+}
+
+// 从有序列表里取 count 个的所有组合(递归,避免深层 for 嵌套触发 max-depth)
+function combinationsOf (list: readonly number[],count: number): number[][] {
+  const out: number[][] = [];
+  const walk = (start: number,picked: number[]): void => {
+    if (picked.length === count) {
+      out.push([...picked]);
+      return;
+    }
+    for (let i = start; i < list.length; i += 1) {
+      const value = list[i];
+      if (value === undefined) {continue;}
+      picked.push(value);
+      walk(i + 1,picked);
+      picked.pop();
+    }
+  };
+  walk(0,[]);
+  return out;
+}
+
+// 组合里的开战增益(武松增伤/加攻；命中按 100% 口径,不再算命中类光环)
+function comboSupport (combo: number[]): {atkBuff: number; damageBuff: number} {
+  const hasWuSong = combo.includes(6);
+  return {
+    atkBuff:    hasWuSong ? 20 : 0, // 武松神形态 1011:最高攻 +20% 攻击 3 回合(加到攻击百分比)
+    damageBuff: hasWuSong ? 35 : 0 // 武松三技能:最高攻 +35% 增伤 3 回合(加到伤害加成)
+  };
 }
 
 // Damage_Recorder.CulDamagePercent:攻防比系数
@@ -495,17 +524,6 @@ function main (): void {
     return best;
   };
 
-  // 组合里的开战增益(武松增伤/加攻；命中按 100% 口径,不再算命中类光环)
-  const comboSupport = (
-    combo: number[]
-  ): {atkBuff: number; damageBuff: number} => {
-    const hasWuSong = combo.includes(6);
-    return {
-      atkBuff:    hasWuSong ? 20 : 0, // 武松神形态 1011:最高攻 +20% 攻击 3 回合(加到攻击百分比)
-      damageBuff: hasWuSong ? 35 : 0 // 武松三技能:最高攻 +35% 增伤 3 回合(加到伤害加成)
-    };
-  };
-
   // 场景:通天塔只算 5 的倍数层,只算首领；试炼敌人按 LevelToTargetLevel 重写属性
   const sceneArg = argString(args,"scene") ?? "both";
   const scenes: SceneInfo[] = [];
@@ -575,47 +593,29 @@ function main (): void {
   const rankScene = (scene: SceneInfo): {ctx: BondContext; results: ComboResult[]} => {
     const ctx = contextOf(scene);
     const results: ComboResult[] = [];
-    for (let a = 0; a < ownedList.length; a += 1) {
-      for (let b = a + 1; b < ownedList.length; b += 1) {
-        for (let c = b + 1; c < ownedList.length; c += 1) {
-          for (let d = c + 1; d < ownedList.length; d += 1) {
-            for (let e = d + 1; e < ownedList.length; e += 1) {
-              const combo = [
-                ownedList[a],
-                ownedList[b],
-                ownedList[c],
-                ownedList[d],
-                ownedList[e]
-              ].filter((value): value is number => value !== undefined);
-              if (combo.length !== SLOT_COUNT) {
-                continue;
-              }
-              const carry = bestCarryOf(combo);
-              if (isRequireAoe && !carry) {
-                continue;
-              }
-              const evaluated = evaluateCombo(combo,bondOf,jiban,ctx);
-              const support = comboSupport(combo);
-
-              // 武松 +20% 攻击是加 PercentAddition,不是乘 1.2
-              const atk = Math.round(atkBase * (100 + atkPct + support.atkBuff) / 100);
-              const atkWithSkill = atk + Math.trunc(atk * zhenFaAtkPct / 100);
-              const defEff = Math.max(1,scene.enemyDef - ignoreDef);
-              const k = culDamagePercent(atkWithSkill,defEff);
-              const baseDamage = Math.max(1,atkWithSkill * k / 100);
-              const damage =
-                baseDamage *
-                withBowHit() *
-                (1 + ctx.critRate * (critMultiplier - 1)) *
-                (1 + (damageAddition + support.damageBuff) / 100) *
-                evaluated.multiplier *
-                (1 - Math.min(scene.enemyDamageReduce,80) / 100) *
-                ((carry?.pct ?? 0) / 100);
-              results.push({...evaluated,carry,damage});
-            }
-          }
-        }
+    for (const combo of combinationsOf(ownedList,SLOT_COUNT)) {
+      const carry = bestCarryOf(combo);
+      if (isRequireAoe && !carry) {
+        continue;
       }
+      const evaluated = evaluateCombo(combo,bondOf,jiban,ctx);
+      const support = comboSupport(combo);
+
+      // 武松 +20% 攻击是加 PercentAddition,不是乘 1.2
+      const atk = Math.round(atkBase * (100 + atkPct + support.atkBuff) / 100);
+      const atkWithSkill = atk + Math.trunc(atk * zhenFaAtkPct / 100);
+      const defEff = Math.max(1,scene.enemyDef - ignoreDef);
+      const k = culDamagePercent(atkWithSkill,defEff);
+      const baseDamage = Math.max(1,atkWithSkill * k / 100);
+      const damage =
+        baseDamage *
+        withBowHit() *
+        (1 + ctx.critRate * (critMultiplier - 1)) *
+        (1 + (damageAddition + support.damageBuff) / 100) *
+        evaluated.multiplier *
+        (1 - Math.min(scene.enemyDamageReduce,80) / 100) *
+        ((carry?.pct ?? 0) / 100);
+      results.push({...evaluated,carry,damage});
     }
     results.sort((left,right) => right.damage - left.damage);
     return {ctx,results};
@@ -646,8 +646,9 @@ function main (): void {
   const equipmentText =
     `15 级后羿弓（+${String(BOW_FLAT)} 三围）｜15 级金玉令（+${String(TOKEN_FLAT)} 三围、+${String(TOKEN_PCT)}% 三围）｜` +
     `6 颗 15 级宝石（+${String(GEM_FLAT * GEMS.length)} 三围、${GEMS.map(gem => `${gem.name}${String(gem.value)}`).join("/")}）`;
-  const lines: string[] = [];
-  lines.push("=== 配队输出排名（15 级御灵装备 + 两场景每击伤害）===","说明：本文件按存档面板计算，未含威慑/魅惑/流血/怯懦等负面层数联动；全量英灵组合排名见 output/输出英灵排名.md",`存档：${save.dir}`,`装备：${equipmentText}`,`      后羿弓 Lv.${String(EQUIP_LEVEL)}：命中按 100% 口径，伤害 ×${BOW_HIT_DAMAGE.toFixed(2)}`,`我方（主角+最高攻英灵）：攻击 ${formatDamage(baseAtk)}${zhenFaAtkPct > 0 ? `（阵法 ${String(zhenFaId)} Lv.${String(zhenFaLevel)} → ${formatDamage(atkWithZhenFa)}）` : ""}｜穿透 ${formatDamage(ignoreDef)}｜命中 ${String(mingZhong)}｜闪避 ${String(shanBi)}｜暴击 ${String(critValue)}｜暴伤 ${(critMultiplier * 100).toFixed(0)}%｜伤害加成 ${String(damageAddition)}%`,`持有英灵：${String(ownedList.length)} 个`,`初始怒气 30 / 上限 101；神通 ${String(shenTong.length)} 个全点满 ${String(shenTongTotal)} 卷轴；怒气输出需放弃 #${String(maxSpShenTong?.id ?? "?")}（怒气上限 +100）→ ${String(shenTong.length - 1)} 个共 ${String(shenTongWithoutMaxSp)} 卷轴（未计折扣）`,"","--- 各羁绊单独收益（按 5 人满羁绊算，取第一个场景）---");
+  const lines: string[] = [
+    "=== 配队输出排名（15 级御灵装备 + 两场景每击伤害）===","说明：本文件按存档面板计算，未含威慑/魅惑/流血/怯懦等负面层数联动；全量英灵组合排名见 output/输出英灵排名.md",`存档：${save.dir}`,`装备：${equipmentText}`,`      后羿弓 Lv.${String(EQUIP_LEVEL)}：命中按 100% 口径，伤害 ×${BOW_HIT_DAMAGE.toFixed(2)}`,`我方（主角+最高攻英灵）：攻击 ${formatDamage(baseAtk)}${zhenFaAtkPct > 0 ? `（阵法 ${String(zhenFaId)} Lv.${String(zhenFaLevel)} → ${formatDamage(atkWithZhenFa)}）` : ""}｜穿透 ${formatDamage(ignoreDef)}｜命中 ${String(mingZhong)}｜闪避 ${String(shanBi)}｜暴击 ${String(critValue)}｜暴伤 ${(critMultiplier * 100).toFixed(0)}%｜伤害加成 ${String(damageAddition)}%`,`持有英灵：${String(ownedList.length)} 个`,`初始怒气 30 / 上限 101；神通 ${String(shenTong.length)} 个全点满 ${String(shenTongTotal)} 卷轴；怒气输出需放弃 #${String(maxSpShenTong?.id ?? "?")}（怒气上限 +100）→ ${String(shenTong.length - 1)} 个共 ${String(shenTongWithoutMaxSp)} 卷轴（未计折扣）`,"","--- 各羁绊单独收益（按 5 人满羁绊算，取第一个场景）---"
+];
   for (const config of jiban) {
     const maxLevel = bondLevel(jiban,config.type,SLOT_COUNT);
     const single = bondMultiplier(config.type,maxLevel,first.ctx);
@@ -657,10 +658,10 @@ function main (): void {
   lines.push("");
   if (currentResult) {
     const currentCarry = bestCarryOf(currentCombo);
-    lines.push("--- 当前阵型 ---",`[${currentCombo.join(",")}] ${currentCombo.map(yingLingName).join("、")}：${describe(currentResult)}`);
+    lines.push("--- 当前阵型 ---",`[${currentCombo.join(",")}] ${currentCombo.map(index => yingLingName(index)).join("、")}：${describe(currentResult)}`);
     for (const {results,scene} of sceneRanks) {
       const rank = results.findIndex(item => item.combo.join(",") === currentKey) + 1;
-      const item = rank > 0 ? results[rank - 1] : undefined;
+      const item = results[rank - 1];
       lines.push(
         `  ${scene.title}：${item ? `每击 ${formatDamage(item.damage)}，排第 ${String(rank)} 名` : "没有可用的全体输出位或未进榜"}${currentCarry ? `（输出位 ${yingLingName(currentCarry.index)}，${currentCarry.mode}${String(currentCarry.pct)}%）` : ""}`
       );
@@ -697,10 +698,10 @@ function percentPropsOf (propertyConfig: {percent: number; type: number}[]): Set
 }
 function rawFromBattleData (list?: BattleDataRecorder[]): RawStats {
   const raw: RawStats = {
-    base: new Array<number>(PROP_COUNT).fill(0),
-    pct:  new Array<number>(PROP_COUNT).fill(0)
+    base: Array.from({length: PROP_COUNT},() => 0),
+    pct:  Array.from({length: PROP_COUNT},() => 0)
   };
-  if (list != null) {
+  if (list !== undefined) {
     for (const item of list) {
       if (item.PropertyTypeEnum < 0 || item.PropertyTypeEnum >= PROP_COUNT) {
         continue;
@@ -723,8 +724,9 @@ function roundBaseValue (level: number): number {
  * 目标等级 = 10000 + (层数-1)×250×(层数/10+1),升级成长每级 +15 防御,
  * 防御 PercentAddition = 10000 + 层数×500.基础按初始 400 起算(实际取玩家自己的英灵,
  * 但升级成长项占 99.9% 以上,基础差异小于 0.1%).
-  * @returns number.
-*/
+ * @param ceng 试炼层数.
+ * @returns number.
+ */
 function shiLianEnemyDef (ceng: number): number {
   const targetLevel = 10000 + (ceng - 1) * 250 * (Math.trunc(ceng / 10) + 1);
   let totalBase = 0;
@@ -744,8 +746,8 @@ function towerEnemyDef (level: number,trueRound: number): number {
 /**
  * 命中口径(用户指定):默认 100 命中,不考虑命中率/闪避判定；
  * 后羿弓 Lv.15 只按伤害 ×0.8 计入.
-  * @returns number.
-*/
+ * @returns number.
+ */
 function withBowHit (): number {
   return BOW_HIT_DAMAGE;
 }
@@ -753,8 +755,9 @@ function withBowHit (): number {
 /**
  * 把 15 级御灵装备(后羿弓 + 金玉令 + 6 颗宝石)加到英灵属性上.
  * BattleData_Recorder.ChangeValue:百分比属性一律加 Base_Value；其它属性 percent 时加 PercentAddition.
-  * @returns RawStats.
-*/
+ * @param raw 基础属性面板.
+ * @returns RawStats.
+ */
 function withEquipment (raw: RawStats): RawStats {
   const base = [...raw.base];
   const pct = [...raw.pct];

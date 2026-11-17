@@ -54,7 +54,7 @@ function main (): void {
   if (!mgr) {
     throw new Error("存档里没有 EquipManager（炼器/器鼎数据），可能存档未初始化");
   }
-  const curLevel = mgr.LianQiLevel ?? 0;
+  const curLevel = mgr.LianQiLevel;
   if (curLevel < 1) {
     throw new Error("存档里没有炼器等级（LianQiLevel），可能存档未初始化");
   }
@@ -62,7 +62,7 @@ function main (): void {
     console.log(`当前炼器 Lv.${String(curLevel)} 已达到目标 Lv.${String(target)}，够了`);
     return;
   }
-  const curExp = mgr.LianQiExp ?? 0;
+  const curExp = mgr.LianQiExp;
 
   // 研究16(日积月累)按项目分析口径点满=50 → 每本 150 经验
   const expPerBook = 150;
@@ -71,15 +71,14 @@ function main (): void {
     totalExp += lianQiLevelUpExp(level);
   }
   const remainExp = Math.max(0,totalExp - curExp);
-  const books = expPerBook > 0 ? Math.ceil(remainExp / expPerBook) : 0;
+  const books = Math.ceil(remainExp / expPerBook);
   const booksOwned = getPropNums(game,BOOK_PROP);
   const needBooks = Math.max(0,books - booksOwned);
   if (needBooks <= 0) {
     console.log(`够了（持有炼器宝典 ${formatSuoXie(booksOwned)} 本已够升到炼器 Lv.${String(target)}）`);
     return;
   }
-  const lines: string[] = [];
-  lines.push(
+  const lines: string[] = [
     "=== 炼器（制作装备）升级计算 ===",
     `结论：还差 ${formatSuoXie(remainExp)} 经验 → 还需炼器宝典 ${formatSuoXie(needBooks)} 本（持有 ${formatSuoXie(booksOwned)} 本）`,
     `存档：${dir}`,
@@ -92,7 +91,7 @@ function main (): void {
     `需要本数：${formatSuoXie(books)} 本（剩余经验 ÷ 每本 ${String(expPerBook)}，向上取整）`,
     `已持有 ${formatSuoXie(booksOwned)} 本，还差 ${formatSuoXie(needBooks)} 本`,"",
     "说明：炼器等级也吃寒铁打造给的经验，本脚本仅按炼器宝典来源换算。研究16 按项目分析口径点满（50 级）。"
-  );
+  ];
   console.log(lines.join("\n"));
 }
 runMain(main);

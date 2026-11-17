@@ -87,8 +87,7 @@ function main (): void {
   const buyMoney = percentToInt(book.valueCost * needBooks,sellMark,true);
   const needMoney = Math.max(0,buyMoney - moneyOwned);
   const needTupo = breakthroughs * TUPO_COST;
-  const lines: string[] = [];
-  lines.push(
+  const lines: string[] = [
     "=== 御灵师升级计算 ===",
     `结论：还差 ${formatSuoXie(remainExp)} 经验 → 御灵宝典 ${formatSuoXie(needBooks)} 本 → 钱币 ${formatSuoXie(needMoney)}`,
     `存档：${dir}`,
@@ -108,7 +107,7 @@ function main (): void {
     `需要突破 ${String(breakthroughs)} 次（Lv.${String(curLevel)} → Lv.${String(target)} 之间所有 10 的倍数等级）`,
     `消耗：${String(breakthroughs)} × ${String(TUPO_COST)} = ${formatSuoXie(needTupo)} 突破丹（Prop ${String(TUPO_PROP)}），已持有 ${formatSuoXie(tupoOwned)}`,"",
     "说明：突破不消耗经验，但等级卡在 10 的倍数且突破丹不足时无法继续升级。"
-  );
+  ];
   console.log(lines.join("\n"));
 }
 

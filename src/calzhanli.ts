@@ -19,15 +19,13 @@
  * - VIP 16；翅膀等级,万魂帆等级为参数,默认 0
  * - 5 图 × 3 品质的真实掉落表全部内联；幸运 50010 时所有条目都封顶 1000‰,必掉
  */
+import {readFileSync} from "node:fs";
 import {BOOK_YULI_BASE,CANNIAN_RESEARCH_33_REDUCE,CANNIAN_STAR_BRANCH,CANNIAN_STAR_COST_BASE,CANNIAN_STAR_COST_CAP,CANNIAN_STAR_DIVISOR,CANNIAN_STAR_PCT_CAP,CANNIAN_STAR_PCT_PER_STEP,CANNIAN_YINGLING_COUNT,CHEST_DATA,CRAFT_EXP_BASE,DEFAULT_WANTED_PROPERTIES,EMPTY_PERCENT_PROPERTIES,EMPTY_PROPERTIES,EQUIP_BASE,EQUIP_CI_TIAO_POOL,EQUIP_PER_LEVEL,EQUIP_PINZHI,EQUIP_PINZHI_FACTOR,EQUIP_PINZHI_PER_LEVEL,EQUIP_RANDOM_AVG,EQUIP_SLOT_COUNT,LIANQI_START_EXP,LIANQI_START_LEVEL,LUCKY,MAKE_EQUIP_COST_CAP,MAP_EFFECT,MAPS,MATERIAL_COST_PER_UNIT,NORMAL_SECONDS,PERCENT_BASE,POJING_COST_PER_100_LEVEL,POJING_MAX_LEVEL_STEP,POJING_STAR_DIVISOR,POJING_STAR_PCT_CAP,POJING_STAR_PCT_PER_STEP,POJING_START_MAX_LEVEL,POJING_START_STAR,POJING_YINGLING_COUNT,PROP_NAMES,PROPERTY_NAME_TO_KEY,PROPERTY_TO_KEY,QIDING_LEVEL_CAP,QIDING_START_LEVEL,QILU_COST_BASE,QILU_TIER_SIZE,RAGE_SECONDS,RESEARCH,RESEARCH_15_HANTIE_REDUCE,RESEARCH_16_EXP_ADD,RESEARCH_18_EQUIP_ADD,RESEARCH_20_WUCAI_REDUCE,RESEARCH_24_RONGLIAN_ADD,RESEARCH_25_STRENGTH_REDUCE,RESEARCH_26_LINGWEN_REDUCE,RESEARCH_34_POJING_REDUCE,RESEARCH_35_SHENTONG_REDUCE,RESEARCH_48_BOOK_EXP_ADD,RONGLIAN_LEVEL_DIVISOR,SAO_DANG_REMAIN_TIMER,SECONDS_PER_HOUR,SHEN_BING_COST_CAP,SHEN_BING_COST_PER_LEVEL,SHEN_BING_FIRE_TRACKS,SHEN_BING_MAX_LV,SHEN_BING_WATER_TRACKS,SHEN_TONG_COST_BY_PINZHI,SHEN_TONG_ENTRY_EFFECT,SHEN_TONG_NODES,SHEN_TONG_PROPERTY_EFFECT,SHENG_SHOU_ADD_BASE,SHENG_SHOU_ADD_PER_LEVEL,SHENG_SHOU_COST_BASE,SHENG_SHOU_COST_CAP,SHENG_SHOU_COST_PER_LEVEL,SHENG_SHOU_LEVEL_CAP,SHENG_SHOU_MAX_ROUND,SHENG_SHOU_SPECIAL_CYCLE,SHENG_SHOU_START_LEVEL,START_ROUND,STRENGTH_ADD_BASE,STRENGTH_ADD_PER_LEVEL,STRENGTH_COST_BASE,STRENGTH_COST_CAP,STRENGTH_COST_MIN,STRENGTH_COST_PER_LEVEL,STRENGTH_HIGH_MULTIPLIER,STRENGTH_HIGH_THRESHOLD,VIP_PERCENT_ADD_COUNT,VIP_SAO_DANG_SPEED,VIP_YU_LI_DROP,WAVE_COMPOSITION,WING_EXP_PER_LEVEL,WING_FLAT_BASE,WING_FLAT_PER_LEVEL,YINGLING_STAR_ROTATE_PROPS,YULING_LEVEL_CAP,YULINGSHI_START_EXP,YULINGSHI_START_LEVEL,ZHENFA_ADD_BASE,ZHENFA_ADD_PER_LEVEL,ZHENFA_COST_PER_LEVEL,ZHENFA_LEVEL_CAP,ZHENFA_NIAOXIANG_DAMAGE_CAP,ZHENFA_NIAOXIANG_SPEED,ZHENFA_START_LEVEL,ZHENFA_TIANFU_ATK_PERCENT,ZHENFA_UNLOCK_COST,ZHENFA_UNLOCK_COUNT,ZHUANZHI_ADD_BASE,ZHUANZHI_ADD_PER_LEVEL,ZHUANZHI_COST_BASE,ZHUANZHI_COST_PER_LEVEL,ZHUANZHI_LEVEL_CAP,ZHUANZHI_SPEED_PER_LEVEL,ZHUANZHI_START_LEVEL} from "./data.ts";
-import type {AllProperties,ChestDef,CiTiaoPercentKey,DropRow,EquipStrengthenResult,FarmModeResult,FarmResult,HantieToZhanliResult,MapConfig,MapID,ResearchReduce,SweepResult,SystemGain,ToZhanliResult} from "./data.ts";
+import type {AllProperties,ChestDef,CiTiaoPercentKey,DropRow,FarmModeResult,FarmResult,HantieToZhanliResult,MapConfig,MapID,ResearchReduce,SweepResult,SystemGain,ToZhanliResult} from "./data.ts";
 
-// 保持原有对外类型/常量可用(data.ts 是唯一依赖).
-export type {
-  AllProperties,EquipStrengthenResult,FarmModeResult,FarmResult,HantieToZhanliResult,
-  MapID,ResearchReduce,SweepResult,SystemGain,ToZhanliResult
-};
-export {MATERIAL_COST_PER_UNIT};
+// 保持原有对外类型/常量可用(data.ts 是唯一依赖),直接从源模块转出.
+export type {AllProperties,EquipStrengthenResult,FarmModeResult,FarmResult,HantieToZhanliResult,MapID,ResearchReduce,SweepResult,SystemGain,ToZhanliResult} from "./data.ts";
+export {MATERIAL_COST_PER_UNIT} from "./data.ts";
 
 // #endregion
 // #region 材料 → 战力(11 个 tozhanli)
@@ -47,20 +45,15 @@ export {MATERIAL_COST_PER_UNIT};
  * @param hantie 投入的寒铁数量
  * @param wingLevel 翅膀 Wing_CB_2 印记等级(0 = 没翅膀)
  * @param wucaiStones 投入的五彩神石数量(把器鼎从 Lv.1700 继续升级;默认 0 即保持 1700)
-  * @returns HantieToZhanliResult.
-*/
+ * @returns HantieToZhanliResult.
+ */
 export function hantieTozhanli (
   hantie: number,
   wingLevel: number,
   wucaiStones = 0
 ): HantieToZhanliResult {
 
-  // ① 器鼎:从 Lv.1700 起用五彩神石逐级往上顶(lianqi.ts:72-76,研究20 满 -50%)
-  const qiluCost = (level: number): number => Math.max(
-    1,
-    Math.round(QILU_COST_BASE * (Math.trunc((level - 1) / QILU_TIER_SIZE) + 1)
-      * (PERCENT_BASE - RESEARCH_20_WUCAI_REDUCE) / PERCENT_BASE)
-  );
+  // ① 器鼎:从 Lv.1700 起用五彩神石逐级往上顶(lianqi.ts:72-76,研究20 满 -50%),qiluCost 用模块顶层同名函数
   let qidingLevel = QIDING_START_LEVEL;
   let wucaiLeft = wucaiStones;
   while (wucaiLeft >= qiluCost(qidingLevel)) {
@@ -68,14 +61,7 @@ export function hantieTozhanli (
     qidingLevel += 1;
   }
 
-  // ② 寒铁单次消耗(PropHelper.cs:487-505 GetRemandMat):先 200 万封顶 → 研究15 满 -50% 四舍五入 → 下限 1 → 再 200 万封顶
-  // Cul_Percent_ToInt 用 MidpointRounding.AwayFromZero(ToolClass.cs:107-117),对正数等价于 Math.round
-  const hantieCost = (level: number): number => {
-    const capped = Math.min(MAKE_EQUIP_COST_CAP,level);
-    const discounted = Math.round(capped * (PERCENT_BASE - RESEARCH_15_HANTIE_REDUCE) / PERCENT_BASE);
-    return Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,discounted));
-  };
-
+  // ② 寒铁单次消耗(PropHelper.cs:487-505 GetRemandMat):见模块顶层 hantieCost,先 200 万封顶 → 研究15 满 -50% 四舍五入 → 下限 1 → 再 200 万封顶
   // 每级升级门槛(PropHelper.cs:467-476 GetLianQiLevelUpExp)
   const LV_10 = 10; const LV_20 = 20; const LV_30 = 30; const LV_40 = 40;
   const LV_10_PER = 20; const LV_20_BASE = 200; const LV_20_PER = 50;
@@ -212,8 +198,8 @@ export function hantieTozhanli (
  * 每升到 1,251,501... 级给 Property3 +1%(源码 (CurStrength+249)%250==0),记在 specialPercent.
  * 等级上限取通天塔 1 万层 maxRound(CheckMaxOK :166-174);阵法解锁数不单列,消耗已计入 used.
  * @param lingjing 投入的灵晶数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function lingjingTozhanli (lingjing: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(lingjing,"灵晶");
@@ -255,8 +241,8 @@ export function lingjingTozhanli (lingjing: number): ToZhanliResult {
  * 每级消耗 10+10L 个历史本纪(源码 GetStrengthRemand 直接 new PropRecorder(9,num),无研究减免),
  * 每级 HP/ATK/DEF/穿透 各 +(20+50L) 固定值,速度 +1(:21-33).
  * @param history 投入的历史本纪数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function lishibenjiTozhanli (history: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(history,"历史本纪");
@@ -308,8 +294,8 @@ export function materialCost (quantity = 1): Record<string,number> {
  * @param lingwen 投入的灵纹数量
  * @param mySpeed 我方速度(默认 0)
  * @param enemySpeed 敌方速度(默认 0)
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function niaoxiangzhenTozhanli (
   lingwen: number,
   mySpeed = 0,
@@ -333,8 +319,8 @@ export function niaoxiangzhenTozhanli (
  * 速度 +1 固定值,LevelUpStartEffect[Star/5]=暴击 +1 固定值(Character_YingLing.cs:51-61).
  * 破境无硬上限,maxLevel 记本次达到的最终等级上限.
  * @param pojing 投入的破境石数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function pojingshiTozhanli (pojing: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(pojing,"破境石");
@@ -420,8 +406,8 @@ export function research (): ResearchReduce {
  * 默认 wanted=命中/速度 是 8 条命中轨 + 2 条速度轨;只传 命中 即复现 DESIGN.md:52 的 8 轨口径.
  * @param sanwei 投入的三味真火数量
  * @param wanted 想要的属性中文名数组(默认 命中,速度),可带 % 后缀
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function sanweizhenhuoTozhanli (
   sanwei: number,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
@@ -459,8 +445,8 @@ export function shengShou (level: number): SystemGain {
  * LearnShenTong(Character_YingLing.cs:462-466) 每级给 effectRecoders.Params_2 固定值到 Params_1 属性,
  * effectName=1 的 EntryEffect 类不进面板属性,进 GetZhanLi 的 Level×PinZhi 战力乘区(:401-411).
  * @param scrolls 投入的神通卷轴数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function shentongjuanzhouTozhanli (scrolls: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(scrolls,"神通卷轴");
@@ -545,8 +531,8 @@ export function simulateFarm (
  * @param round 层数(CurRound),默认 1；影响御力波次系数与已触发的扫荡加成
  * @param power 扫荡阵容战力,默认 0；按 MapRecorder.GetZhanLiAddition 折算速度
  * @param map 地图 1-5,默认 5 通天塔
-  * @returns SweepResult.
-*/
+ * @returns SweepResult.
+ */
 export function simulateSweep (
   hours: number,
   round = 1,
@@ -584,8 +570,8 @@ export function simulateSweep (
  * DESIGN.md:35 / MoNiShouYou_伤害计算与加成上限.md:139).
  * Entry_ZhenFa_1.cs:18-26 战斗开始给全场最高攻单位 +阵法等级% 攻击,这是乘区而非固定值, 按确认口径不伪造攻击基数,只把 Lv 记进 zhenFaAttackPercent 过程量,atk 仍是四维增量.
  * @param lingwen 投入的灵纹数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function tianfuzhenTozhanli (lingwen: number): ToZhanliResult {
   const result = lingwenLevelUp(lingwen);
   result.atkPercent = ZHENFA_TIANFU_ATK_PERCENT;
@@ -624,8 +610,8 @@ export function tuJian (level: number): SystemGain {
  * 传 伤害加成,暴伤 即选中 DESIGN.md:52 的 2 条伤害加成 + 6 条暴伤轨(仍按平均分配,与该文档的边际收益分配不同).
  * @param water 投入的忘情水数量
  * @param wanted 想要的属性中文名数组(默认 命中,速度),可带 % 后缀
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function wangqingshuiTozhanli (
   water: number,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES
@@ -643,15 +629,11 @@ export function wangqingshuiTozhanli (
  * 器鼎等级经 GetEqui_PropertyAddition(PropHelper.cs:424-438) 进装备主属性倍率,
  * 故按 hantieTozhanli 同一套主属性公式(固定炼器 Lv.1,品质 15,10 槽)折算攻/防/血三维增量.
  * @param wucai 投入的五彩神石数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function wucaishenshiTozhanli (wucai: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(wucai,"五彩神石");
-  const single = (qiding: number): number => (EQUIP_BASE + EQUIP_PER_LEVEL * LIANQI_START_LEVEL
-    + EQUIP_PINZHI_PER_LEVEL * EQUIP_PINZHI * LIANQI_START_LEVEL)
-    * (EQUIP_PINZHI_FACTOR * EQUIP_PINZHI + 1) * EQUIP_RANDOM_AVG
-    * (PERCENT_BASE + RESEARCH_18_EQUIP_ADD + qiding + LIANQI_START_LEVEL) / PERCENT_BASE;
   let level = QIDING_START_LEVEL;
   let left = material;
   let count = 0;
@@ -660,7 +642,7 @@ export function wucaishenshiTozhanli (wucai: number): ToZhanliResult {
     level += 1;
     count += 1;
   }
-  const gain = (single(level) - single(QIDING_START_LEVEL)) * EQUIP_SLOT_COUNT;
+  const gain = (equipSingleAtk(level) - equipSingleAtk(QIDING_START_LEVEL)) * EQUIP_SLOT_COUNT;
   result.atk = gain;
   result.count = count;
   result.def = gain;
@@ -704,8 +686,8 @@ export function yuLing (level: number): SystemGain {
  * @param books 投入的御灵宝典本数
  * @param tuPoDir 突破方向(PropertyTypeEnum):0 攻击 / 1 防御 / 2 生命 / 15 穿透 / 9 速度 / 11 幸运(默认 0)
  * @param tuPoPinZhi 突破品质:1 白 / 2 蓝 / 3 紫 / 4 金,金加成 1.75(默认 4)
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function yulingbaodianTozhanli (
   books: number,
   tuPoDir = 0,
@@ -841,8 +823,8 @@ function applyYuLingTuPo (
  * 每级 HP/ATK/DEF/穿透 各 +(200+35L) 固定值(:85-89),不给速度.
  * 研究 27/28/29 的攻/防/穿 +100% 属初始态 PercentAddition,不重复计入本次增量.
  * @param lingwen 投入的灵纹数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 function lingwenLevelUp (lingwen: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(lingwen,"灵纹");
@@ -850,9 +832,9 @@ function lingwenLevelUp (lingwen: number): ToZhanliResult {
   let left = material;
   let count = 0;
   while (level < ZHENFA_LEVEL_CAP) {
+    const cappedLevel = Math.min(ZHENFA_LEVEL_CAP,level * ZHENFA_COST_PER_LEVEL);
     const cost = Math.max(1,Math.min(ZHENFA_LEVEL_CAP,culPercentToInt(
-      Math.min(ZHENFA_LEVEL_CAP,level * ZHENFA_COST_PER_LEVEL),
-      -RESEARCH_26_LINGWEN_REDUCE)));
+      cappedLevel,-RESEARCH_26_LINGWEN_REDUCE)));
     if (left < cost) {
       break;
     }
@@ -908,8 +890,8 @@ const FIX_TARGET_METHODS: Record<number,(n: number) => object> = {
  * 88「随机英灵宝箱」不属于任一 Prop_Chest_* 类(TaskData.cs:121-137 只是任务奖励标记),故不在表内.
  * @param propID 宝箱道具 ID
  * @param count 开启的宝箱个数
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function baoxiangTozhanli (propID: number,count: number): ToZhanliResult {
   const def = CHEST_BY_ID.get(propID);
   if (def === undefined) {
@@ -929,10 +911,10 @@ export function baoxiangTozhanli (propID: number,count: number): ToZhanliResult 
     const cannian = def.ziXuan === true ? material : material / CANNIAN_YINGLING_COUNT;
     addGain(result,cannianToZhanli(cannian,0));
   } else if (def.kind === "taowa") {
-    let id: number | undefined = propID;
+    let id: number = propID;
     let weight = material;
     const visited = new Set<number>();
-    while (id !== undefined && id !== 0 && !visited.has(id)) {
+    while (id !== 0 && !visited.has(id)) {
       visited.add(id);
       const current = CHEST_BY_ID.get(id);
       if (current === undefined) {
@@ -953,8 +935,8 @@ export function baoxiangTozhanli (propID: number,count: number): ToZhanliResult 
  * 按「默认只算一个英灵」口径,只统计该英灵分到的期望残念 count/29,其余 28 个英灵不计.
  * @param count 残念锦囊个数
  * @param startStar 该英灵的起始星级(默认 0)
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function cannianjinnangTozhanli (
   count: number,
   startStar = 0
@@ -970,8 +952,8 @@ export function cannianjinnangTozhanli (
  * 与 yulingbaodianTozhanli 同一套 CulLevel_Up_Remand 与每级四维 +L×250(GameRecorder.cs:659-711),
  * 但御力宝箱直接给 AssetType.YuLi 的御力,不再按「每本宝典 200 御力」换算.
  * @param yuli 投入的御力数量
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function yuliTozhanli (yuli: number): ToZhanliResult {
   const result = emptyToZhanli();
   const material = assertMaterial(yuli,"御力");
@@ -1008,8 +990,8 @@ export function yuliTozhanli (yuli: number): ToZhanliResult {
  * 所以 1 个锦囊 = 1 个该英灵专属残念;默认只算这一个英灵,乘区里没有英灵数量倍数.
  * @param count 自选残念锦囊个数
  * @param startStar 该英灵的起始星级(默认 0)
-  * @returns ToZhanliResult.
-*/
+ * @returns ToZhanliResult.
+ */
 export function zixuancannianjinnangTozhanli (
   count: number,
   startStar = 0
@@ -1300,7 +1282,7 @@ function simulateMode (
     const round = START_ROUND + index;
     const extraCount = getExpectedExtraCount(round);
     const wave = WAVE_COMPOSITION[round % 5];
-    if (wave != null) {
+    if (wave !== undefined) {
       for (const pinZhi of wave) {
         addMonsterDrops(drops,mapConfig,pinZhi,round,extraCount,wingYuanBao,wanHunFanLevel,dropAdditionPercent);
       }
@@ -1324,6 +1306,17 @@ function simulateMode (
 
 // 18 项里走「真百分比」的 5 项;其余 13 项按源码是固定值
 const isCiTiaoPercentKey = (key: keyof AllProperties): key is CiTiaoPercentKey => key === "atk" || key === "def" || key === "hp" || key === "speed" || key === "ignoreDef";
+function equipSingleAtk (qiding: number): number {
+  return (EQUIP_BASE + EQUIP_PER_LEVEL * LIANQI_START_LEVEL
+    + EQUIP_PINZHI_PER_LEVEL * EQUIP_PINZHI * LIANQI_START_LEVEL)
+    * (EQUIP_PINZHI_FACTOR * EQUIP_PINZHI + 1) * EQUIP_RANDOM_AVG
+    * (PERCENT_BASE + RESEARCH_18_EQUIP_ADD + qiding + LIANQI_START_LEVEL) / PERCENT_BASE;
+}
+function hantieCost (level: number): number {
+  const capped = Math.min(MAKE_EQUIP_COST_CAP,level);
+  const discounted = Math.round(capped * (PERCENT_BASE - RESEARCH_15_HANTIE_REDUCE) / PERCENT_BASE);
+  return Math.max(1,Math.min(MAKE_EQUIP_COST_CAP,discounted));
+}
 
 // 在神兵多轨平均分配里,挑当前等级最低且未达 MaxLv 的一条轨;全满返回 -1
 function lowestUpgradableTrack (levels: number[]): number {
@@ -1491,8 +1484,6 @@ function wantedPropertyKeys (wanted: readonly string[]): Set<keyof AllProperties
 // - 修炼:YingLing.KeJinSystem/ShiLian_Manger.cs(生成神魔分身,属性来自技能+双转职)
 // 属性枚举(PropertyTypeEnum.cs):0 atk,1 def,2 hp,3 speed,4 mingZhong,5 shanBi,6 baoJi,7 baoJiResist,
 // 8 baoJiDamage,9 lianJi,10 fanJi,11 recovery,12 xiXie,13 damageAddition,14 damageReduce,15 ignoreDef,16 returnDamage,17 lucky
-import {readFileSync} from "node:fs";
-
 // EffectNameEnum.cs:0 ChangeBattleProperty(直接加战斗属性,进面板);1 EntryEffect(特殊机制,不进面板)
 const EFFECT_CHANGE_BATTLE_PROPERTY = 0;
 interface JiBanConfig {

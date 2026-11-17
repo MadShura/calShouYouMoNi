@@ -68,7 +68,7 @@ function isOk (panel: ResourcePanel,enemy: EnemyStats,shouldApplyTuJian: boolean
 function panelAt (resource: number): null | ResourcePanel {
   const cached = panelCache.get(resource);
   if (cached !== undefined) {return cached;}
-  let panel: null | ResourcePanel = null;
+  let panel: null | ResourcePanel;
   try {
     panel = buildResourcePanel(new Map<string,string | true>([["resource",String(resource)]]));
   } catch {
@@ -91,7 +91,7 @@ function main (): void {
     .split(",").map(s => s.trim())
 .filter(Boolean)
 .map(Number)
-.filter(n => !isNaN(n));
+.filter(n => !Number.isNaN(n));
   if (scene === "tower") {
     const ls = layers.length > 0 ? layers : [1000,5000,10000,20000,50000,10_0000];
     for (const l of ls) {reportOne(`通天塔 首领 ${fmtShort(l)}层`,towerEnemy(l),true);}
@@ -139,7 +139,7 @@ function reportOne (tag: string,enemy: EnemyStats,shouldApplyTuJian: boolean): v
   const reduce = Math.min(enemy.damageReduce,80);
   console.log(`敌人: HP=${fmtShort(enemy.hp)} 防御=${fmtShort(enemy.def)} 速度=${fmtShort(enemy.speed)} 闪避=${fmtShort(enemy.dodge)} 减伤=${String(reduce)}%(封顶80)${SKILL_REDUCE ? ` +技能减伤${String(SKILL_REDUCE)}%` : ""}${ADD_BE_DAMAGE ? ` 我方图鉴减益+${String(ADD_BE_DAMAGE)}%` : ""}`);
   const fixed = argNumber(parseArgs(process.argv.slice(2)),"resource");
-  const {panel,resource} = fixed == null
+  const {panel,resource} = fixed === undefined
     ? minResource(enemy,shouldApplyTuJian)
     : {panel: panelAt(fixed),resource: fixed};
   if (panel === null) {

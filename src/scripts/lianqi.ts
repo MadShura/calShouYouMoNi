@@ -35,7 +35,7 @@ function main (): void {
   if (!mgr) {
     throw new Error("存档里没有 EquipManager（炼器/器鼎数据），可能存档未初始化");
   }
-  const curLevel = mgr.QiLu_Level ?? 0;
+  const curLevel = mgr.QiLu_Level;
   if (curLevel < 1) {
     throw new Error("存档里没有器鼎等级（QiLu_Level），可能存档未初始化");
   }
@@ -54,8 +54,7 @@ function main (): void {
     console.log(`够了（持有五彩神石 ${formatSuoXie(heldStones)} 已够升到器鼎 Lv.${String(target)}）`);
     return;
   }
-  const lines: string[] = [];
-  lines.push(
+  const lines: string[] = [
     "=== 器鼎升级计算 ===",
     `结论：还差 ${formatSuoXie(needStones)} 个五彩神石（持有 ${formatSuoXie(heldStones)}）`,
     `存档：${dir}`,
@@ -65,7 +64,7 @@ function main (): void {
     `已投入到当前等级的石头折合 ${formatSuoXie(stoneForCurrent)}，扣除后还需 ${formatSuoXie(stoneForTarget - stoneForCurrent)}`,
     `持有 ${formatSuoXie(heldStones)}，最终还差 ${formatSuoXie(needStones)}`,"",
     "说明：器鼎每 5 级一档，升档消耗翻倍；研究20 按项目分析口径点满（50 级）。"
-  );
+  ];
   console.log(lines.join("\n"));
 }
 

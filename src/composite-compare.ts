@@ -30,8 +30,8 @@ import {ENEMY_5} from "./zhanli-panel.ts";
 // 一击必杀 = 伤害 ≥ 敌 HP(源码 Damage_Recorder.cs:55-99,全 BigInteger 整除向零截断).
 // 金币单位放大 10 倍(单位=0.1钱币),使单价成整数:御灵宝典 52.5→525,灵纹 1.4→14.
 const SCALE = 10n;
-const BOOK_COST = BigInt(Math.round(MATERIAL_COST_PER_UNIT["御灵宝典"]! * 10));  // 525 (0.1钱币)
-const LINGWEN_COST = BigInt(Math.round(MATERIAL_COST_PER_UNIT["灵纹"]! * 10));     // 14
+const BOOK_COST = BigInt(Math.round((MATERIAL_COST_PER_UNIT["御灵宝典"] ?? 0) * 10));  // 525 (0.1钱币)
+const LINGWEN_COST = BigInt(Math.round((MATERIAL_COST_PER_UNIT["灵纹"] ?? 0) * 10));     // 14
 const WUKONG_TANG_HIT = 30n;
 const WUKONG_ZHU_DODGE_DOWN = 20n;
 const XI_XING_LV3_RATE = 1n;   // (0.25+0.25×3)=1.0
@@ -85,7 +85,8 @@ lo = 1n;
 // 累计灵纹 = Σ10L = 5Z(Z-1),四维攻击 = Σ(200+35L) = 200(Z-1)+35(Z-1)Z/2.
 // 初值用 number 开方估计(仅作起点,后续 BigInt 校正到精确),不参与结果计算.
 function zhenLevel (lingwen: bigint): {atk: bigint; level: bigint} {
-  let level = BigInt(Math.max(1,Math.floor((1 + Math.sqrt(1 + 0.8 * Number(lingwen))) / 2)));
+  const approx = (1 + Math.sqrt(1 + 0.8 * Number(lingwen))) / 2;
+  let level = BigInt(Math.max(1,Math.floor(approx)));
   if (level < 1n) {level = 1n;}
   while (level > 1n && 5n * level * (level - 1n) > lingwen) {level--;}
   while (5n * (level + 1n) * level <= lingwen) {level++;}
@@ -318,12 +319,12 @@ const amt = (v: bigint): string => {
   return v >= 10n ** 21n ? s : `${s}(${v.toString()})`;
 };
 const amtCoin = (v: bigint): string => amt(coinOf(v));
+const ratio = (scaled: bigint): string => (Number(scaled) / Number(HIT_SCALE)).toLocaleString("en-US",{maximumFractionDigits: 3});
 
 // 逐项拆解伤害公式,每部分标注花了多少钱币;写到根目录 composite-compare.log.
 export function logFormulaBreakdown (): void {
   const lines: string[] = [];
   const log = (s = ""): void => {lines.push(s); console.log(s);};
-  const ratio = (scaled: bigint): string => (Number(scaled) / Number(HIT_SCALE)).toLocaleString("en-US",{maximumFractionDigits: 3});
   log("########## 伤害公式逐项拆解(Damage_Recorder.cs CulFinalDamage,BigInt精确) ##########");
   log(`敌人: DEF=${amt(ENEMY_DEF)} 减伤=${String(ENEMY_5.damageReduce)}(夹到${String(ENEMY_REDUCE)}) 闪避=${String(ENEMY_DODGE)} 速度=${formatSuoXie(ENEMY_5.speed)} HP=${amt(ENEMY_HP)}`);
   for (const isBird of [true,false]) {
@@ -371,22 +372,22 @@ export function logFormulaBreakdown (): void {
 export function printReverseCoin (): void {
   console.log("=== 反推金币(命中100% + 一击必杀 + 速度更快;BigInt精确;金币拆御灵宝典+灵纹升阵法;从零面板,终局第5层) ===");
   console.log(`敌闪避=${String(ENEMY_5.dodge)} 敌速=${formatSuoXie(ENEMY_5.speed)} 敌HP=${formatSuoXie(ENEMY_5.hp)}`);
-  const line = (r: ReverseRow): void => {
-    const pct = (v: bigint): string => `${(Number(v * 1000n / r.coin) / 10).toFixed(1)}%`;
-    console.log(`  【资源拆分】总金币=${amtCoin(r.coin)} = 御灵宝典 ${amtCoin(r.coinBook)}(${pct(r.coinBook)}) + 灵纹升阵法 ${amtCoin(r.coinZhen)}(${pct(r.coinZhen)})`);
-    console.log(`    御灵宝典 ${amtCoin(r.coinBook)} → ${amt(r.books)}本 → 御灵师Lv.${formatSuoXie(Number(r.yuLevel))}`);
-    console.log(`    灵纹 ${amtCoin(r.coinZhen)} → ${amt(r.lingwen)}个 → 阵法Lv.${formatSuoXie(Number(r.zhenLevel))}(四维攻+${amt(r.zhenAtk)})`);
-    console.log(`  【突破】总突破=${formatSuoXie(Number(r.totalBreaks))};补短板=${formatSuoXie(Number(r.shortBreaks))}(${r.shortBreaks < 0n ? "未达标" : r.name.includes("鸟翔") ? "幸运突破补命中" : "速度突破补速度"})`);
-    console.log(`    幸运=${formatSuoXie(Number(r.lucky))} 速度=${formatSuoXie(Number(r.speed))} 命中=${formatSuoXie(Number(r.hit))} 命中率=${(r.hitRateValue * 100).toFixed(2)}%`);
-    const finalAtk = r.baseAtk * (100n + r.atkPct) / 100n;
-    console.log(`  【伤害】攻击基数=${amt(r.baseAtk)} 攻击加成=${formatSuoXie(Number(r.atkPct))}% → final攻=${amt(finalAtk)} 穿透=${amt(r.pen)} 命中链乘区=${(Number(r.pctBucketScaled) / Number(HIT_SCALE)).toLocaleString("en-US",{maximumFractionDigits: 3})}`);
-    console.log(`    鸟翔速度差=${formatSuoXie(Number(r.zhenSpeedDmg))}% 伤害加成桶=${formatSuoXie(Number(r.dmgAdd))} → 伤害=${amt(r.damage)} (${r.damage >= ENEMY_HP ? "≥" : "<"} 敌HP ${amt(ENEMY_HP)})`);
-  };
   for (const isBird of [true,false]) {
     const row = reverseWukongCoin(isBird);
     console.log(`\n--- ${row.name} ---`);
-    line(row);
+    printReverseRow(row);
   }
+}
+function printReverseRow (r: ReverseRow): void {
+  const pct = (v: bigint): string => `${(Number(v * 1000n / r.coin) / 10).toFixed(1)}%`;
+  console.log(`  【资源拆分】总金币=${amtCoin(r.coin)} = 御灵宝典 ${amtCoin(r.coinBook)}(${pct(r.coinBook)}) + 灵纹升阵法 ${amtCoin(r.coinZhen)}(${pct(r.coinZhen)})`);
+  console.log(`    御灵宝典 ${amtCoin(r.coinBook)} → ${amt(r.books)}本 → 御灵师Lv.${formatSuoXie(Number(r.yuLevel))}`);
+  console.log(`    灵纹 ${amtCoin(r.coinZhen)} → ${amt(r.lingwen)}个 → 阵法Lv.${formatSuoXie(Number(r.zhenLevel))}(四维攻+${amt(r.zhenAtk)})`);
+  console.log(`  【突破】总突破=${formatSuoXie(Number(r.totalBreaks))};补短板=${formatSuoXie(Number(r.shortBreaks))}(${r.shortBreaks < 0n ? "未达标" : r.name.includes("鸟翔") ? "幸运突破补命中" : "速度突破补速度"})`);
+  console.log(`    幸运=${formatSuoXie(Number(r.lucky))} 速度=${formatSuoXie(Number(r.speed))} 命中=${formatSuoXie(Number(r.hit))} 命中率=${(r.hitRateValue * 100).toFixed(2)}%`);
+  const finalAtk = r.baseAtk * (100n + r.atkPct) / 100n;
+  console.log(`  【伤害】攻击基数=${amt(r.baseAtk)} 攻击加成=${formatSuoXie(Number(r.atkPct))}% → final攻=${amt(finalAtk)} 穿透=${amt(r.pen)} 命中链乘区=${(Number(r.pctBucketScaled) / Number(HIT_SCALE)).toLocaleString("en-US",{maximumFractionDigits: 3})}`);
+  console.log(`    鸟翔速度差=${formatSuoXie(Number(r.zhenSpeedDmg))}% 伤害加成桶=${formatSuoXie(Number(r.dmgAdd))} → 伤害=${amt(r.damage)} (${r.damage >= ENEMY_HP ? "≥" : "<"} 敌HP ${amt(ENEMY_HP)})`);
 }
 printReverseCoin();
 logFormulaBreakdown();

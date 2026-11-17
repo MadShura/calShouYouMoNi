@@ -132,8 +132,8 @@ interface CoinRow {
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
  * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
-  * @returns { 攻击: string; 数量: string; 方法: string; 材料: string; 结果: { [k: string]: string; }; }[].
-*/
+ * @returns CoinRow[].
+ */
 export function compareByCoin (
   money = 1_0000_0000,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
@@ -142,7 +142,7 @@ export function compareByCoin (
 ) {
 
   // 先按数值排好序,再统一格式化;结果里的值全是 number,只需两层即可覆盖.
-  return buildRows(money,wanted,mySpeed,enemySpeed).map(formatRow);
+  return buildRows(money,wanted,mySpeed,enemySpeed).map(row => formatRow(row));
 }
 
 /**
@@ -151,8 +151,8 @@ export function compareByCoin (
  * @param wanted 想要的属性中文名数组(默认 命中,速度)
  * @param mySpeed 我方速度(默认 0,只影响鸟翔阵)
  * @param enemySpeed 敌方速度(默认 0,只影响鸟翔阵)
-  * @returns CoinRow[].
-*/
+ * @returns CoinRow[].
+ */
 function buildRows (
   money = 1_0000_0000,
   wanted: readonly string[] = DEFAULT_WANTED_PROPERTIES,
@@ -180,13 +180,6 @@ function buildRows (
       throw new Error(`材料单价表里没有「${name}」`);
     }
     return buyCount(unit);
-  };
-  const chestUnit = (id: number): number => {
-    const def = CHEST_DATA.chests.find(item => item.id === id);
-    if (def === undefined) {
-      throw new Error(`config/chests.json 里没有道具 ${String(id)}`);
-    }
-    return def.unit;
   };
 
   // 泛型保留各方法的原始返回类型,「结果」里所有字段都会被完整展示.
@@ -227,6 +220,13 @@ function buildRows (
         item.unit
       ))
   ].toSorted((a,b) => b.攻击 - a.攻击);
+}
+function chestUnit (id: number): number {
+  const def = CHEST_DATA.chests.find(item => item.id === id);
+  if (def === undefined) {
+    throw new Error(`config/chests.json 里没有道具 ${String(id)}`);
+  }
+  return def.unit;
 }
 
 // 把一条原始结果转成中文展示结果:数值经 formatSuoXie 变成带单位字符串,字段名译成中文.

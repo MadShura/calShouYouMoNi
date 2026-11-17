@@ -124,7 +124,8 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
 
   // 边际恰好等于 1 的连续最优投入,名次可能不变
   if (marginal > 1) {
-    const cost = Math.min(cap,Math.max(1,Math.round(Math.sqrt(mul * score / 2 * spare) - base.total)));
+    const ideal = Math.sqrt(mul * score / 2 * spare) - base.total;
+    const cost = Math.min(cap,Math.max(1,Math.round(ideal)));
     const next = settle(score,members,cost,round,wingLevel);
     jumps.push({cost,kind: "share",net: next.yuanbao - base.yuanbao - cost,rank: next.rank});
   }
@@ -158,9 +159,8 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
 }
 function investTable (plan: InvestPlan,score: number,members: readonly CampPlayerRecord[],round: number,wingLevel: number,base: Settlement): string[] {
   const lines: string[] = ["","--- 元宝投入扫描表 ---"," 投入元宝      名次      产出元宝        增量       净收益  每 1 元宝回报"];
-  const samples = [...new Set([50,100,200,500,1000,2000,5000,10000,20000,50000]
-    .filter(item => item <= plan.cap)
-    .concat(plan.cap))].toSorted((left,right) => left - right);
+  const samples = [...new Set([...[50,100,200,500,1000,2000,5000,10000,20000,50000]
+    .filter(item => item <= plan.cap),plan.cap])].toSorted((left,right) => left - right);
   for (const extra of samples) {
     const next = settle(score,members,extra,round,wingLevel);
     const delta = next.yuanbao - base.yuanbao;
@@ -199,10 +199,13 @@ function main (): void {
   const sideTiles = (camp.diKuaiData_Recorders ?? []).filter(
     tile => tile.ZhenYingBelong === mySide
   );
-  const autoRate = sideTiles.reduce((sum,tile) => {
+  let autoRate = 0;
+  for (const tile of sideTiles) {
     const config = tiles.find(item => item.index === tile.ID);
-    return sum + (config ? tileScore(config.level) : 0);
-  },0);
+    if (config) {
+      autoRate += tileScore(config.level);
+    }
+  }
 
   // 第一个非 -- 参数就是本轮每分钟积分增加值；默认取 AddJiFen 实际会加的己方地块
   const rateArg = process.argv.slice(2).find(item => !item.startsWith("--"));
@@ -235,10 +238,9 @@ function main (): void {
   members.sort((left,right) => right.GongXun - left.GongXun);
   const round = camp.Round;
   const result = settle(projectedScore,members,0,round,wingLevel);
-  const lines: string[] = [];
-  lines.push("=== 阵营元宝计算 ===",camp.HasOpen
+  const lines: string[] = ["=== 阵营元宝计算 ===",camp.HasOpen
     ? `本轮状态：进行中，已运行 ${(camp.OpenGameTime / 60).toFixed(1)} 分钟，剩余 ${remainMinutes.toFixed(1)} 分钟`
-    : "本轮状态：未开启（不点选阵营不会开始，也不会有积分）");
+    : "本轮状态：未开启（不点选阵营不会开始，也不会有积分）"];
   const allRate = 71; // 全部占领 加的积分
   const rateNote = rateArg !== undefined && !isArgOn(args,"auto")
     ? `手工指定；当前归属己方 ${String(sideTiles.length)} 块地实际 ${String(autoRate)}，全图基准 ${String(allRate)}`
@@ -311,7 +313,8 @@ function settle (score: number,members: readonly CampPlayerRecord[],extraGongXun
   const share = clampShare(total === 0 ? 0 : Math.fround(Math.fround(gongXun) / Math.fround(total)));
   const myScore = BigInt(Math.round(score));
   const rankReward = myScore * BigInt(percentForRank(rank)) / 100n;
-  const shareReward = BigInt(Math.trunc(Math.fround(Math.fround(Number(myScore / 2n)) * share)));
+  const halfScoreF32 = Math.fround(Number(myScore / 2n));
+  const shareReward = BigInt(Math.trunc(Math.fround(halfScoreF32 * share)));
   const scaled = (rankReward + shareReward) * BigInt(10 + Math.min(round,20)) / 10n;
   return {
     gongXun,

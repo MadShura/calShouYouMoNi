@@ -39,6 +39,7 @@
  * 源码只有单一 DamageReduce(封顶80),这三个来自 DESIGN.md §图鉴口径(研究54)等,按倍率外挂.
  * 资源 PropID 速查:寒铁1 / 五彩神石2 / 破境石3 / 御力4 / 强化石5 / 神通卷轴6 / 灵纹7 / 灵晶8 / 历史本纪9 / 抽奖卷10 / 升仙令93 / 元宝95 / 御灵宝典84 / 忘情水81 / 三味真火85 / 炼器宝典86 / 神速符92 / 图鉴道具901-915.
  */
+import process from "node:process";
 import type {EnemyStats} from "./enemy-stats.ts";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
@@ -300,7 +301,7 @@ export const coin = (propId: number,amount: number): string => `${amount.toFixed
 
 // 缩短单位:万亿/亿/万(本项目展示工具,非游戏机制)
 export const fmtShort = (n: number): string => {
-  if (!isFinite(n)) {return "∞";}
+  if (!Number.isFinite(n)) {return "∞";}
   if (n >= 1e12) {return `${(n / 1e12).toFixed(2)}万亿`;}
   if (n >= 1e8) {return `${(n / 1e8).toFixed(2)}亿`;}
   if (n >= 1e4) {return `${(n / 1e4).toFixed(2)}万`;}
@@ -391,8 +392,6 @@ function table (title: string,rows: [string,string][]): void {
 }
 
 // 直接运行则演示；被 import 时只导出函数
-import process from "node:process";
-
 const isMain = process.argv[1] !== undefined && import.meta.filename === process.argv[1];
 if (isMain) {
   main();

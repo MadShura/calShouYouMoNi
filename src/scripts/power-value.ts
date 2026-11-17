@@ -225,7 +225,7 @@ function clamp01 (value: number): number {
   if (value < 0) {
     return 0;
   }
-  return value > 1 ? 1 : value;
+  return Math.min(value,1);
 }
 
 // 复制一份 RawStats
@@ -253,20 +253,20 @@ function culDamagePercent (atk: number,def: number): number {
   return 2 + Math.trunc((atk * 3 - def) * 48 / (def * 2));
 }
 function emptyRaw (): RawStats {
-  return {base: new Array<number>(PROP_COUNT).fill(0),pct: new Array<number>(PROP_COUNT).fill(0)};
+  return {base: Array.from({length: PROP_COUNT},() => 0),pct: Array.from({length: PROP_COUNT},() => 0)};
 }
 
 /**
  * 期望伤害(不含随机浮动 0.95~1.05,固定倍率对比较没有影响)
  * 阵法只实现 1/6/8 三个对输出有直接影响的 Entry
-  * @param own 自身属性.
-  * @param master 主角属性.
-  * @param target 目标参数.
-  * @param zhenFa 阵法上下文.
-  * @param bond 羁绊上下文.
-  * @param percentProps 百分比属性集合.
-  * @returns number.
-*/
+ * @param own 自身属性.
+ * @param master 主角属性.
+ * @param target 目标参数.
+ * @param zhenFa 阵法上下文.
+ * @param bond 羁绊上下文.
+ * @param percentProps 百分比属性集合.
+ * @returns number.
+ */
 function expectedDamage (
   own: RawStats,
   master: null | RawStats,
@@ -636,9 +636,10 @@ function main (): void {
   // ---- 制作装备(寒铁):加主角 ----
   const lianQiLevel = save.cha.EquipManager?.LianQiLevel ?? 1;
   const qiLuLevel = save.cha.EquipManager?.QiLu_Level ?? 1;
+  const hantieReduce = getMarkCount(game,MARK_REDUCE_HANTIE);
   const hanTieCost = Math.max(
     1,
-    Math.min(200_0000,culPercentToInt(lianQiLevel,getMarkCount(game,MARK_REDUCE_HANTIE),true))
+    Math.min(200_0000,culPercentToInt(lianQiLevel,hantieReduce,true))
   );
   let equipPropertyAddition = getMarkCount(game,MARK_ADD_EQUIP_PROPERTY);
   if (getMarkCount(game,MARK_ADD_EQUIP_QI_DING) > 0) {
@@ -829,8 +830,20 @@ function main (): void {
     连击:   finalValue(P.LianJi,unitRaw,master,percentProps),
     速度:   finalValue(P.Speed,unitRaw,master,percentProps)
   };
-  const lines: string[] = [];
-  lines.push("=== 物资性价比（按期望伤害计算）===",`存档：${save.dir}`,"","--- 我方最高输出单位 ---",`英灵 ID：${unitRecord._id}（Master_ID=1）`,`攻击 ${formatNumber(unitStats.ATK)}｜穿透 ${formatNumber(unitStats.穿透)}｜速度 ${formatNumber(unitStats.速度)}｜暴击 ${unitStats.暴击}｜暴伤 ${unitStats.暴伤}｜命中 ${unitStats.命中}｜连击 ${unitStats.连击}｜伤害加成 ${unitStats.伤害加成}%`,`佩戴阵法：${curZhenFaID || "无"} 号（Lv.${zhenFa.level}）${zhenFa.id === 1 ? ` → 战斗开始最高攻单位 +${zhenFa.level}% 攻击` : ""}`,`目标参数：防御 ${formatNumber(target.def)}｜速度 ${formatNumber(target.speed)}｜闪避 ${target.shanBi}｜命中 ${target.mingZhong}｜抗暴 ${target.baoJiResist}｜减伤 ${target.damageReduce}%｜血量 ${target.hpPercent}%｜人数 ${target.count}`,`生效羁绊：西行取经 Lv.${bond.xiXing}｜神鬼志异 Lv.${bond.shenGui}｜万人敌 Lv.${bond.wanRen}｜神谋鬼算 Lv.${bond.shenMou}｜三国群英 Lv.${bond.sanGuo}（0=未激活）`,`基准期望伤害：${formatScore(baseDamage)}`,"","--- 冥商属性药（加成是百分比点，收益按当前属性算）---");
+  const lines: string[] = [
+    "=== 物资性价比（按期望伤害计算）===",
+    `存档：${save.dir}`,
+    "",
+    "--- 我方最高输出单位 ---",
+    `英灵 ID：${String(unitRecord._id)}（Master_ID=1）`,
+    `攻击 ${formatNumber(unitStats.ATK)}｜穿透 ${formatNumber(unitStats.穿透)}｜速度 ${formatNumber(unitStats.速度)}｜暴击 ${String(unitStats.暴击)}｜暴伤 ${String(unitStats.暴伤)}｜命中 ${String(unitStats.命中)}｜连击 ${String(unitStats.连击)}｜伤害加成 ${String(unitStats.伤害加成)}%`,
+    `佩戴阵法：${String(curZhenFaID || "无")} 号（Lv.${String(zhenFa.level)}）${zhenFa.id === 1 ? ` → 战斗开始最高攻单位 +${String(zhenFa.level)}% 攻击` : ""}`,
+    `目标参数：防御 ${formatNumber(target.def)}｜速度 ${formatNumber(target.speed)}｜闪避 ${String(target.shanBi)}｜命中 ${String(target.mingZhong)}｜抗暴 ${String(target.baoJiResist)}｜减伤 ${String(target.damageReduce)}%｜血量 ${String(target.hpPercent)}%｜人数 ${String(target.count)}`,
+    `生效羁绊：西行取经 Lv.${String(bond.xiXing)}｜神鬼志异 Lv.${String(bond.shenGui)}｜万人敌 Lv.${String(bond.wanRen)}｜神谋鬼算 Lv.${String(bond.shenMou)}｜三国群英 Lv.${String(bond.sanGuo)}（0=未激活）`,
+    `基准期望伤害：${formatScore(baseDamage)}`,
+    "",
+    "--- 冥商属性药（加成是百分比点，收益按当前属性算）---"
+  ];
   for (const pill of pillReports) {
     const name = propName(names,pill.propID);
     const label = PROP_NAMES[pill.propType] ?? `属性${String(pill.propType)}`;
@@ -893,7 +906,7 @@ function main (): void {
         const delta = damageDelta(route.gains,route.target === "unit");
         return {deltaPercent: delta.percent,route};
       })
-      .sort((left,right) => right.deltaPercent / right.route.cost - left.deltaPercent / left.route.cost);
+      .toSorted((left,right) => right.deltaPercent / right.route.cost - left.deltaPercent / left.route.cost);
     for (const item of materialRoutes) {
       lines.push(
         `  · ${item.route.use}：每次 ${formatNumber(item.route.cost)} 个 → ${item.route.detail} = 伤害 +${formatPercent(item.deltaPercent)}%（${formatPercent(item.deltaPercent / item.route.cost)} %/个）`
@@ -929,7 +942,7 @@ function main (): void {
 
 // 装备品质概率表(EquipLevel_PercentTable.GeneratePercent)
 function pinZhiDistribution (qiLuLevel: number,table: EquipPercentEntry[]): number[] {
-  const percent = new Array<number>(table.length).fill(0);
+  const percent = Array.from({length: table.length},() => 0);
   for (let index = table.length - 1; index >= 0; index -= 1) {
     const entry = table[index];
     if (!entry) {
@@ -954,7 +967,7 @@ function propName (names: NamesConfig,propID: number): string {
 }
 function rawFromBattleData (list: BattleDataRecorder[] | undefined): RawStats {
   const raw = emptyRaw();
-  if (list != null) {
+  if (list !== undefined) {
     for (const item of list) {
       if (item.PropertyTypeEnum < 0 || item.PropertyTypeEnum >= PROP_COUNT) {
         continue;

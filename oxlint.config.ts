@@ -11,7 +11,7 @@ export default createConfig({
       rules: {"max-lines": "off","no-magic-numbers": "off","unicorn/no-process-exit": "off"}
     },{
       files: ["src/**/*.ts"],
-      rules: {"axl-custom-rules/no-native-api": "off","no-magic-numbers": "off"}
+      rules: {"axl-custom-rules/no-native-api": "off","max-lines": "off","no-magic-numbers": "off"}
     }
   ],
   types: ["tsfile","jsfile"]

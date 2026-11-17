@@ -13,7 +13,7 @@ const argv = process.argv.slice(2);
 const envLimit = Number(process.env.TIMEOUT_MS);
 let limit = Number.isFinite(envLimit) && envLimit > 0 ? envLimit : 12_0000;
 let cmdArgs: string[] = argv;
-if (argv.length > 1 && (/^\d+$/).test(argv[0]!)) {
+if (argv.length > 1 && argv[0] !== undefined && (/^\d+$/).test(argv[0])) {
   limit = Number(argv[0]);
   cmdArgs = argv.slice(1);
 }

@@ -184,7 +184,7 @@ interface PoolRow {amount: number; fromCode: number; fromPoint: number; name: st
 // ---------------- 等级求解(成本曲线前缀和 + 二分,按研究减免缓存) ----------------
 class CostCurve {
   private readonly sums: number[] = [0];
-  constructor (
+  public constructor (
     private readonly start: number,
     private readonly costAt: (l: number) => number,
     private readonly sumAt?: (n: number) => number  // 闭式前缀和；给了就不受数组长度限制
@@ -202,10 +202,10 @@ class CostCurve {
   }
 
   // 升 n 级(到 level = start+n)所需的累计资源,供「硬前置」反解
-  sumOf (n: number): number {
+  public sumOf (n: number): number {
     return this.sum(Math.max(0,n));
   }
-  solve (total: number): {level: number; remain: number} {
+  public solve (total: number): {level: number; remain: number} {
 
     // 有闭式时上界放到 1e15,避免等级被 5e6 硬封顶导致边际收益恒为 0
     const cap = this.sumAt ? 1e15 : 500_0000;
@@ -234,7 +234,7 @@ function buildInitialPool (): {pointPrice: number; property: Map<number,number>;
   let pointPrice = 0;
   for (const entry of cfg.tongGuan.entries) {
     pointPrice += entry.price;
-    if (entry.type === "prop") {add(entry.prop,entry.nums ?? 0,"point");} else {property.set(entry.prop,(property.get(entry.prop) ?? 0) + (entry.value ?? 0));}
+    if (entry.type === "prop") {add(entry.prop,entry.nums,"point");} else {property.set(entry.prop,(property.get(entry.prop) ?? 0) + entry.value);}
   }
   const total = new Map<number,number>();
   const rows: PoolRow[] = [];
@@ -300,7 +300,7 @@ r = rem % 10;
   return s * f;
 };
 function expectedPinZhi (qiluLevel: number): number {
-  const percent = new Array<number>(EQUIP_TABLE.length).fill(0);
+  const percent = Array.from({length: EQUIP_TABLE.length},() => 0);
   let used = 0;
   for (let i = EQUIP_TABLE.length - 1; i >= 0; i -= 1) {
     const e = EQUIP_TABLE[i];
@@ -313,7 +313,7 @@ function expectedPinZhi (qiluLevel: number): number {
   }
   let pinzhi = 0;
   for (const [i,element] of EQUIP_TABLE.entries()) {
-    pinzhi += (percent[i] ?? 0) / 1000 * (element?.pinzhi ?? 0);
+    pinzhi += (percent[i] ?? 0) / 1000 * element.pinzhi;
   }
   return pinzhi;
 }
@@ -323,6 +323,11 @@ function lianQiLevelUpExp (level: number): number {
   if (level < 30) {return 700 + 100 * (level - 20);}
   if (level >= 40) {return 3700 + 300 * (level - 40);}
   return 1700 + 200 * (level - 30);
+}
+
+// 突破第 i 次给 2+trunc(4·i·1.75)=2+7i；Σ_{i=1..n}(2+7i)=2n+7n(n+1)/2 (闭式,避免逐次累加)
+function sumBreakthrough (n: number): number {
+  return 2 * n + 7 * n * (n + 1) / 2;
 }
 function tuJianLevelFromExp (exp: number): number {
   let costSum = 0,
@@ -455,9 +460,7 @@ function panelOf (final: Map<number,number>,property: Map<number,number>): Panel
   const yulingshiAtk = (yls.level - 1) * yls.level / 2 * 250;
   const breakthroughCount = Math.trunc(yls.level / 10);
 
-  // 突破第 i 次给 2+trunc(4·i·1.75)=2+7i；Σ_{i=1..n}(2+7i)=2n+7n(n+1)/2.
-  // 必须闭式:二分探索极大资源时突破次数可达千万级,逐次累加会卡死.
-  const sumBreakthrough = (n: number): number => 2 * n + 7 * n * (n + 1) / 2;
+  // 突破增益用模块顶层 sumBreakthrough(闭式;二分极大资源时突破次数可达千万级,不能逐次累加)
   const luckyN = luckyBreakthroughs();
   const luckyCount = Math.min(breakthroughCount,luckyN);
   const breakpointSpeed = breakthroughCount > luckyCount
@@ -840,9 +843,14 @@ const PROBE_COUNT = 1e6; // 统一探测量:每种资源追加 100 万个,再归
 function buildMarginalTable (final: Map<number,number>,property: Map<number,number>,
   targets: readonly Target[],alloc: AllocRes[],prices: Map<number,number>,
   hasNeed: boolean): {base: Panel; baseT: number; baseZ: number; rows: MarginRow[]} {
+  const targetZ = targets[0];
+  const targetT = targets[1];
+  if (targetZ === undefined || targetT === undefined) {
+    throw new Error("边际收益表需要两个目标");
+  }
   const base = panelOf(final,property);
-  const baseZ = damageOf(base,targets[0]!.enemy);
-  const baseT = damageOf(base,targets[1]!.enemy);
+  const baseZ = damageOf(base,targetZ.enemy);
+  const baseT = damageOf(base,targetT.enemy);
   const rows: MarginRow[] = [];
   for (const res of alloc) {
     const price = shopPriceOf(prices,res.prop);
@@ -850,8 +858,8 @@ function buildMarginalTable (final: Map<number,number>,property: Map<number,numb
     trial.set(res.prop,(trial.get(res.prop) ?? 0) + PROBE_COUNT);
     const after = panelOf(trial,property);
     const coins = PROBE_COUNT * price;
-    const dmgZ = damageOf(after,targets[0]!.enemy);
-    const dmgT = damageOf(after,targets[1]!.enemy);
+    const dmgZ = damageOf(after,targetZ.enemy);
+    const dmgT = damageOf(after,targetT.enemy);
     const perCoinZ = (dmgZ - baseZ) / coins;
 
     // 单独达标量是可选的重计算(--need=1)；默认只出边际表,保持秒级
@@ -1001,7 +1009,7 @@ function printAnalysis (): void {
   const {pointPrice,property,rows: pool,total: base} = buildInitialPool();
   const zhongju5 = ZHONG_JU.find(e => e.tiaoZhanID === 5);
   if (zhongju5 === undefined) {throw new Error("config/zhongju.json 找不到 tiaoZhanID=5");}
-  const targets: Target[] = [
+  const targets: [Target,Target] = [
     {enemy: zhongju5,name: `终局第5关 (Boss ${zhongju5.bossID.join("/")})`},
     {enemy: trialEnemy(1000),name: "试炼 1000层"}
   ];
@@ -1062,12 +1070,12 @@ function printAnalysis (): void {
     console.log(`    追加 ${fmtShort(r.count)} 个 × 单价 ${fmtShort(r.coins / r.count)} = ${fmtShort(r.coins)} 钱币`);
     console.log(`    核查加的属性：${r.adds}`);
     const ratioPairs: [Target,number,number][] = [
-      [targets[0]!,baseZ,r.dmgZ],[targets[1]!,baseT,r.dmgT]
+      [targets[0],baseZ,r.dmgZ],[targets[1],baseT,r.dmgT]
     ];
     for (const [t,before,after] of ratioPairs) {
       console.log(`    ${t.name} 伤害比 ${(before / t.enemy.hp).toExponential(3)} → ${(after / t.enemy.hp).toExponential(3)}（伤害增量 ${fmtShort(after - before)}）`);
     }
-    console.log(`    每 1 钱币伤害增量：${targets[0]!.name} ${r.perCoinZ.toExponential(3)} / ${targets[1]!.name} ${r.perCoinT.toExponential(3)}`);
+    console.log(`    每 1 钱币伤害增量：${targets[0].name} ${r.perCoinZ.toExponential(3)} / ${targets[1].name} ${r.perCoinT.toExponential(3)}`);
     if (!isWithNeed) {continue;}
     const cap = fmtShort(needProbeMax(targets));
     console.log(`    单独靠它达标：${r.feasible ? `需 ${fmtShort(r.needCount)} 个 = ${fmtShort(r.needCoins)} 钱币` : `追加到 ${cap} 个仍不达标`}`);
@@ -1091,7 +1099,7 @@ function printAnalysis (): void {
       console.log(`  ${String(i + 1).padStart(2)}. ${r.name.padEnd(10)} ${cost.padEnd(34)} ${r.use}`);
     }
   }
-  console.log(`\n--- ${isWithNeed ? "五" : "四"}、按「每钱币伤害增量」排序（边际效率，${targets[0]!.name} 口径）---`);
+  console.log(`\n--- ${isWithNeed ? "五" : "四"}、按「每钱币伤害增量」排序（边际效率，${targets[0].name} 口径）---`);
   for (const [i,row] of rows.entries()) {
     const r = row;
     console.log(`  ${String(i + 1).padStart(2)}. ${r.name.padEnd(10)} ${r.perCoinZ.toExponential(3)} /钱币   ${r.use}`);

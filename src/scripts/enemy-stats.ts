@@ -52,11 +52,11 @@ const zhongJuRecords = JSON.parse(
  * 命中率.源码:MingZhong_Recorder.Final_MZ = 100 + 命中 - 闪避 + MZ_Addition,
  * 判定 Random.Range(0,101) <= Final_MZ,所以命中率是 (Final_MZ+1)/101,上限 100%.
  * floor 是 MZ_Addition 形成的下限(红拂女神转职:Final_MZ 至少 65).
-  * @param attackerHit 攻击方命中.
-  * @param defenderDodge 防守方闪避.
-  * @param floor 命中下限.
-  * @returns number.
-*/
+ * @param attackerHit 攻击方命中.
+ * @param defenderDodge 防守方闪避.
+ * @param floor 命中下限.
+ * @returns number.
+ */
 export function hitRate (
   attackerHit: number,
   defenderDodge: number,
@@ -199,7 +199,7 @@ function main (): void {
   if (sceneText !== undefined && scene === undefined) {
     throw new Error(`未知场景：${sceneText}（可用 通 / 终 / 试）`);
   }
-  const levels = positionals.slice(1).map(parseLevel);
+  const levels = positionals.slice(1).map(value => parseLevel(value));
   const lines: string[] = ["=== 敌人属性（全部按反编译公式计算）===","","命中率公式：Final_MZ = 100 + 我方命中 - 敌闪避；命中率 = (Final_MZ+1)/101，封顶 100%",""];
   if (scene === undefined) {
     lines.push(...sceneLines("trial",Array.from({length: 10},(_,index) => (index + 1) * 100)),"",...sceneLines("tower",Array.from({length: 10},(_,index) => (index + 1) * 10000)),"",...sceneLines("zhongju",[]),"","说明：","1、通天塔 `Character_Enemy` 的构造参数是 `(品质, GetTrueRound(), 预设, 地图, CurRound)`，所以 `True_Round` = 层数；命中/闪避 = `min(层数/100,70) + max(0,(层数-11000)/1000)`，速度 = `26+品质+1+层数/100+min(层数/100,70)`。",`2、试炼按 \`LevelToTargetLevel(层数)\`：命中/闪避/暴击/抗暴 = \`100+层数×3\`，速度 = \`层数×35×(150+层数)/100\`；100 层命中/闪避 ${String(TRIAL_ENEMY_100.dodge)}、速度 ${String(TRIAL_ENEMY_100.speed)}。`,"3、终局按 `ZhongJu_Config_Data.BattleData_Manager`：`percent=true` 的属性直接取 Base，`percent=false` 的属性取 `Base×(100+Percent)/100`。","4、红拂女神转职给全队 `Final_MZ >= 65` 的下限，所以命中率最低 65/101 ≈ 65.3%。");

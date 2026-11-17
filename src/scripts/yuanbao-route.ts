@@ -323,8 +323,7 @@ lv15Sellable:   lv15Prices.length,
   };
   const ticketsHeld = getPropNums(game,PROP_TICKET);
   const tickets = argNumber(args,"tickets") ?? ticketsHeld;
-  const lines: string[] = [];
-  lines.push("=== 6 级抽奖：两条拿元宝路线对比 ===","",`存档：${save.dir}`,`抽奖累计 ${fmt(game.ChouJiangCount ?? 0)} 次 → 6 级；当前奖池 #${String(game.Cur_JiangChiIndex ?? 0)}（奖池 #${String(poolB.ChouJiangIndex)} 是套娃池，#${String(poolA.ChouJiangIndex)} 是御灵宝典池）`,`持有抽奖卷 ${fmt(ticketsHeld)}，元宝 ${fmt(ctx.yuanbaoHeld)}，御灵师 Lv.${String(ctx.curLevel)}，试炼第 ${String(ctx.shiLian.Cur_CengShu ?? 1)} 层，疲劳 ${String(ctx.shiLian.Cur_PiLao ?? 0)}/100`,`十连赠送 Mark=${String(bonusCount)} → 每张卷实际抽 ${fmt(bonus)} 次；御灵宝典每本 ${fmt(bookParams1 * (100 + ctx.yuLingExpMark) / 100)} 御力；奖池每 ${fmt(ctx.refreshMinutes)} 分钟轮换一次，手动刷新需五鬼运财符（持有 ${fmt(ctx.wugui)}）`,`冥商 Lv15 收购 ${String(ctx.lv15Sellable)} 种，单价 ${fmt(lv15Price)} 元宝；收购格子 ${String(MINGSHANG_GRIDS)}/${String(mingShang.buy.length)}，NPC 每 ${fmt(NPC_SHOUGOU_SECONDS / 60)} 分钟收走 1 格`,"","--- 路线 A（御灵宝典 → 战力 → 试炼）---");
+  const lines: string[] = ["=== 6 级抽奖：两条拿元宝路线对比 ===","",`存档：${save.dir}`,`抽奖累计 ${fmt(game.ChouJiangCount ?? 0)} 次 → 6 级；当前奖池 #${String(game.Cur_JiangChiIndex ?? 0)}（奖池 #${String(poolB.ChouJiangIndex)} 是套娃池，#${String(poolA.ChouJiangIndex)} 是御灵宝典池）`,`持有抽奖卷 ${fmt(ticketsHeld)}，元宝 ${fmt(ctx.yuanbaoHeld)}，御灵师 Lv.${String(ctx.curLevel)}，试炼第 ${String(ctx.shiLian.Cur_CengShu ?? 1)} 层，疲劳 ${String(ctx.shiLian.Cur_PiLao ?? 0)}/100`,`十连赠送 Mark=${String(bonusCount)} → 每张卷实际抽 ${fmt(bonus)} 次；御灵宝典每本 ${fmt(bookParams1 * (100 + ctx.yuLingExpMark) / 100)} 御力；奖池每 ${fmt(ctx.refreshMinutes)} 分钟轮换一次，手动刷新需五鬼运财符（持有 ${fmt(ctx.wugui)}）`,`冥商 Lv15 收购 ${String(ctx.lv15Sellable)} 种，单价 ${fmt(lv15Price)} 元宝；收购格子 ${String(MINGSHANG_GRIDS)}/${String(mingShang.buy.length)}，NPC 每 ${fmt(NPC_SHOUGOU_SECONDS / 60)} 分钟收走 1 格`,"","--- 路线 A（御灵宝典 → 战力 → 试炼）---"];
   const a = routeA(tickets,ctx,atkShare);
   lines.push(`${fmt(tickets)} 张卷 → 御灵宝典 ${fmt(a.books)} 本 → Lv.${String(ctx.curLevel)} → Lv.${String(a.levelTo)}（突破 ${String(a.breakthroughs)} 次，存档忘情水 ${fmt(ctx.yaoShui)} 可支撑 ${String(ctx.tuPoAvailable)} 次）`,`攻击倍率上界 ${fmt(a.atkMultiplier)}（--atk-share=${fmt(atkShare)}）→ 试炼 ${String(a.layersFrom)} → ${String(a.layersTo)} 层，胜 ${String(a.layersTo - a.layersFrom)} 场`,`敌方速度 ${fmt(a.speedFrom)} → ${fmt(a.speedTo)}（御灵宝典不加速度，只有每 10 级突破给速度；这是 A 的额外硬门槛）`,`元宝：毛 ${fmt(a.yuanbaoGross)}，扣补疲劳 ${fmt(PILAO_BUY_COST)} 元宝/场后净 ${fmt(a.yuanbaoNet)}；试炼秘宝 ${fmt(a.mibao)} 个（自选 Lv15 宝石）再折 ${fmt(a.mibaoYuanbao)}`,`每抽 ${fmt(totalA(a) / tickets)} 元宝，合计 ${fmt(totalA(a))} 元宝`,"");
   const oneLv15Tickets = ticketsForOneLv15(ctx);
@@ -376,12 +375,12 @@ function mergeRatio (props: Map<number,PropDef>): number {
  * 冥商收购变现吞吐:10 个格子从收购表随机抽取,每格一次性,10 格全满才刷新.
  * MingShang_Manager.RefreShouGou:151-159 / CheckShouGouRefre:79-89 / AddTime:50-61,
  * UIPanel_MingShang.RefreShouGouEvent:283-293 手动刷新消耗 1 个冥君令(161).
-  * @param sell 出售记录.
-  * @param ctx 上下文.
-  * @param boxesLv10 Lv10 宝箱数.
-  * @param enoughCount 满足 Enough 的条数.
-  * @returns Throughput.
-*/
+ * @param sell 出售记录.
+ * @param ctx 上下文.
+ * @param boxesLv10 Lv10 宝箱数.
+ * @param enoughCount 满足 Enough 的条数.
+ * @returns Throughput.
+ */
 function mingshangThroughput (
   sell: MingShangEntry[],
   ctx: Context,
@@ -435,11 +434,11 @@ function readLines (gameDir: string,fileName: string): string[] {
  * 路线 A:御灵宝典 → 御力 → 御灵师等级 → 攻击 → 推试炼层数 → 元宝.
  * 伤害倍率按「玩家攻击全部来自御灵师等级」计算,并用 --atk-share 缩放, 这是路线 A 的乐观上界:真实面板还有装备/阵法/图鉴/研究,占比越小路线 A 越差.
  * 仅按敌方 HP 门槛推层(忽略速度/命中门槛),同样是上界.
-  * @param tickets 参数 tickets.
+ * @param tickets 参数 tickets.
  * @param ctx 参数 ctx.
  * @param atkShare 参数 atkShare.
  * @returns RouteAResult.
-*/
+ */
 function routeA (tickets: number,ctx: Context,atkShare: number): RouteAResult {
   const books = expectedPerTicket(ctx.poolA,PROP_BOOK,ctx.bonus) * tickets;
 
@@ -513,10 +512,10 @@ yuanbaoNet:   net
 /**
  * 路线 B:套娃宝箱 Lv6 → 逐级 50% 套出 Lv10 → 开箱出同品质装备 → 5 合 1 升到 Lv15 → 冥商收购.
  * 开箱候选按品质均匀分布；同系列才能合成,因此按每个系列「等效品质 6 件数」向下取整, 同时给出不做取整的连续期望上界.
-  * @param tickets 参数 tickets.
+ * @param tickets 参数 tickets.
  * @param ctx 参数 ctx.
  * @returns RouteBResult.
-*/
+ */
 function routeB (tickets: number,ctx: Context): RouteBResult {
   const taowaLv6 = expectedPerTicket(ctx.poolB,PROP_TAOWA_LV6,ctx.bonus) * tickets;
   const ziXuan = expectedPerTicket(ctx.poolB,PROP_ZIXUAN_BAOSHI_LV6,ctx.bonus) * tickets;
