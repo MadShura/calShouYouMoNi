@@ -9,11 +9,13 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "chis": "axl clean-history",
     "cl": "pnpm prune && pnpm store prune",
     "cleanhis": "axl clean-history",
     "compare2": "pnpm exec tsx src/composite-compare.ts",
     "dev": "vite",
     "enemy": "pnpm exec tsx src/enemy-stats.ts",
+    "fsame": "pnpm fsame",
     "lianqi": "pnpm exec tsx src/lianqi.ts",
     "lint": "run-s --continue-on-error lint:ox lint:es",
     "lint-rules": "axl lint-rules",
@@ -28,9 +30,10 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:all": "pnpm test",
     "up:tsConfig": "axl tsconfig-exclude",
+    "verify": "pnpm exec tsx src/verify-damage.ts",
     "xunbao": "pnpm exec tsx src/xunbao.ts",
-    "zhenyin": "pnpm exec tsx src/zhenyin.ts",
     "yuling": "pnpm exec tsx src/yulingshi-level.ts",
+    "zhenyin": "pnpm exec tsx src/zhenyin.ts",
     "zhizao": "pnpm exec tsx src/zhizao.ts"
   },
   "dependencies": {

@@ -24,8 +24,6 @@ interface InvestPlan {
   bestX:     number;
   cap:       number;
   lingLi:    number;
-  marginal:  number;
-  needScore: number;
   rankJumps: InvestJump[];
   yuanbao:   number;
 }
@@ -95,64 +93,38 @@ function investPlan (camp: CampData,save: SaveBundle,score: number,members: read
   const yuanbao = getPropNums(save.game,YUANBAO_PROP);
   const cap = Math.max(0,Math.min(yuanbao,Math.floor((LINGLI_MAX - lingLi) / 10)));
 
-  // 结算总额的所有倍率:轮数 × 王者之翼,边际/保本/最优点都要带上
-  const mul = (10 + Math.min(round,20)) / 10 * wingLevelAddon;
-  const spare = base.total - base.gongXun;
-
-  // 边际 = (积分/2)·(总贡献-我的贡献)/(总贡献+X)²·倍率,X=0 时最大,大于 1 才值得投入
-  const needScore = spare === 0 ? 0 : 2 * base.total ** 2 / (mul * spare);
-  const marginal = base.total === 0 ? 0 : mul * score / 2 * spare / base.total ** 2;
-  const jumps: InvestJump[] = [];
-  const ranked = [...members].toSorted((left,right) => right.GongXun - left.GongXun);
-  const myIndex = ranked.findIndex(record => record.Cha_ID === MY_CHA_ID);
-  for (let index = 0; index < myIndex; index += 1) {
-    const target = ranked[index];
-    if (!target) {
-      continue;
-    }
-    const cost = target.GongXun - base.gongXun + 1;
-    if (cost < 1 || cost > cap) {
-      continue;
-    }
-    const next = settle(score,members,cost,round,wingLevel);
-
-    // 只有真正超过前面的人,名次确实上升才算买名次
-    if (next.rank < base.rank) {
-      jumps.push({cost,kind: "rank",net: next.yuanbao - base.yuanbao - cost,rank: next.rank});
-    }
-  }
-
-  // 边际恰好等于 1 的连续最优投入,名次可能不变
-  if (marginal > 1) {
-    const ideal = Math.sqrt(mul * score / 2 * spare) - base.total;
-    const cost = Math.min(cap,Math.max(1,Math.round(ideal)));
-    const next = settle(score,members,cost,round,wingLevel);
-    jumps.push({cost,kind: "share",net: next.yuanbao - base.yuanbao - cost,rank: next.rank});
-  }
+  // settle() 含 BigInt 整除与 float32 取整,净收益是整数阶梯函数;
+  // 逐点扫描 0..cap 取 net 最大者,自动覆盖名次跳变,不用连续导数近似
+  let bestCost = 0;
+  let bestNet = 0;
+  let bestRank = base.rank;
   const byRank = new Map<number,InvestJump>();
-  for (const item of jumps) {
-    if (item.kind !== "rank") {
-      continue;
+  for (let cost = 1; cost <= cap; cost += 1) {
+    const next = settle(score,members,cost,round,wingLevel);
+    const net = next.yuanbao - base.yuanbao - cost;
+    if (net > bestNet) {
+      bestCost = cost;
+      bestNet = net;
+      bestRank = next.rank;
     }
-    const seen = byRank.get(item.rank);
-    if (!seen || item.cost < seen.cost) {
-      byRank.set(item.rank,item);
+
+    // 每个名次保留最便宜的投入点,供买名次清单展示
+    if (next.rank >= base.rank) {continue;}
+    const seen = byRank.get(next.rank);
+    if (!seen || cost < seen.cost) {
+      byRank.set(next.rank,{cost,kind: "rank",net,rank: next.rank});
     }
   }
-  const sharePick = jumps.find(item => item.kind === "share");
-  const options = [...byRank.values(),...sharePick ? [sharePick] : []].toSorted((left,right) => left.net - right.net);
-  const best = options.at(-1);
-  const isProfit = best !== undefined && best.net > 0;
+  const best = byRank.get(bestRank);
+  const bestKind: "rank" | "share" = bestRank < base.rank && best?.cost === bestCost ? "rank" : "share";
   return {
     baseRank:  base.rank,
-    bestKind:  isProfit ? best.kind : "share",
-    bestNet:   isProfit ? best.net : 0,
-    bestRank:  isProfit ? best.rank : base.rank,
-    bestX:     isProfit ? best.cost : 0,
+    bestKind,
+    bestNet,
+    bestRank,
+    bestX:     bestCost,
     cap,
     lingLi,
-    marginal,
-    needScore,
     rankJumps: [...byRank.values()].toSorted((left,right) => left.cost - right.cost),
     yuanbao
   };
@@ -263,7 +235,7 @@ function main (): void {
     lines.push(`${label}：${formatSuoXie(settle(projectedScore,members,0,round,wingLevel,rank).yuanbao)} 元宝`);
   }
   const plan = investPlan(camp,save,projectedScore,members,round,wingLevel,result);
-  lines.push(...planLines(plan,projectedScore));
+  lines.push(...planLines(plan));
   if (isArgOn(args,"invest")) {
     lines.push(...investTable(plan,projectedScore,members,round,wingLevel,result));
   }
@@ -278,18 +250,18 @@ function percentForRank (rank: number): number {
   }
   return rank === 3 ? 10 : 0;
 }
-function planLines (plan: InvestPlan,score: number): string[] {
+function planLines (plan: InvestPlan): string[] {
   const lines: string[] = [
     "","--- 元宝投入建议（补充灵力：1 元宝 = 1 贡献 + 10 灵力）---",
     `持有元宝 ${formatSuoXie(plan.yuanbao)}；己方灵力 ${formatSuoXie(plan.lingLi)}/${formatSuoXie(LINGLI_MAX)} → 最多可投 ${formatSuoXie(plan.cap)} 元宝`,
-    `保本条件：积分 ≥ ${formatSuoXie(plan.needScore)}（当前预计 ${formatSuoXie(score)}）`
+    `扫描 0 ~ ${formatSuoXie(plan.cap)} 元宝逐点试算，取净收益最大的精确整数投入（含取整阶梯与名次跳变）`
   ];
   if (plan.bestX > 0 && plan.bestKind === "rank") {
     lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献）→ 名次 第 ${String(plan.baseRank)} 名 → 第 ${String(plan.bestRank)} 名，净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
   } else if (plan.bestX > 0) {
-    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献，分润边际=1 的最优点）→ 名次不变（第 ${String(plan.baseRank)} 名），净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
+    lines.push(`建议投入 ${formatSuoXie(plan.bestX)} 元宝（= ${formatSuoXie(plan.bestX)} 贡献，净收益最大的精确整数点）→ 名次不变（第 ${String(plan.baseRank)} 名），净赚 ${formatSuoXie(plan.bestNet)} 元宝`);
   } else {
-    lines.push(`建议投入 0 元宝：每 1 元宝最多换回 ${plan.marginal.toFixed(3)} 元宝，买贡献越投越亏`);
+    lines.push("建议投入 0 元宝：全区间扫描后没有净收益为正的投入点");
   }
   if (plan.rankJumps.length === 0) {
     lines.push(`没有能靠元宝买到的更高名次（当前第 ${String(plan.baseRank)} 名）`);

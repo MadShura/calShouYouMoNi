@@ -10,7 +10,7 @@
  * - 仙葫芦需求逐项算:①当前存档只走保底 ②逐层清单从第10层倒序写到当前层,已走过低层跳过(每层=保底+开满该层非大奖格),÷10向上取整,不抵扣已有仙葫芦
  * 运行:pnpm xunbao
  */
-import {argNumber,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
+import {getMarkCount,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
 import {runMain} from "./tools.ts";
 
 const REFRE_SECONDS = 600 * 60;       // 一次计时周期 36000s
@@ -18,8 +18,6 @@ const RECOVER_SECONDS = 300;          // 无翼加速时每 300s 回 1 点
 const BASE_MAX_TILI = 150;
 const MINGSHANG_XUNBAO_TILI_LIMIT = 62;  // Mark_Enum 序号
 const WING_CB_4 = 71;                     // 恢复加速 Mark 序号
-const XIANHU_PROP_ID = 155;               // 仙葫药
-const TILI_PER_XIANHU = 10;
 const PAID_BLOCKS = 15;                   // 每层付费格(16格减入口格)
 const LAST_LAYER = 10;
 const HIDDEN_EXPECT_BLOCKS = 8;           // (15+1)/2,隐藏大奖固定顺序每层走到大奖的期望格数
@@ -55,7 +53,6 @@ function main (): void {
   const maxTili = BASE_MAX_TILI + getMarkCount(game,MINGSHANG_XUNBAO_TILI_LIMIT);
   const wing = getMarkCount(game,WING_CB_4);
   const recoveryRate = wing > 0 ? (100 + Math.min(wing,250) * 2) / 100 : 1;
-  const xianhuNums = getPropNums(game,XIANHU_PROP_ID);
   const remainSeconds = Math.max(0,REFRE_SECONDS - gameTime);
   const remainHours = remainSeconds / 3600;
 
@@ -65,36 +62,29 @@ function main (): void {
 
   // 从当前状态走完本轮(打到第10层全开)还需要的体力.
   // 开一格扣当前层数点体力;入口格免费;开到大奖才能进下一层.
-  let remainNeed = 0;
   const stepNotes: string[] = [];
   if (layer >= LAST_LAYER) {
     const openedPaid = Math.max(0,openBlock.length - 1);   // 去掉入口格
     const remainBlocks = Math.max(0,PAID_BLOCKS - openedPaid);
-    remainNeed = remainBlocks * LAST_LAYER;
+    const remainNeed = remainBlocks * LAST_LAYER;
     stepNotes.push(`已在第${String(LAST_LAYER)}层:还差 ${String(remainBlocks)} 个付费格 × ${String(LAST_LAYER)} = ${String(remainNeed)} 体力`);
   } else {
     if (isDaJiangOpened) {
       stepNotes.push(`第${String(layer)}层大奖 ${seatCoord(daJiangSeat)} 已开 → 直接进下一层,本层剩余 0 体力`);
     } else {
       const step = HIDDEN_EXPECT_BLOCKS * layer;
-      remainNeed += step;
       stepNotes.push(`第${String(layer)}层大奖 ${seatCoord(daJiangSeat)} 未开 → 按期望 ${String(HIDDEN_EXPECT_BLOCKS)} 格 × ${String(layer)} = ${String(step)} 体力`);
     }
     for (let next = layer + 1; next < LAST_LAYER; next += 1) {
       const step = HIDDEN_EXPECT_BLOCKS * next;
-      remainNeed += step;
       stepNotes.push(`第${String(next)}层走到大奖:期望 ${String(HIDDEN_EXPECT_BLOCKS)} 格 × ${String(next)} = ${String(step)} 体力`);
     }
     const lastCost = PAID_BLOCKS * LAST_LAYER;
-    remainNeed += lastCost;
     stepNotes.push(`第${String(LAST_LAYER)}层全开:${String(PAID_BLOCKS)} 格 × ${String(LAST_LAYER)} = ${String(lastCost)} 体力`);
   }
-  let baseNeed = remainNeed;   // 保底消耗:每层只走到大奖 + 第10层全开
-  const overrideNeed = argNumber(args,"need");
-  if (overrideNeed !== undefined) {baseNeed = overrideNeed;}
   console.log("\n=== 当前寻宝状态 ===");
   console.log(`  层数 第${String(layer)}/${String(LAST_LAYER)}层，大奖位 ${seatCoord(daJiangSeat)}（座位号 ${String(daJiangSeat)}，${isDaJiangOpened ? "已开" : "未开"}）`);
-  console.log(`  已开格 ${String(openBlock.length)}/16：${openBlock.map(seatCoord).join(" ")}`);
+  console.log(`  已开格 ${String(openBlock.length)}/16：${openBlock.map(s => seatCoord(s)).join(" ")}`);
   console.log(`  当前体力 ${String(curTuli)} / 上限 ${String(maxTili)}`);
   console.log(`  已计时 ${gameTime.toFixed(1)}s / 周期 ${String(REFRE_SECONDS)}s，剩余 ${remainSeconds.toFixed(1)}s（${remainHours.toFixed(2)} 小时）`);
   console.log(`  恢复累加 TiLiRecovery = ${recovery.toFixed(1)} / ${String(RECOVER_SECONDS)}；Wing_CB_4 = ${String(wing)}，恢复倍率 ×${recoveryRate.toFixed(2)}`);

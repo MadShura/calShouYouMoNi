@@ -45,6 +45,7 @@ export {MATERIAL_COST_PER_UNIT} from "./data.ts";
  * @param hantie 投入的寒铁数量
  * @param wingLevel 翅膀 Wing_CB_2 印记等级(0 = 没翅膀)
  * @param wucaiStones 投入的五彩神石数量(把器鼎从 Lv.1700 继续升级;默认 0 即保持 1700)
+ * @param maxSeconds 打造时间上限(秒;默认 Infinity 不限)
  * @returns HantieToZhanliResult.
  */
 export function hantieTozhanli (

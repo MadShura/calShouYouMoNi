@@ -27,6 +27,7 @@ export function main (): void {
   console.log(`[缓存] ${String(cacheSize())} 条 → output/calc-cache.json`);
   cacheFlush();
 }
+if (process.argv[1] === import.meta.filename) {main();}
 
 // 输出单组完整推导(逐项写来源).
 function logDetail (log: (s: string) => void,item: GroupPlan,snap: SimSnap): void {

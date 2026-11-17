@@ -869,7 +869,7 @@ export function simulateHero (item: GroupPlan,maxHours: number,isJudge = true,gr
     const snapshot = (): Record<string,number> => {
       const s: Record<string,number> = {
         ...drops,
-        "元宝余额": shop.yuanbao,
+        "元宝余额":     shop.yuanbao,
         "元宝池(VIP)": shop.vipPool
       };
       for (const [i,lv] of shop.wing.entries()) {s[`翅膀${String(i + 1)}级`] = lv;}
@@ -966,7 +966,7 @@ export function simulateHero (item: GroupPlan,maxHours: number,isJudge = true,gr
     }
 
     // 三条件第一次满足即跳出.
-    if (checkNow !== undefined && checkNow.pass) {isReached = true; break;}
+    if (checkNow?.pass === true) {isReached = true; break;}
   }
 
   // 终态快照.若逐点判定因间隔采样漏掉达标点,终态已满足则视为达标(小时=终态,精度=判定间隔).
@@ -1073,7 +1073,5 @@ export {
   CB_TU_CAP,DK_PROFIT_PER_ROUND,ENEMY_HP,fmt,GROUP_PLANS,MAP_ORDER,
   nfmt,PRE_ROUTE,WUKONG_SEC,YUNXIAO_SEC,ZHUAN_SHENG_MAX
 };
-if (process.argv[1] === import.meta.filename) {
-  const report = await import("./finalCal-report.ts");
-  report.main();
-}
+
+// 入口见 ./finalCal-report.ts(避免 top-level await 导致 unsettled).

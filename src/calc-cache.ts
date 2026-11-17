@@ -15,10 +15,10 @@ type Store = Record<string,unknown>;
 class JsonCache {
   private readonly store: Store;
   private dirty = false;
-  constructor (private readonly file: URL) {
+  public constructor (private readonly file: URL) {
     this.store = existsSync(file) ? JSON.parse(readFileSync(file,"utf8"),reviver) as Store : {};
   }
-  get<T> (fn: string,args: readonly unknown[],compute: () => T): T {
+  public get<T> (fn: string,args: readonly unknown[],compute: () => T): T {
     const key = `${fn}|${args.map(a => (typeof a === "bigint" ? a.toString() : String(a))).join("|")}`;
     if (Object.hasOwn(this.store,key)) {
       return this.store[key] as T;
@@ -28,12 +28,12 @@ class JsonCache {
     this.dirty = true;
     return value;
   }
-  flush (): void {
+  public flush (): void {
     if (!this.dirty) {return;}
     writeFileSync(this.file,JSON.stringify(this.store,replacer,2),"utf8");
     this.dirty = false;
   }
-  get size (): number {return Object.keys(this.store).length;}
+  public get size (): number {return Object.keys(this.store).length;}
 }
 function replacer (_key: string,value: unknown): unknown {
   if (typeof value === "bigint") {return `${BIG}${value.toString()}`;}
