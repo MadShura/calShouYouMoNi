@@ -4,7 +4,7 @@
 
 param(
     [string]$GameDir = 'D:\game\steam\steamapps\common\MoNiShouYou',
-    [string]$OutDir = (Join-Path $PSScriptRoot '..\反编译')
+    [string]$OutDir = (Join-Path $PSScriptRoot '..\源码')
 )
 
 $ErrorActionPreference = 'Stop'

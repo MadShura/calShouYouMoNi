@@ -60,4 +60,4 @@ _gen*
 
 
 # 挂机手游模拟器反编译产物（由 src/scripts/decompile.ps1 生成）
-反编译/
+源码/
