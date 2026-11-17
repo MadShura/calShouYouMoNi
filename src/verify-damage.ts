@@ -35,8 +35,20 @@
  *   最高攻 +35% 伤害加成;唐三藏3技能(技能81,Entry_Skill_81) 全体 +30 命中;猪八戒3技能(技能84,Entry_Skill_84)
  *   全体敌人 +2 层流血且 −20 闪避(同时喂 神通27 与 西行取经).
  *
- * 图鉴增伤(研究54,仅通天塔):Character_Enemy.cs:125-131 = 图鉴等级 × 研究54等级;通天塔 map5 的
+ * 图鉴增伤(研究54,仅通天塔):Character_Enemy.cs:123-134 = 图鉴等级 × 研究54等级;通天塔 map5 的
  *   小怪/精英/首领 PresetID 取自 config/maps.json(louLouID/jingYingID/bossID).
+ *
+ * 暴击乘区:Damage_Recorder.cs:82-85 = 中间值 × 面板暴伤 / 100.存档战斗面板暴伤 = 英灵 + 主角 = 545,
+ *   但两次实测(456/317/142~148 与 688/460/217,同为 207585 层的不同存档快照)反解出的乘区恒为 6.45,
+ *   即游戏按 (100+暴伤)/100 结算(等价战斗面板暴伤 645).本文件用 BAO_JI_BASE=100 表示;
+ *   --critbase=0 退回源码字面写法(×5.45),--critdmg=N 覆盖面板暴伤(如 --critdmg=545 --critbase=100).
+ *
+ * 一层只有一次群体出手,所以是 5 个数、不是 3 个数:Battle_Action_Manager.ActionOrder 用 OrderByMin
+ *   (ArrayHelper.cs:155-169,实际按降序原地排序)排整张角色表,Entry_Skill_76.WhenCulTarget 取
+ *   GetCha_Dead_Alive(不排序,直接用列表顺序),命中顺序 = 速度降序 首领(2175) → 精英(2174)×2 →
+ *   小怪(2173)×2;Entry_Skill_76.AfterAttakEnemy 每命中一个目标自身 +1 层 Mark,WhenAttack_Cul_1
+ *   按 Mark×10 加桶 → 同品级两击相差 10%."小怪 688" 只是两个小怪中的一个(第 4 击 Mark3 或第 5 击 Mark4).
+ *   --obs=217,460,688 把观测到的暴击伤害逐个丢进 5 次命中的暴击范围(×0.95~1.05)里核对落点.
  *
  * 所有乘区来自反编译源码;只读存档,不写游戏目录.
  */
@@ -106,6 +118,14 @@ const WU_SONG_ATK_PCT = 20;                         // 武松神转职 Entry_Ski
 const WU_SONG_DMG_ADD = 35;                         // 武松3技能 Entry_Skill_18:最高攻 +35% 伤害加成
 const BATTERY_MIN = 0.95;                           // Damage_Recorder.cs:80-81 Random.Range 下限
 const BATTERY_MAX = 1.05;                           // 同上上限
+
+// 暴击乘区.Damage_Recorder.cs:84 字面写的是 `× GetFinalValue(BaoJi_Damage) / 100`,
+// 存档战斗面板暴伤 = 英灵 415 + 主角 130 = 545;但两次实测反解出的乘区恒为 6.45:
+//   实测① 456 / 317 / 142~148  实测② 688 / 460 / 217(同一层 207585,不同存档快照)
+// 按 5.45 算两次都整体低 18.35%(1.1835 = 645/545),按 6.45 算两次全部落在 ±5% 浮动内.
+// 所以游戏实际按 (100 + 暴伤) / 100 结算,等价于战斗面板暴伤 645.用显式基数 BAO_JI_BASE 表示,
+// --critbase=0 退回源码字面写法(×5.45).
+const BAO_JI_BASE = 100;
 const SP_OPEN_BATTLE = 30;                          // 开战 SP
 const SP_MAX = 101;                                 // MaxSP
 const SP_RAGE_NEED = 100;                           // 怒气动作门槛
@@ -723,6 +743,8 @@ export function damageRangeOf (
     mark?: number;
     enemyCount?: number;
     reducePct?: number;
+    critBasePct?: number;
+    critDamagePct?: number;
   } = {}
 ): DamageRange {
   const reduce = opts.reducePct ?? (scene === "tower" ? TOWER_DAMAGE_REDUCE : Math.min(enemy.damageReduce,80));
@@ -778,7 +800,9 @@ export function damageRangeOf (
     (100 + panel.dmgAdd + team.wuSongDmgAdd) / 100 *
     (100 - reduce) / 100;
   const critRate = Math.max(0,Math.min(1,(panel.crit - enemy.critResist + 1) / 101));
-  const critMultiplier = panel.critDamage / 100;
+  const critBase = opts.critBasePct ?? BAO_JI_BASE;
+  const critDamagePct = opts.critDamagePct ?? panel.critDamage;
+  const critMultiplier = (critDamagePct + critBase) / 100;
   const crit = nonCrit * critMultiplier;
 
   const weaponName = panel.weapon?.name ?? "未知灵器";
@@ -814,11 +838,18 @@ export function damageRangeOf (
 
 // ============================== 打印 ==============================
 
-/** 把一份 DamageRange 按游戏单位打印到控制台. */
+/**
+ * 把一份 DamageRange 按游戏单位打印到控制台.
+ * @param report 伤害结果.
+ * @param panel 输出位面板.
+ * @param tuJian 图鉴增伤与来源.
+ * @param critBase 暴击乘区的基数(默认 100,即 (100+暴伤)/100).
+ */
 export function printDamageRange (
   report: DamageRange,
   panel: CarryPanel,
-  tuJian: {pct: number; source: string}
+  tuJian: {pct: number; source: string},
+  critBase = BAO_JI_BASE
 ): void {
   const {enemy} = report;
   console.log(`\n=== ${report.scene}${report.layer > 0 ? ` ${formatSuoXie(report.layer)} 层` : ""} 最终伤害验证(存档实际面板 · 孙悟空神·人皇印队)===`);
@@ -833,9 +864,13 @@ export function printDamageRange (
     `闪避=${formatSuoXie(enemy.dodge)}  抗暴=${formatSuoXie(enemy.critResist)}  减伤=${String(enemy.damageReduce)}%`
   );
   console.log(
-    `面板: 实际攻击=${formatSuoXie(report.atkForK)}  穿透=${formatSuoXie(report.pen)}  ` +
+    `面板: 实际攻击=${formatSuoXie(report.atkForK)}（基础 ${formatSuoXie(panel.atkFlat)} × ${(panel.atkPct / 100 + 1).toFixed(2)}）` +
+    `  穿透=${formatSuoXie(report.pen)}  速度=${formatSuoXie(panel.speed)}  伤害加成=${String(panel.dmgAdd)}+${String(report.wuSongDmgAdd)}` +
+    `  暴伤=${String(panel.critDamage)}`
+  );
+  console.log(
     `命中链=${formatSuoXie(report.carryHit)}  命中率=${(report.hitRate * 100).toFixed(2)}%  ` +
-    `暴击率=${(report.critRate * 100).toFixed(2)}%  暴伤倍率=${report.critMultiplier.toFixed(2)}  K=${String(report.k)}`
+    `暴击率=${(report.critRate * 100).toFixed(2)}%  暴击倍率=${report.critMultiplier.toFixed(2)}（(${String(panel.critDamage)}+${String(critBase)})/100）  K=${String(report.k)}`
   );
   const {buckets} = report;
   console.log(
@@ -849,78 +884,136 @@ export function printDamageRange (
   console.log(`暴击后: ${formatSuoXie(report.critRange[0])} ~ ${formatSuoXie(report.critRange[1])}  (期望 ${formatSuoXie(report.crit)})`);
 }
 
+/** 一次命中的落点(位置 + 品级 + Mark + 伤害范围). */
+interface LayerHit {
+  mark: number;
+  quality: number;
+  range: DamageRange;
+  tuJian: number;
+}
+/** 观测到的暴击伤害:原始数值 + 显式单位(未写单位时由命中量级推断). */
+interface ObservedValue {
+  raw: number;
+  unit: string | undefined;
+}
+
 /**
- * 通天塔同一层 5 只怪的完整伤害表 + 三种敌人各 Mark 层数的伤害表.
- * 源码依据:MapRecorder.GetEnemyCount(品质分布)/GetEnemtID(图鉴预设)/Character_Enemy.cs:125-131/
- * Entry_Skill_76.AfterAttakEnemy(Mark 每命中一个目标 +1).
+ * 通天塔同一层:一轮群体技能打 5 个目标的逐击伤害表 + 观测值落点核对.
+ *
+ * 源码依据:MapRecorder.GetEnemyCount(品级分布)/GetEnemtID(图鉴预设)/Character_Enemy.cs:123-134/
+ * Battle_Action_Manager.ActionOrder + ArrayHelper.OrderByMin(按速度降序,原地排序)/
+ * Entry_Skill_76.AfterAttakEnemy(每命中一个目标 Mark+1).
+ * 一层只出手一次,5 个目标按速度降序吃伤:首领(2175) → 精英(2174) ×2 → 小怪(2173) ×2,
+ * 所以同一品级的两个怪伤害相差 10%(Mark 差 1 层).
+ * @param save 存档.
+ * @param layer 层数.
+ * @param panel 输出位面板.
+ * @param team 队伍加成.
+ * @param opts 图鉴/减伤/暴伤覆盖 + 观测值(暴击伤害).
  */
 function printTowerLayerTable (
   save: SaveBundle,
   layer: number,
   panel: CarryPanel,
   team: TeamContext,
-  opts: {tuJianArg: number | undefined; reducePct: number | undefined}
+  opts: {
+    critBasePct: number;
+    critDamagePct: number | undefined;
+    observed: readonly ObservedValue[];
+    reducePct: number | undefined;
+    tuJianArg: number | undefined;
+  }
 ): void {
   const presets = towerPresets();
   const spawnOrder = TOWER_QUALITY[layer % 5] ?? TOWER_QUALITY[1] ?? [1,1,1,1,1];
-  // 出手顺序:Battle_Action_Manager.ActionOrder 用 OrderByMin 按速度降序排整张角色表,
-  // 之后 Entry_Skill_76.WhenCulTarget 取 GetCha_Dead_Alive(不排序) 直接沿用该顺序,
-  // 所以敌人按速度从高到低 首领(2175) → 精英(2174) → 小怪(2173) 被依次命中.
   const qualities = [...spawnOrder].sort((left,right) => towerEnemy(layer,right).speed - towerEnemy(layer,left).speed);
   console.log(`\n--- 本层刷怪(MapRecorder.GetEnemyCount,层数%5=${String(layer % 5)})---`);
   console.log(`  ${spawnOrder.map((item,index) => `${String(index + 1)}.${QUALITY_NAME[item] ?? String(item)}`).join("  ")}`);
-  console.log(`  实际命中顺序(速度降序): ${qualities.map(item => QUALITY_NAME[item] ?? String(item)).join("  ")}`);
+  console.log(`  一轮群体技能的命中顺序(速度降序): ${qualities.map(item => QUALITY_NAME[item] ?? String(item)).join(" → ")}`);
 
-  console.log("\n--- 同一轮怒气技能内(按命中顺序,Mark 每命中一个目标 +1)---");
-  console.log(
-    "  位置 品级  图鉴增伤%  Mark层  敌HP      非暴击范围                非暴击期望  暴击范围                  暴击期望    暴击率 命中率 K"
-  );
-  for (let index = 0; index < qualities.length; index++) {
-    const quality = qualities[index] ?? 1;
+  const hits: LayerHit[] = qualities.map((quality,index) => {
     const preset = quality === 3 ? presets.boss : quality === 2 ? presets.elite : presets.normal;
     const tuJian = opts.tuJianArg ?? tuJianDamagePctOf(save,preset).pct;
-    const range = damageRangeOf("tower",layer,panel,towerEnemy(layer,quality),team,{
-      mark:           index,
-      reducePct:      opts.reducePct,
-      tuJianDamagePct:tuJian
-    });
-    const nonCritRng = `${formatSuoXie(range.nonCritRange[0])} ~ ${formatSuoXie(range.nonCritRange[1])}`;
+    return {
+      mark:    index,
+      quality,
+      range:   damageRangeOf("tower",layer,panel,towerEnemy(layer,quality),team,{
+        critBasePct:    opts.critBasePct,
+        critDamagePct:  opts.critDamagePct,
+        mark:           index,
+        reducePct:      opts.reducePct,
+        tuJianDamagePct:tuJian
+      }),
+      tuJian
+    };
+  });
+
+  console.log("\n--- 5 次命中:暴击范围 = 期望 × 0.95~1.05(Damage_Recorder Random.Range)---");
+  console.log("  序 品级  Mark  图鉴增伤  敌HP      暴击范围(±5%)               暴击期望   非暴击范围              命中率 暴击率 K");
+  for (const hit of hits) {
+    const {range} = hit;
     const critRng = `${formatSuoXie(range.critRange[0])} ~ ${formatSuoXie(range.critRange[1])}`;
+    const nonCritRng = `${formatSuoXie(range.nonCritRange[0])} ~ ${formatSuoXie(range.nonCritRange[1])}`;
     console.log(
-      `  ${String(index + 1).padStart(3)}  ${(QUALITY_NAME[quality] ?? "?").padEnd(4)}  ` +
-      `${String(tuJian).padStart(6)}%   ${String(index).padStart(4)}层  ` +
-      `${formatSuoXie(range.enemy.hp).padEnd(8)}  ${nonCritRng.padEnd(24)}  ` +
-      `${formatSuoXie(range.nonCrit).padEnd(10)}  ${critRng.padEnd(24)}  ` +
-      `${formatSuoXie(range.crit).padEnd(10)}  ` +
-      `${(range.critRate * 100).toFixed(0)}%  ${(range.hitRate * 100).toFixed(0)}%  ${String(range.k)}`
+      `  ${String(hit.mark + 1).padStart(2)}  ${(QUALITY_NAME[hit.quality] ?? "?").padEnd(4)}  ` +
+      `${String(hit.mark).padStart(4)}  ${String(hit.tuJian).padStart(7)}%  ${formatSuoXie(range.enemy.hp).padEnd(8)}  ` +
+      `${critRng.padEnd(26)}  ${formatSuoXie(range.crit).padEnd(9)}  ${nonCritRng.padEnd(23)}  ` +
+      `${(range.hitRate * 100).toFixed(0)}%  ${(range.critRate * 100).toFixed(0)}%  ${String(range.k)}`
     );
   }
 
-  console.log("\n--- 本层各位置 × Mark 层数(Mark 每次命中 +1,可跨多轮怒气技能累加)---");
-  const positionsOf = (quality: number): string => qualities
-    .map((item,index) => item === quality ? `第${String(index + 1)}位` : "")
-    .filter(item => item !== "")
-    .join("/");
-  for (const [name,quality,preset] of [["首领",3,presets.boss],["精英",2,presets.elite],["小怪",1,presets.normal]] as const) {
-    if (!qualities.includes(quality)) {continue;}
-    const tuJian = opts.tuJianArg ?? tuJianDamagePctOf(save,preset).pct;
-    const enemy = towerEnemy(layer,quality);
-    console.log(`\n${name} ${positionsOf(quality)}(图鉴增伤 ${String(tuJian)}%, HP ${formatSuoXie(enemy.hp)})`);
-    console.log("  Mark  非暴击范围                非暴击期望  暴击范围                  暴击期望");
-    for (let stack = 0; stack <= 12; stack++) {
-      const range = damageRangeOf("tower",layer,panel,enemy,team,{
-        mark:           stack,
-        reducePct:      opts.reducePct,
-        tuJianDamagePct:tuJian
-      });
-      const nonCritRng = `${formatSuoXie(range.nonCritRange[0])} ~ ${formatSuoXie(range.nonCritRange[1])}`;
-      const critRng = `${formatSuoXie(range.critRange[0])} ~ ${formatSuoXie(range.critRange[1])}`;
-      console.log(
-        `  ${String(stack).padStart(4)}  ${nonCritRng.padEnd(24)}  ` +
-        `${formatSuoXie(range.nonCrit).padEnd(10)}  ${critRng.padEnd(24)}  ${formatSuoXie(range.crit)}`
-      );
-    }
+  if (opts.observed.length > 0) {
+    printObservedMatch(hits,opts.observed,{
+      critBasePct:    opts.critBasePct,
+      panelCritDamage:opts.critDamagePct ?? panel.critDamage
+    });
   }
+}
+
+/**
+ * 把用户给的暴击伤害逐个丢进 5 次命中的范围里,打印落点与偏差,并给一条暴伤标定建议.
+ * @param hits 5 次命中.
+ * @param observed 观测到的暴击伤害(如 217/460/688 或 46.0垓).
+ * @param crit 暴伤面板值与乘区基数,用于换算标定后的 --critdmg.
+ */
+function printObservedMatch (
+  hits: readonly LayerHit[],
+  observed: readonly ObservedValue[],
+  crit: {critBasePct: number; panelCritDamage: number}
+): void {
+  console.log("\n--- 观测值落点核对(只比暴击范围)---");
+  const deviations: number[] = [];
+  for (const item of observed) {
+    const value = resolveObserved(item,hits);
+    const ranked = hits
+      .map(hit => ({deviation: value / hit.range.crit, hit}))
+      .sort((left,right) => Math.abs(Math.log(left.deviation)) - Math.abs(Math.log(right.deviation)));
+    const nearest = ranked[0];
+    if (nearest === undefined) {continue;}
+    deviations.push(nearest.deviation);
+    const inside = hits.filter(hit => value >= hit.range.critRange[0] && value <= hit.range.critRange[1]);
+    const position = `第${String(nearest.hit.mark + 1)}击 ${QUALITY_NAME[nearest.hit.quality] ?? "?"}(Mark${String(nearest.hit.mark)})`;
+    const percent = ((nearest.deviation - 1) * 100).toFixed(1);
+    if (inside.length > 0) {
+      console.log(`  ${formatSuoXie(value)} → ${position}  偏差 ${percent}%  [落在范围内]`);
+      continue;
+    }
+    console.log(`  ${formatSuoXie(value)} → ${position}  偏差 ${percent}%  [超出范围]`);
+  }
+  if (deviations.length < 2) {return;}
+  // 用 (最小比值 + 最大比值) / 2 居中:这样包住全部观测的窗口最窄,窗口半宽 = 最大偏差.
+  const center = (Math.min(...deviations) + Math.max(...deviations)) / 2;
+  const halfWidth = (Math.max(...deviations) - Math.min(...deviations)) / 2 / center;
+  const current = crit.panelCritDamage + crit.critBasePct;
+  const fitted = Math.round(current * center - crit.critBasePct);
+  console.log(
+    `\n  标定:${String(deviations.length)} 个观测的 观测/期望 落在 ${Math.min(...deviations).toFixed(4)} ~ ${Math.max(...deviations).toFixed(4)}，` +
+    `居中倍数 ${center.toFixed(4)}（窗口半宽 ±${(halfWidth * 100).toFixed(1)}%）`
+  );
+  console.log(
+    `  当前暴伤面板 ${String(crit.panelCritDamage)} + 基数 ${String(crit.critBasePct)}；` +
+    `整体居中后：--critdmg=${String(fitted)}（暴击倍率 ${(current * center / 100).toFixed(2)}）`
+  );
 }
 
 // ============================== 入口 ==============================
@@ -949,8 +1042,9 @@ function resolveScene (text: string): "tower" | "trial" | "zhongju" {
   return scene;
 }
 
-function enemyOf (scene: "tower" | "trial" | "zhongju",layer: number,challenge: number): EnemyStats {
-  if (scene === "tower") {return towerEnemy(layer);}
+// 单点报告的敌人:通天塔按 --preset 对应的品级取(1 小怪 / 2 精英 / 3 首领).
+function enemyOf (scene: "tower" | "trial" | "zhongju",layer: number,challenge: number,towerPinzhi = 3): EnemyStats {
+  if (scene === "tower") {return towerEnemy(layer,towerPinzhi);}
   if (scene === "trial") {return trialEnemy(layer);}
   const enemy = zhongJuEnemies().find(item => item.tiaoZhanID === challenge);
   if (enemy === undefined) {throw new Error(`config/zhongju.json 里没有 tiaoZhanID=${String(challenge)} 的终局敌人`);}
@@ -981,18 +1075,24 @@ export function verifyFinalDamage (sceneText: string,layerText?: string | number
   const presetIdx = argNumber(args,"preset") ?? presets.normal;
   const tuJianArg = argNumber(args,"tujian");
   const reducePct = argNumber(args,"reduce");
+  const critBasePct = argNumber(args,"critbase") ?? BAO_JI_BASE;
+  const critDamagePct = argNumber(args,"critdmg");
+  const observed = parseObserved(argString(args,"obs"));
   const tuJian = scene === "tower" ? tuJianDamagePctOf(save,presetIdx) : {level: 0,pct: 0,research: 0};
   const tuJianDamagePct = tuJianArg ?? tuJian.pct;
 
   printRageCheck(save,panel);
   printTeamContext(save,team);
 
-  const report = damageRangeOf(scene,layer,panel,enemyOf(scene,layer,challenge),team,{
+  const presetPinzhi = presetIdx === presets.boss ? 3 : presetIdx === presets.elite ? 2 : 1;
+  const report = damageRangeOf(scene,layer,panel,enemyOf(scene,layer,challenge,presetPinzhi),team,{
+    critBasePct,
+    critDamagePct,
     mark:           argNumber(args,"mark") ?? 0,
     reducePct,
     tuJianDamagePct
   });
-  const presetName = presetIdx === presets.boss ? "首领" : presetIdx === presets.elite ? "精英" : "小怪";
+  const presetName = QUALITY_NAME[presetPinzhi] ?? "小怪";
   printDamageRange(report,panel,{
     pct:    tuJianDamagePct,
     source: scene !== "tower"
@@ -1000,11 +1100,50 @@ export function verifyFinalDamage (sceneText: string,layerText?: string | number
       : tuJianArg !== undefined
         ? "手动 --tujian"
         : `${presetName}图鉴 Lv.${String(tuJian.level)}×研究54 Lv.${String(tuJian.research)}`
-  });
+  },critBasePct);
   if (scene === "tower") {
-    printTowerLayerTable(save,layer,panel,team,{reducePct,tuJianArg});
+    printTowerLayerTable(save,layer,panel,team,{critBasePct,critDamagePct,observed,reducePct,tuJianArg});
   }
   return report;
+}
+
+/**
+ * 解析 --obs=217,460,688:支持带单位(46.0垓)与不带单位(217);不带单位时按 5 次命中的量级自动补单位.
+ * @param text 逗号/空格分隔的伤害值.
+ * @returns 原始数值 + 显式单位;未传返回空数组.
+ */
+function parseObserved (text: string | undefined): ObservedValue[] {
+  if (text === undefined) {return [];}
+  const values: ObservedValue[] = [];
+  for (const piece of text.split(/[,，\s]+/u).filter(item => item !== "")) {
+    const matched = (/^(\d+(?:\.\d+)?)([万亿兆京垓秭穰沟涧正载极]?)$/u).exec(piece.trim());
+    if (matched?.[1] === undefined) {throw new Error(`伤害写法不对：${piece}（可用 217 / 46.0垓 / 1.5兆）`);}
+    const raw = Number(matched[1]);
+    if (!Number.isFinite(raw)) {throw new Error(`伤害写法不对：${piece}`);}
+    values.push({raw,unit: matched[2] === undefined || matched[2] === "" ? undefined : matched[2]});
+  }
+  return values;
+}
+
+/**
+ * 把观测值换算成绝对数值:写了单位就按单位换算,没写单位就选一个数量级让它落到各次命中的量级附近.
+ * @param item 解析结果.
+ * @param hits 5 次命中.
+ * @returns 绝对数值.
+ */
+function resolveObserved (item: ObservedValue,hits: readonly LayerHit[]): number {
+  if (item.unit !== undefined) {return item.raw * 10000 ** CN_UNITS.indexOf(item.unit);}
+  let best = item.raw;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (let power = 0; power < CN_UNITS.length; power++) {
+    const scaled = item.raw * 10000 ** power;
+    const score = Math.min(...hits.map(hit => Math.abs(Math.log10(scaled / hit.range.crit))));
+    if (score < bestScore) {
+      bestScore = score;
+      best = scaled;
+    }
+  }
+  return best;
 }
 
 // 打印阵容、羁绊档位与队友开战效果(全部来自存档 + config).
