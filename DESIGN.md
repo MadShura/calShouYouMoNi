@@ -6,7 +6,7 @@
 
 ## 目录用途
 
-- 脚本目录 `src`，配置数据目录 `src/config`，结果目录 `src/output`
+- 脚本目录 `src`，配置数据目录 `src/config`，结果目录 `output`
 - src/fanbianyi 反编译相关代码
 
 ### 脚本清单
@@ -17,9 +17,9 @@
 - `power-value.ts`：按反编译公式计算每种材料在“卖冥商换元宝买药”和“直接强化”之间的输出收益
 - `zhenyin.ts`：`pnpm zhenyin` 调用，第一个位置参数是本轮每分钟积分增加值（默认 71，即 13 块地总分；`--auto` 改为按当前归属己方的地块求和），剩余加分次数按存档 `JifenCulTime` 相位计算；常驻输出买贡献/买名次的最佳投入元宝数（不赚时给 0），`--invest` 另给逐档扫描表
 - `yulingshi-level.ts`：`pnpm yuling [目标等级]` 调用，按 `CulLevel_Up_Remand` 逐级累加到目标等级，扣现有经验后换算御灵宝典本数（每本经验含 AddYuLingShi_EXP 研究加成）与购买所需钱币（单价含 Store_Sell_Price 研究折扣），并列出突破次数与突破丹消耗
-- `jiban-value.ts`：按存档阵型 + 15 级御灵装备计算通天塔 1 万层与试炼 100 层的每击期望伤害，结果写 `src/output/羁绊排名.md`
-- `enemy-stats.ts`：按反编译公式计算三个场景的敌人属性（命中/闪避/暴击/抗暴/速度/减伤），导出 `TRIAL_ENEMY_100`、`TOWER_ENEMY_10000`、`ZHONG_JU`、`hitRate()` 供其他脚本直接 import；`pnpm enemy [通|试|终] [层数...]` 查指定场景（层数支持 `100` / `1w` / `1.5w`，可写多个，试炼默认 100、通天塔默认 1w），不带参数输出全表并写 `src/output/敌人属性.md`
-- `yingling-output.ts`：不读存档，遍历全部英灵的 5 人组合与魔/神转职，按技能倍率 + 羁绊 + 负面层数 + 资源面板 + 研究 + 图鉴算输出，结果写 `src/output/输出英灵排名.md`，VIP 路线写 `输出英灵排名_VIP.md`
+- `jiban-value.ts`：按存档阵型 + 15 级御灵装备计算通天塔 1 万层与试炼 100 层的每击期望伤害，结果写 `output/羁绊排名.md`
+- `enemy-stats.ts`：按反编译公式计算三个场景的敌人属性（命中/闪避/暴击/抗暴/速度/减伤），导出 `TRIAL_ENEMY_100`、`TOWER_ENEMY_10000`、`ZHONG_JU`、`hitRate()` 供其他脚本直接 import；`pnpm enemy [通|试|终] [层数...]` 查指定场景（层数支持 `100` / `1w` / `1.5w`，可写多个，试炼默认 100、通天塔默认 1w），不带参数输出全表并写 `output/敌人属性.md`
+- `yingling-output.ts`：不读存档，遍历全部英灵的 5 人组合与魔/神转职，按技能倍率 + 羁绊 + 负面层数 + 资源面板 + 研究 + 图鉴算输出，结果写 `output/输出英灵排名.md`，VIP 路线写 `输出英灵排名_VIP.md`
 - `xunbao-tili.ts`：按 `XunBaoManager` 的层数、入口格免费、每层 15 个付费格、第 10 层跑满，计算寻宝期望体力；支持已知大奖、隐藏大奖、每开一格 p 概率下层、每层全开四种口径
 - `composite-compare.ts`（`src` 根目录）：`reverseWukongCoin` 反推金币——求「孙悟空神+4 人西游 Lv.3(人皇印队)」从零面板下打终局第 5 层、满足命中100%+一击必杀+速度更快的最小钱币；只算两种：全速度+鸟翔阵(补命中)与全幸运+天覆阵(补速度)；执行 `pnpm exec tsx src/composite-compare.ts`
 - `coin-to-zhanli.ts`（`src` 根目录）：固定钱币 → 11 种材料 + 自选残念锦囊 + 6 个材料宝箱 → 20 条主角面板输出的完整对比

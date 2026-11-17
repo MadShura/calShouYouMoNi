@@ -36,7 +36,7 @@ import type {YingLingConfig} from "./tools.ts";
  * - 神通27:按目标身上全部负面层数之和增伤
  */
 const HERE = import.meta.dirname;
-const OUT_DIR = join(HERE,"..","output");
+const OUT_DIR = join(HERE,"output");
 const SLOT_COUNT = 5;
 const EQUIP_SLOT_COUNT = 10;
 

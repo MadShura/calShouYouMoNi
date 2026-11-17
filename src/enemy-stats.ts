@@ -14,8 +14,8 @@ import {towerAddition} from "./game-formulas.ts";
  * 判定 Random.Range(0,101) <= Final_MZ,所以命中率 = clamp((Final_MZ+1)/101, 0, 1)
  */
 const HERE = import.meta.dirname;
-const CONFIG_DIR = join(HERE,"..","config");
-const OUT_DIR = join(HERE,"..","output");
+const CONFIG_DIR = join(HERE,"config");
+const OUT_DIR = join(HERE,"output");
 export interface EnemyStats {
   crit:         number;
   critResist:   number;

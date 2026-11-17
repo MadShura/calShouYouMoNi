@@ -25,7 +25,7 @@ import type {ShiLianSave} from "./tools.ts";
 // #region 类型与只读数据加载
 const DEFAULT_GAME_DIR = String.raw`D:\game\steam\steamapps\common\MoNiShouYou`;
 const HERE = import.meta.dirname;
-const CONFIG_DIR = join(HERE,"..","config");
+const CONFIG_DIR = join(HERE,"config");
 
 // 抽奖等级按用户要求统一取 6 级(GameRecorder.GetChouJiangLevel 阈值 50000)
 const POOL_LEVEL = 6;

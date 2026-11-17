@@ -605,7 +605,7 @@ function main (): void {
   }
   lines.push("说明：","1、每击伤害 = 攻击 × 攻防系数 / 100 × 命中系数 × 暴击期望 × 伤害加成 × 羁绊倍率 × 技能倍率 × (1-减伤)。","2、御灵装备按 15 级后羿弓 + 15 级金玉令 + 6 颗 15 级宝石，全部加在“主角+最高攻英灵”这名输出位身上。","3、命中按默认 100% 口径，只把后羿弓的伤害 ×0.8 计入；命中/闪避类光环不再参与计算。","4、武松 +35 增伤加到“伤害加成”，+20% 攻击加到“攻击百分比”，都只对输出位生效。","5、连击/反击/流血/控制/治疗类羁绊按你的要求不计入。");
   const text = lines.join("\n");
-  const outPath = argString(args,"out") ?? join(HERE,"..","output","羁绊排名.md");
+  const outPath = argString(args,"out") ?? join(HERE,"output","羁绊排名.md");
   if (!existsSync(dirname(outPath))) {
     mkdirSync(dirname(outPath),{recursive: true});
   }
