@@ -19,7 +19,7 @@
  * ② 前置:拿整段小时数的点卡收益;再按阶梯抽次数(1000抽 Lv1,4000抽 Lv3,5000抽 Lv4,20000抽 Lv5,
  * 20000抽 Lv5)模拟抽奖,奖池取权重期望.
  * ③ 逐小时循环:每小时依次核查 任务奖励 / 点卡 / 元宝购物 / 抽奖(8h 倍数,两组奖池选收益高) /
- * 阵营(8h 倍数) / 寻宝(10h 倍数,源码 RefreTime_min=600分=36000秒) / 地图挂机掉落 / 扫荡(不能被一击秒杀时,春秋蝉1个=1小时) /
+ * 阵营(8h 倍数) / 寻宝(10h 倍数) / 地图挂机掉落 / 扫荡(每小时判定,不能被一击秒杀时春秋蝉1个=1小时) /
  * 物资转面板 / 三条件判定;第一次满足即跳出,记录达标小时.
  * - 抽奖券(prop10)只从地图/扫荡掉落产出,抽奖消耗券;奖池权重期望来自游戏目录 JiangChi_Data_Json.txt.
  * - 元宝购物正反馈:每结算点攒够整组买 4 翅膀材料(各2个/48888)+孟婆汤(够转生不买)+藏宝图(补满100%不买);
@@ -50,6 +50,11 @@ import {formatSuoXie} from "./readSave.ts";
 import {buildResourcePanel} from "./yingling-output.ts";
 import type {CliArgs} from "./readSave.ts";
 import type {MapID} from "./data.ts";
+import type {
+  BreakAlloc,ChoujiangState,CheckResult,DropMap,FinalPanel,GroupPlan,Hero,
+  HourRecord,HourStep,PreRouteResult,ShopState,SimSnap,VipDetail,XunbaoDetail,ZhenyingDetail
+} from "./types.ts";
+import {CALC_CACHE,cacheFlush,cacheSize} from "./calc-cache.ts";
 
 // #region 常量
 const BASE_HOURS = 80;
@@ -164,94 +169,106 @@ const CHUNQIU_HOURS = 1;                    // 春秋蝉1个 = 1小时扫荡(用
 // 任务奖励(TaskData_Json.txt):taskType=1 达成式任务,key=条件里程碑→一次性奖励.本计算只取能确定触发的骨架.
 // BigInt 版 CulDamagePercent(Damage_Recorder.cs:138-161),整除向零截断.
 function culDamagePercentBig (atk: bigint,def: bigint): bigint {
-  if (def <= 0n) {return atk > 0n ? 100n : 50n;}
-  if (atk === def) {return 50n;}
-  if (atk > def) {
-    if (atk >= 3n * def) {return 100n;}
-    return 50n + (atk - def) * 50n / def * 2n;
-  }
-  if (atk * 3n <= def) {return 2n;}
-  return 2n + (atk * 3n - def) * 48n / (def * 2n);
+  return CALC_CACHE.get("culDamagePercentBig",[atk,def],(): bigint => {
+    if (def <= 0n) {return atk > 0n ? 100n : 50n;}
+    if (atk === def) {return 50n;}
+    if (atk > def) {
+      if (atk >= 3n * def) {return 100n;}
+      return 50n + (atk - def) * 50n / def * 2n;
+    }
+    if (atk * 3n <= def) {return 2n;}
+    return 2n + (atk * 3n - def) * 48n / (def * 2n);
+  });
 }
 
 // #endregion
 // #region 闭式工具
 // Σ_{i=0}^{n-1} floor((a*i+b)/m),AtCoder floor_sum(BigInt 版);a,b>=0,m>0.
 function floorSum (n: bigint,m: bigint,a: bigint,b: bigint): bigint {
-  let ans = 0n;
-  let aa = a,
+  return CALC_CACHE.get("floorSum",[n,m,a,b],(): bigint => {
+    let ans = 0n;
+    let aa = a,
 bb = b,
 mm = m,
 nn = n;
-  for (;;) {
-    if (aa >= mm) {
-      ans += (nn - 1n) * nn * (aa / mm) / 2n;
-      aa %= mm;
+    for (;;) {
+      if (aa >= mm) {
+        ans += (nn - 1n) * nn * (aa / mm) / 2n;
+        aa %= mm;
+      }
+      if (bb >= mm) {
+        ans += nn * (bb / mm);
+        bb %= mm;
+      }
+      const y = aa * nn + bb;
+      if (y < mm) {break;}
+      nn = y / mm;
+      bb = y % mm;
+      [mm,aa] = [aa,mm];
     }
-    if (bb >= mm) {
-      ans += nn * (bb / mm);
-      bb %= mm;
-    }
-    const y = aa * nn + bb;
-    if (y < mm) {break;}
-    nn = y / mm;
-    bb = y % mm;
-    [mm,aa] = [aa,mm];
-  }
-  return ans;
+    return ans;
+  });
 }
 
 // 前 n 次突破的累计增益:Σ(2+7k)=2n+7n(n+1)/2.
-const sumGain = (n: bigint): bigint => (n <= 0n ? 0n : 2n * n + 7n * n * (n + 1n) / 2n);
+const sumGain = (n: bigint): bigint => CALC_CACHE.get("sumGain",[n],(): bigint =>
+  n <= 0n ? 0n : 2n * n + 7n * n * (n + 1n) / 2n);
 
 // #endregion
 // #region 期望掉落(闭式)
-type DropMap = Record<string,number>;
 
 // 达到某累计增益所需最少突破次数.
 function minBreaksForGain (gain: bigint): bigint {
-  if (gain <= 0n) {return 0n;}
-  let hi = 1n,
+  return CALC_CACHE.get("minBreaksForGain",[gain],(): bigint => {
+    if (gain <= 0n) {return 0n;}
+    let hi = 1n,
 lo = 0n;
-  while (sumGain(hi) < gain) {hi *= 2n;}
-  while (lo < hi) {
-    const mid = (lo + hi) / 2n;
-    if (sumGain(mid) >= gain) {hi = mid;} else {lo = mid + 1n;}
-  }
-  return lo;
+    while (sumGain(hi) < gain) {hi *= 2n;}
+    while (lo < hi) {
+      const mid = (lo + hi) / 2n;
+      if (sumGain(mid) >= gain) {hi = mid;} else {lo = mid + 1n;}
+    }
+    return lo;
+  });
 }
 
 // 御灵宝典本数 → 御灵等级/四维攻/突破次数(等价 composite-compare:yulingLevel).
 function yuCumNeed (level: bigint): bigint {
-  if (level <= 1n) {return 0n;}
-  const last = level - 1n,
+  return CALC_CACHE.get("yuCumNeed",[level],(): bigint => {
+    if (level <= 1n) {return 0n;}
+    const last = level - 1n,
 rem = last % 10n,
 tens = last / 10n;
-  const full = 100n * (10n * tens * (tens - 1n) * (2n * tens - 1n) / 6n
-    + 19n * tens * (tens - 1n) / 2n + 9n * tens);
-  const partial = 20n * (tens + 1n) * (5n * tens * (rem + 1n) + rem * (rem + 1n) / 2n);
-  return full + partial;
+    const full = 100n * (10n * tens * (tens - 1n) * (2n * tens - 1n) / 6n
+      + 19n * tens * (tens - 1n) / 2n + 9n * tens);
+    const partial = 20n * (tens + 1n) * (5n * tens * (rem + 1n) + rem * (rem + 1n) / 2n);
+    return full + partial;
+  });
 }
 function yulingLevel (books: bigint): {atk: bigint; breaks: bigint; level: bigint} {
-  const exp = 200n * books;
-  let hi = 2n,
+  return CALC_CACHE.get("yulingLevel",[books],(): {atk: bigint; breaks: bigint; level: bigint} => {
+    const exp = 200n * books;
+    let hi = 2n,
 lo = 1n;
-  while (yuCumNeed(hi) <= exp) {hi *= 2n;}
-  while (lo < hi) {
-    const mid = (lo + hi + 1n) / 2n;
-    if (yuCumNeed(mid) <= exp) {lo = mid;} else {hi = mid - 1n;}
-  }
-  return {atk: 125n * lo * (lo - 1n),breaks: lo / 10n,level: lo};
+    while (yuCumNeed(hi) <= exp) {hi *= 2n;}
+    while (lo < hi) {
+      const mid = (lo + hi + 1n) / 2n;
+      if (yuCumNeed(mid) <= exp) {lo = mid;} else {hi = mid - 1n;}
+    }
+    return {atk: 125n * lo * (lo - 1n),breaks: lo / 10n,level: lo};
+  });
 }
 
 // 灵纹 → 天覆阵等级/四维攻增量(等价 composite-compare:zhenLevel).
 function zhenLevel (lingwen: bigint): {atk: bigint; level: bigint} {
-  const approx = (1 + Math.sqrt(1 + 0.8 * Number(lingwen))) / 2;
-  let level = BigInt(Math.max(1,Math.floor(approx)));
-  if (level < 1n) {level = 1n;}
-  while (level > 1n && 5n * level * (level - 1n) > lingwen) {level--;}
-  while (5n * (level + 1n) * level <= lingwen) {level++;}
-  return {atk: 200n * (level - 1n) + 35n * (level - 1n) * level / 2n,level};
+  return CALC_CACHE.get("zhenLevel",[lingwen],(): {atk: bigint; level: bigint} => {
+    const approx = (1 + Math.sqrt(1 + 0.8 * Number(lingwen))) / 2;
+    let level = BigInt(Math.max(1,Math.floor(approx)));
+    if (level < 1n) {level = 1n;}
+    while (level > 1n && 5n * level * (level - 1n) > lingwen) {level--;}
+    while (5n * (level + 1n) * level <= lingwen) {level++;}
+    return {atk: 200n * (level - 1n) + 35n * (level - 1n) * level / 2n,level};
+  });
 }
 const add = (drops: DropMap,key: string,value: number): void => {
   if (value > 0) {drops[key] = (drops[key] ?? 0) + value;}
@@ -259,64 +276,9 @@ const add = (drops: DropMap,key: string,value: number): void => {
 
 // #endregion
 // #region 面板
-interface FinalPanel {
-  atkPct:          bigint;
-  baseAtk:         bigint;
-  books:           number;
-  breaks:          bigint;
-  crit:            bigint;
-  critDamage:      bigint;
-  dmgAdd:          bigint;
-  extraAtk:        number;
-  extraAtkPct:     number;
-  extraCrit:       number;
-  extraCritDamage: number;
-  extraDmgAdd:     number;
-  extraHit:        number;
-  extraPen:        number;
-  extraSpeed:      number;
-  forgeCrafts:     number;     // 受时间限制实际打造的装备件数
-  forgeHantieUsed: number; // 实际消耗的寒铁
-  forgeLevel:      number;      // 打造结束时的炼器等级
-  hitFlat:         bigint;
-  lingwen:         number;
-  lucky:           bigint;
-  pen:             bigint;
-  speed:           bigint;
-  zhenLevel:       bigint;
-}
-
-interface VipDetail {
-  hitCrit: number;         // 每2级 +1 命中/+1 暴击
-  level:   number;
-  remain:  number;
-  spent:   number;
-  yuanbao: number;
-}
-
+// 面板/寻宝/阵营/VIP 的类型定义已搬至 ./types.ts
 // #endregion
 // #region 寻宝 / 阵营 / VIP(口径见常量区)
-interface XunbaoDetail {
-  advCost:       number;         // 前9层走到大奖消耗
-  block10:       number;         // 第10层开格数
-  block9:        number;          // 第9层加开格数
-  drops:         DropMap;          // 每轮掉落(不含元宝)
-  layer1Cost:    number;
-  layer2to9Cost: number;
-  remain:        number;          // 进第10层前剩余体力
-  totalTili:     number;       // 一轮可用体力
-  used:          number;
-  yuanbao:       number;         // 每轮元宝大奖
-}
-
-interface ZhenyingDetail {
-  baseReward:  number;
-  rankReward:  number;
-  roundMul:    number;
-  score:       number;
-  shareReward: number;
-  yuanbao:     number;
-}
 
 /**
  * 单张地图推 layers 层的期望掉落.
@@ -324,6 +286,9 @@ interface ZhenyingDetail {
  * 额外个数按 floorSum 闭式求和,不逐波循环.
  */
 function expectedDrops (map: MapID,layers: number): DropMap {
+  return CALC_CACHE.get("expectedDrops",[map,Math.floor(layers)],(): DropMap => expectedDropsUncached(map,layers));
+}
+function expectedDropsUncached (map: MapID,layers: number): DropMap {
   const cfg = MAPS[map];
   const n = Math.floor(layers);
   const drops: DropMap = {};
@@ -398,82 +363,88 @@ function residueCount (n: number,a: number): number {
 
 // 元宝全部升 VIP(yingling-output.ts vipLevel):返回等级/命中暴击加成.
 function vipFromYuanbao (yuanbao: number): VipDetail {
-  let level = 0,
+  return CALC_CACHE.get("vipFromYuanbao",[yuanbao],(): VipDetail => {
+    let level = 0,
 spent = 0;
-  for (;;) {
-    const cost = vipLevelUpCost(level + 1);
-    if (spent + cost > yuanbao) {break;}
-    spent += cost;
-    level += 1;
-  }
-  return {hitCrit: Math.trunc(level / 2),level,remain: yuanbao - spent,spent,yuanbao};
+    for (;;) {
+      const cost = vipLevelUpCost(level + 1);
+      if (spent + cost > yuanbao) {break;}
+      spent += cost;
+      level += 1;
+    }
+    return {hitCrit: Math.trunc(level / 2),level,remain: yuanbao - spent,spent,yuanbao};
+  });
 }
 
 // 单轮寻宝:前9层已知大奖最短路径,余力从第10层往下逐层开满付费格.
 // wing4 = 王者之翼等级(寻宝大奖+5%/级无封顶,整份翻倍概率=等级%封顶100,体力恢复+2%/级封顶250),
 // cangbaotu = 藏宝图印记(掉率+1‰/点,补满每格权重到1000‰).
 function xunbaoRound (wing4: number,cangbaotu: number): XunbaoDetail {
-  const layer1Cost = XB_FIRST_KNOWN;                       // 第1层:3.2 格 × 1点
-  let layer2to9Cost = 0;
-  for (let layer = 2; layer <= XB_ADVANCE_LAYERS; layer++) {
-    layer2to9Cost += XB_LATER_KNOWN * layer;                   // 第 k 层:2.667 格 × k 点
-  }
-  const advCost = layer1Cost + layer2to9Cost;
+  return CALC_CACHE.get("xunbaoRound",[wing4,cangbaotu],(): XunbaoDetail => {
+    const layer1Cost = XB_FIRST_KNOWN;                       // 第1层:3.2 格 × 1点
+    let layer2to9Cost = 0;
+    for (let layer = 2; layer <= XB_ADVANCE_LAYERS; layer++) {
+      layer2to9Cost += XB_LATER_KNOWN * layer;                   // 第 k 层:2.667 格 × k 点
+    }
+    const advCost = layer1Cost + layer2to9Cost;
 
-  // 每轮体力:满 150 + 一轮自然恢复 36000/300=120 × 翅膀4恢复倍率(1+2%×min(L,250)).
-  const recoverMul = 1 + 0.02 * Math.min(wing4,WING4_RECOVER_CAP);
-  const totalTili = XB_FULL_TILI + XB_ROUND_SECONDS / XB_RECOVER_SECONDS * recoverMul;
+    // 每轮体力:满 150 + 一轮自然恢复 36000/300=120 × 翅膀4恢复倍率(1+2%×min(L,250)).
+    const recoverMul = 1 + 0.02 * Math.min(wing4,WING4_RECOVER_CAP);
+    const totalTili = XB_FULL_TILI + XB_ROUND_SECONDS / XB_RECOVER_SECONDS * recoverMul;
 
-  // 余力从第10层往下逐层开满付费格:每层15格,每格扣当前层数点体力.
-  let remain = Math.max(0,totalTili - advCost);
-  let block10 = 0,
+    // 余力从第10层往下逐层开满付费格:每层15格,每格扣当前层数点体力.
+    let remain = Math.max(0,totalTili - advCost);
+    let block10 = 0,
 block9 = 0,
 extraBlocks = 0;
-  for (let layer = 10; layer >= 1; layer--) {
-    const n = Math.min(XB_PAID_BLOCKS,Math.floor(remain / layer));
-    remain -= n * layer;
-    if (layer === 10) {block10 = n;} else if (layer === 9) {block9 = n;}
-    extraBlocks += n;
-  }
-  const used = totalTili - remain;
-  const drops: DropMap = {};
+    for (let layer = 10; layer >= 1; layer--) {
+      const n = Math.min(XB_PAID_BLOCKS,Math.floor(remain / layer));
+      remain -= n * layer;
+      if (layer === 10) {block10 = n;} else if (layer === 9) {block9 = n;}
+      extraBlocks += n;
+    }
+    const used = totalTili - remain;
+    const drops: DropMap = {};
 
-  // 每格期望 = 固定数 × min(1000, 权重‰ + 藏宝图)/1000 × 整份翻倍期望(1 + 等级%/100).
-  const dropBonus = 1 + Math.min(wing4,WING4_DOUBLE_CAP) / 100;
-  for (const [key,weight] of XB_DROP_WEIGHTS) {
-    const rate = Math.min(1000,weight + cangbaotu) / 1000;
-    add(drops,key,XB_GRID_FIXED * rate * dropBonus * extraBlocks);
-  }
+    // 每格期望 = 固定数 × min(1000, 权重‰ + 藏宝图)/1000 × 整份翻倍期望(1 + 等级%/100).
+    const dropBonus = 1 + Math.min(wing4,WING4_DOUBLE_CAP) / 100;
+    for (const [key,weight] of XB_DROP_WEIGHTS) {
+      const rate = Math.min(1000,weight + cangbaotu) / 1000;
+      add(drops,key,XB_GRID_FIXED * rate * dropBonus * extraBlocks);
+    }
 
-  // 大奖 = 20488 × (100 + 5×翅膀4)/100,再乘整份翻倍期望.
-  const yuanbao = XB_JACKPOT * (100 + 5 * wing4) / 100 * dropBonus;
-  return {
+    // 大奖 = 20488 × (100 + 5×翅膀4)/100,再乘整份翻倍期望.
+    const yuanbao = XB_JACKPOT * (100 + 5 * wing4) / 100 * dropBonus;
+    return {
 advCost,
 block10,
 block9,
 drops,
-    layer1Cost,
+      layer1Cost,
 layer2to9Cost,
 remain: Math.max(0,totalTili - advCost),
 totalTili,
 used,
 yuanbao
-};
+    };
+  });
 }
 
 // 阵营单轮最高奖励(zhenyin.ts settle,从头算,不算王者之翼).
 // wing3 = 王者之翼(五彩之晶)等级,阵营结算元宝 ×(100+5×L)/100(源码无封顶).
 function zhenyingRound (wing3: number): ZhenyingDetail {
-  const score = ZY_TICKS * ZY_RATE;                            // 479 × 71 = 34009
-  const rankReward = Math.floor(score * ZY_RANK1_RATE / 100);  // 第1名 25%
-  const halfScore = Math.floor(score / 2);
-  const shareReward = Math.floor(halfScore * ZY_SHARE);        // 50% 分润 × 0.99
-  const baseReward = rankReward + shareReward;
-  const roundMul = (10 + 1) / 10;                              // Round=1,(10+R)/10
-  const wingMul = 1 + ZY_WING * 5 / 100;                       // 不算王者之翼 ×1
-  const base = Math.floor(baseReward * roundMul * wingMul);
-  const yuanbao = base * (100 + 5 * wing3) / 100;              // 翅膀3 阵营元宝加成
-  return {baseReward,rankReward,roundMul,score,shareReward,yuanbao};
+  return CALC_CACHE.get("zhenyingRound",[wing3],(): ZhenyingDetail => {
+    const score = ZY_TICKS * ZY_RATE;                            // 479 × 71 = 34009
+    const rankReward = Math.floor(score * ZY_RANK1_RATE / 100);  // 第1名 25%
+    const halfScore = Math.floor(score / 2);
+    const shareReward = Math.floor(halfScore * ZY_SHARE);        // 50% 分润 × 0.99
+    const baseReward = rankReward + shareReward;
+    const roundMul = (10 + 1) / 10;                              // Round=1,(10+R)/10
+    const wingMul = 1 + ZY_WING * 5 / 100;                       // 不算王者之翼 ×1
+    const base = Math.floor(baseReward * roundMul * wingMul);
+    const yuanbao = base * (100 + 5 * wing3) / 100;              // 翅膀3 阵营元宝加成
+    return {baseReward,rankReward,roundMul,score,shareReward,yuanbao};
+  });
 }
 const numOf = (drops: DropMap,key: string): number => Math.floor(drops[key] ?? 0);
 
@@ -486,54 +457,9 @@ const BASE = buildResourcePanel(BASE_ARGS);
 // 把 drops 全部按 calzhanli tozhanli 转成面板增量(缓存:同一份 drops + vipHit 只算一次).
 const PANEL_CACHE = new Map<string,FinalPanel>();
 
-// 一组对比的"资源分配方法":每组自己写一个 allocate,告诉通用循环如何把御灵突破分到各属性.
-// 大循环/伤害链保持通用——只消费 allocate 的结果,不写 if(组) 分支.
-interface BreakAlloc {
-  atkBreaks:   bigint;   // 投攻击的突破次数(→ baseAtk)
-  atkPctExtra: bigint;   // 阵法带来的攻击%修正(天覆=+阵法等级%;鸟翔=去掉天覆面板15%)
-  baseAtk:     bigint;   // 分配后基础攻
-  capBreaks:   bigint;   // 投幸运到 5W 保掉落的突破次数
-  dmgAddExtra: bigint;   // 阵法带来的伤害加成(鸟翔=速度差转增伤,封顶 int 上限)
-  hit:         bigint;   // 分配后命中
-  lucky:       bigint;   // 分配后幸运
-  luckyBreaks: bigint;   // 余下投幸运(命中链)的突破次数
-  pen:         bigint;   // 分配后穿透
-  penBreaks:   bigint;   // 投穿透的突破次数(→ pen)
-  speed:       bigint;   // 分配后速度
-  speedBreaks: bigint;   // 投速度的突破次数
-}
-
-interface CheckResult {
-  atkBreaks:   bigint;       // 该组投到攻击的突破
-  capBreaks:   bigint;       // 先把幸运堆到 5W 用掉的突破
-  damage:      bigint;
-  dmgAddExtra: bigint;       // 鸟翔阵速度差增伤
-  hit:         bigint;
-  hitOk:       boolean;
-  killOk:      boolean;
-  lucky:       bigint;
-  luckyBreaks: bigint;     // 余下给幸运(命中链)的突破
-  luckyFull:   boolean;      // 幸运是否已达 5W(掉落 100%)
-  pass:        boolean;
-  penBreaks:   bigint;       // 该组投到穿透的突破
-  speed:       bigint;
-  speedBreaks: bigint;     // 余下给速度的突破
-  speedOk:     boolean;
-}
-
-interface GroupPlan {
-  allocate: (panel: FinalPanel,hero: Hero) => BreakAlloc; // 该组如何分配突破资源
-  bucket:   (hit: bigint) => bigint;                       // 该英灵技能百分比乘区
-  hero:     Hero;
-  hitOk:    (hit: bigint) => boolean;                      // 该英灵命中是否达标
-  name:     string;
-  sec:      number;
-  zhenfa:   "niaoxiang" | "tianfu";
-}
-
+// BreakAlloc/CheckResult/GroupPlan/Hero 类型定义已搬至 ./types.ts
 // #endregion
 // #region 伤害与三条件
-type Hero = "wukong" | "yunxiao";
 
 // 先把幸运堆到 5W(确保地图掉落 100%)所需突破次数——所有组的共同硬前提.
 const LUCKY_CAP = 50000n;
@@ -584,25 +510,29 @@ function speedToPass (panel: FinalPanel,left: bigint): bigint {
 
 // 孙悟空技能乘区:葫芦78% × 神通15 × 西行 Lv3(八戒-20闪避);命中靠幸运链 hitRate 判定.
 function wukongBucket (hit: bigint): bigint {
-  const f1 = (100n + hit) * HIT_SCALE / 100n;
-  const s15 = hit < SHEN_TONG_15_CAP ? hit : SHEN_TONG_15_CAP;
-  const f2 = (100n + s15) * HIT_SCALE / 100n;
-  const xi = hit - ENEMY_DODGE + 20n > 0n ? hit - ENEMY_DODGE + 20n : 0n;
-  const f3 = (100n + xi) * HIT_SCALE / 100n;
-  return f1 * f2 / HIT_SCALE * f3 / HIT_SCALE;
+  return CALC_CACHE.get("wukongBucket",[hit],(): bigint => {
+    const f1 = (100n + hit) * HIT_SCALE / 100n;
+    const s15 = hit < SHEN_TONG_15_CAP ? hit : SHEN_TONG_15_CAP;
+    const f2 = (100n + s15) * HIT_SCALE / 100n;
+    const xi = hit - ENEMY_DODGE + 20n > 0n ? hit - ENEMY_DODGE + 20n : 0n;
+    const f3 = (100n + xi) * HIT_SCALE / 100n;
+    return f1 * f2 / HIT_SCALE * f3 / HIT_SCALE;
+  });
 }
 
 // 云霄技能乘区:普攻80% × 后羿弓0.8 × 神通27 × 神通15 × 西行 Lv2 × 神通20;命中恒达标.
 function yunxiaoBucket (hit: bigint): bigint {
-  const s15 = hit < SHEN_TONG_15_CAP ? hit : SHEN_TONG_15_CAP;
-  const gap = hit > ENEMY_DODGE ? hit - ENEMY_DODGE : 0n;
-  const xi = gap * 75n / 100n;
-  let b = 80n * HIT_SCALE / 100n;
-  b = b * (80n * HIT_SCALE / 100n) / HIT_SCALE;
-  b = b * (102n * HIT_SCALE / 100n) / HIT_SCALE;
-  b = b * ((100n + s15) * HIT_SCALE / 100n) / HIT_SCALE;
-  b = b * ((100n + xi) * HIT_SCALE / 100n) / HIT_SCALE;
-  return b * (130n * HIT_SCALE / 100n) / HIT_SCALE;
+  return CALC_CACHE.get("yunxiaoBucket",[hit],(): bigint => {
+    const s15 = hit < SHEN_TONG_15_CAP ? hit : SHEN_TONG_15_CAP;
+    const gap = hit > ENEMY_DODGE ? hit - ENEMY_DODGE : 0n;
+    const xi = gap * 75n / 100n;
+    let b = 80n * HIT_SCALE / 100n;
+    b = b * (80n * HIT_SCALE / 100n) / HIT_SCALE;
+    b = b * (102n * HIT_SCALE / 100n) / HIT_SCALE;
+    b = b * ((100n + s15) * HIT_SCALE / 100n) / HIT_SCALE;
+    b = b * ((100n + xi) * HIT_SCALE / 100n) / HIT_SCALE;
+    return b * (130n * HIT_SCALE / 100n) / HIT_SCALE;
+  });
 }
 const wukongHitOk  = (hit: bigint): boolean => hitRate(Number(hit),ENEMY_5.dodge) >= 1;
 const yunxiaoHitOk = (_hit: bigint): boolean => true;
@@ -723,7 +653,8 @@ zhenLevel:       zhen.level
 
 // 速度更快需要的最少突破(起点速度 + 其它速度增量后仍需补的部分).
 function speedBreaksNeeded (baseSpeed: bigint): bigint {
-  return minBreaksForGain(ENEMY_SPEED + 1n - baseSpeed);
+  return CALC_CACHE.get("speedBreaksNeeded",[baseSpeed],(): bigint =>
+    minBreaksForGain(ENEMY_SPEED + 1n - baseSpeed));
 }
 
 // 4 组对比(finalcal.md):每组自带 allocate,告诉通用循环"余下突破怎么分".
@@ -791,21 +722,7 @@ zhenfa: "niaoxiang"
   }
 ];
 
-// 购物/翅膀正反馈的逐轮状态(每个 8h 阵营/10h 寻宝结算点先购物再结算).
-interface ShopState {
-  buyCangbaotu:  number;          // 累计买藏宝图个数
-  buyMengpo:     number;          // 累计买孟婆汤组数
-  buyWing:       number;          // 累计买翅膀材料组数(4种合计)
-  cangbaotu:     number;          // 当前藏宝图印记
-  events:        number;          // 发生的结算点数(8h/10h 去重)
-  mengpo:        number;          // 当前孟婆汤持有
-  spentShopping: number;          // 购物花掉元宝
-  vipPool:       number;          // 投入 VIP 的元宝累计
-  wing:          [number,number,number,number]; // 翅膀 1~4 当前等级
-  wingYuanbao:   number;          // 翅膀1 挂机掉元宝累计
-  yuanbao:       number;          // 当前可用于购物的元宝余额
-  zhuan:         number;          // 当前转生次数
-}
+// ShopState 类型定义已搬至 ./types.ts
 
 // 单个结算点购物:用户口径"一轮要买的东西 = 4种翅膀(各2个)+孟婆汤(2个,够转生不买)
 // +藏宝图(1个,补满100%不买)",攒够这一整组就一次买齐;仙葫药/灵根药固定不买(体力已够开满全10层).
@@ -847,35 +764,7 @@ function buyRound (s: ShopState): void {
 const ZY_HOURS = ZY_ROUND_SECONDS / SECONDS_PER_HOUR;   // 8
 const XB_HOURS = XB_ROUND_SECONDS / SECONDS_PER_HOUR;   // 10(寻宝源码 RefreTime_min*60=36000s)
 
-// 抽奖状态:累计抽奖次数决定等级;每 8h 在两组奖池间选期望收益高的一组.
-interface ChoujiangState {
-  count:     number;   // 累计已抽次数(决定等级阈值)
-  draws:     number;   // 实际抽的次数
-  pool3Hit:  number;   // 选组 A 的次数
-  pool4Hit:  number;   // 选组 B 的次数
-  ticketGet: number;   // 从掉落累计获得的抽奖券
-}
-
-// ============ 逐小时大循环模拟状态 ============
-// 单个英灵的一次完整模拟状态.所有掉落累计在 drops,购物/翅膀/抽奖状态单独维护.
-interface SimSnap {
-  check:          CheckResult;
-  choujiang:      ChoujiangState;
-  drops:          DropMap;
-  hero:           Hero;
-  hours:          number;          // 达标小时(或终止小时)
-  layers:         Partial<Record<MapID,number>>; // 各图累计推层数
-  name:           string;
-  panel:          FinalPanel;
-  reached:        boolean;         // 是否达标跳出
-  routeStep:      number;          // 当前处在 PRE_ROUTE 第几步
-  shop:           ShopState;
-  sweepHours:     number;          // 累计扫荡小时(春秋蝉+自动扫荡)
-  ticketDrawn:    number;          // 累计抽奖券消耗
-  vip:            VipDetail;
-  xunbaoRounds:   number;
-  zhenyingRounds: number;
-}
+// ChoujiangState/SimSnap 类型定义已搬至 ./types.ts
 
 // 抽奖奖池每行个数按等级缩放:Lv1 基础×1,Lv3×3,Lv4×4,Lv5×5,Lv6×6(配置 Prop_Nums 恰为等级倍数).
 // 笔记阶梯给的抽数是"抽 N 次",每次按权重期望抽 1 个选项.
@@ -894,11 +783,13 @@ function choujiangDraw (pool: string,level: number,drops: DropMap): void {
 // 抽奖等级:累计 ChouJiangCount 阈值 250/1000/5000/10000/50000 → Lv1..5(资源提升战力方案.md:179).
 // 奖池配置最高到 Lv6;笔记阶梯用 Lv1/3/4/5,这里按 count 阈值给对应奖池等级(至少1).
 function choujiangLevel (count: number): number {
-  if (count >= 50000) {return 5;}
-  if (count >= 10000) {return 4;}
-  if (count >= 5000) {return 3;}
-  if (count >= 1000) {return 2;}
-  return 1;
+  return CALC_CACHE.get("choujiangLevel",[count],(): number => {
+    if (count >= 50000) {return 5;}
+    if (count >= 10000) {return 4;}
+    if (count >= 5000) {return 3;}
+    if (count >= 1000) {return 2;}
+    return 1;
+  });
 }
 function newChoujiang (): ChoujiangState {
   return {count: 0,draws: 0,pool3Hit: 0,pool4Hit: 0,ticketGet: 0};
@@ -940,13 +831,13 @@ const CHOUJIANG_VALUE: Record<string,number> = {
 
 // 前置推层路线:按秒/层逐步推,返回各图累计层数 + 累计消耗秒数.
 // 每步 [图 ID,目标层];-1 表示回第5图一直推(前置阶段只推到刚好整数小时).
-interface PreRouteResult {detail: string[]; layers: Partial<Record<MapID,number>>; seconds: number}
+// PreRouteResult 类型定义已搬至 ./types.ts
 
 // 单英灵完整逐小时模拟(无二分/无 BASE_HOURS):前置路线→点卡→前置抽奖→每小时循环→达标跳出.
 // 大循环参数:judge=true 按"是否击败终局5"判定到达标跳出;judge=false 每 1h 打印战力(仅 100 次循环)供研究参考.
 // item: 对比组(GroupPlan),自带 allocate 资源分配方法;循环通用,只调用 plan 不写按组分支.
 // group: 对比组号(仅 judge=false 有意义):1=悟空幸运,2=云霄攻击,3=云霄穿透,4=云霄鸟翔速度.
-export function simulateHero (item: GroupPlan,maxHours: number,judge = true,group = 1,trace?: (s: string) => void): SimSnap {
+export function simulateHero (item: GroupPlan,maxHours: number,judge = true,group = 1,trace?: (rec: HourRecord) => void): SimSnap {
   const drops: DropMap = {};
   const layers: Partial<Record<MapID,number>> = {};
   const shop = newShop();
@@ -973,80 +864,111 @@ export function simulateHero (item: GroupPlan,maxHours: number,judge = true,grou
   // 物资默认扣除值:全部研究所需资源 = 历史本纪 309,665(data.ts RESEARCH_FULL_COST).
   add(drops,"历史本纪",-RESEARCH_FULL_COST);
 
-  // ---- 每小时大循环 ----
+  // ---- 每小时大循环(全部步骤每小时核查;周期系统只在自身倍数的小时触发) ----
   let isReached = false;
   const routeStep = PRE_ROUTE.length - 1;                // 最后一步:回5图一直打
-
-  // 面板判定点:每 CHECK_STEP 小时一次(8h 的倍数),兼顾精度与耗时;资源逐小时累积不受影响.
-  const CHECK_STEP = 512;                     // 判定间隔(≈21天),达标小时精度=512h
-  let nextCheckHour = CHECK_STEP;
-  const advanceCheck = (h: number): void => {nextCheckHour = h + CHECK_STEP;};
+  // 面板判定频率:judge=false 每小时(逐小时输出+扫荡判定);judge=true 每 CHECK_STEP 小时(正式跑,避免40万次重面板超时).
+  const CHECK_STEP = 512;
+  let nextCheckHour = hour + CHECK_STEP;
   const loopLimit = judge ? maxHours : Math.min(maxHours,hour + 99); // judge=false 仅 100 次循环
   for (; hour <= loopLimit; hour++) {
+    const steps: HourStep[] = [];                        // judge=false 逐步骤记录
+    // 物资快照:掉落 + 元宝余额/元宝池 + 4翅膀等级 + 各图层数,统一成数值表,便于逐步算增量.
+    const snapshot = (): Record<string,number> => {
+      const s: Record<string,number> = {...drops};
+      s["元宝余额"] = shop.yuanbao;
+      s["元宝池(VIP)"] = shop.vipPool;
+      shop.wing.forEach((lv,i) => {s[`翅膀${String(i + 1)}级`] = lv;});
+      for (const m of MAP_ORDER) {if (layers[m] !== undefined) {s[`${String(m)}图层`] = layers[m]!;}}
+      return s;
+    };
+    let before = snapshot();                             // 上一步结束时的物资快照
+    const delta = (step: string,fired: boolean,detailOverride?: string): void => {
+      if (judge) {return;}
+      const now = snapshot();
+      const fmtDelta = (d: number): string => `${d >= 0 ? "+" : "-"}${nfmt(Math.abs(d))}`;
+      const diff = Object.keys(now).filter(k => (now[k] ?? 0) !== (before[k] ?? 0))
+        .map(k => `${k}${fmtDelta(now[k]! - (before[k] ?? 0))}`).join("、");
+      steps.push({step,fired,detail: detailOverride ?? (fired ? (diff || "已核查,本步无物资变化") : "未触发(非周期点)")});
+      before = now;
+    };
 
     // ① 任务奖励(4h 刷新的达成式任务:按层级里程碑一次性领;配置不可得部分在 log 说明).
     // ② 点卡(每小时一轮).
     add(drops,"钱币",DK_PROFIT_PER_ROUND);
+    delta("点卡",true);
 
-    // ③ 结算点:购物在任一 8h/10h 倍数点先做(升翅膀),各系统按自身周期结算,全部用新翅膀等级.
-    let checkNow: CheckResult | undefined;
-    const isZY = hour % ZY_HOURS === 0;        // 阵营/抽奖/地图:8h
-    const isXB = hour % XB_HOURS === 0;        // 寻宝:10h(源码 RefreTime_min*60=36000s)
-    if (isZY || isXB) {
-      shop.events += 1;              // 结算点数(8h/10h 命中同一小时时只计一次)
-      buyRound(shop);
+    // ③ 元宝购物:每小时核查元宝是否够买冥商一轮(够就买,翅膀立即升级).
+    const wingBefore = shop.wing[0];
+    buyRound(shop);
+    const bought = shop.wing[0] !== wingBefore;
+    if (bought) {shop.events += 1;}
+    delta("元宝购物",bought,bought
+      ? undefined
+      : `已核查:元宝 ${nfmt(shop.yuanbao)} 不够整组,继续攒`);
+
+    // ④ 抽奖(8h 倍数):两组奖池选收益高的一组.
+    const isDraw = hour % ZY_HOURS === 0;       // 抽奖:8h
+    if (isDraw && (drops["抽奖卷"] ?? 0) >= CHOUJIANG_TICKET_PROP && cj.ticketGet < Math.floor(drops["抽奖卷"] ?? 0)) {
+      cj.ticketGet += 1;
+      choujiangRound(drops,cj);
     }
+    delta("抽奖",isDraw);
+
+    // ⑤ 阵营(8h 倍数),用新翅膀3.
+    const isZY = hour % ZY_HOURS === 0;        // 阵营/地图:8h
+    if (isZY) {shop.yuanbao += zhenyingRound(shop.wing[2]).yuanbao;}
+    delta("阵营",isZY);
+
+    // ⑥ 寻宝(10h 倍数,源码 RefreTime_min*60=36000s),用新翅膀4+藏宝图.
+    const isXB = hour % XB_HOURS === 0;
+    if (isXB) {
+      const xb = xunbaoRound(shop.wing[3],shop.cangbaotu);
+      for (const [k,v] of Object.entries(xb.drops)) {add(drops,k,v);}
+      shop.yuanbao += xb.yuanbao;
+    }
+    delta("寻宝",isXB);
+
+    // ⑦ 地图挂机掉落(8h 一次性结算,每层掉落恒定,等价逐小时;BigInt floorSum 调用降到 1/8).
     if (isZY) {
-
-      // 抽奖(8h 一次):券来自地图/扫荡掉落(prop10),有券就抽 1 次(笔记"每8h 核查抽奖,选收益高的一组").
-      if ((drops["抽奖卷"] ?? 0) >= CHOUJIANG_TICKET_PROP && cj.ticketGet < Math.floor(drops["抽奖卷"] ?? 0)) {
-        cj.ticketGet += 1;
-        choujiangRound(drops,cj);
-      }
-
-      // 阵营(8h 倍数),用新翅膀3.
-      const zy = zhenyingRound(shop.wing[2]);
-      shop.yuanbao += zy.yuanbao;
-
-      // 地图挂机掉落:8 小时一次性结算(每层掉落恒定,等价逐小时;BigInt floorSum 调用降到 1/8).
       const perHourLayers = Math.floor(SECONDS_PER_HOUR / item.sec);
       const towerBefore = layers[5] ?? 1500;
       const towerAfter = towerBefore + perHourLayers * ZY_HOURS;
       layers[5] = towerAfter;
       addMapDrops(drops,5,towerBefore,towerAfter);
     }
-    if (isXB) {
+    delta("地图掉落",isZY);
 
-      // 寻宝(10h 倍数),用新翅膀4+藏宝图.
-      const xb = xunbaoRound(shop.wing[3],shop.cangbaotu);
-      for (const [k,v] of Object.entries(xb.drops)) {add(drops,k,v);}
-      shop.yuanbao += xb.yuanbao;
-    }
-
-    // ③b 面板/三条件判定(倍增点 nextCheckHour:8→16→32...);judge=false 时每小时都算面板以打印战力.
-    if (hour === nextCheckHour || !judge) {
+    // ⑧ 面板/三条件判定:judge=false 每小时;judge=true 每 CHECK_STEP 小时(正式跑避免超时).
+    const doCheck = !judge || hour >= nextCheckHour;
+    let panelNow: FinalPanel | undefined;
+    let checkNow: CheckResult | undefined;
+    if (doCheck) {
       const vipNow = vipFromYuanbao(shop.vipPool);
-      const panelNow = panelFromDrops(drops,vipNow.hitCrit,hour * SECONDS_PER_HOUR,shop.wing[1]);
+      panelNow = panelFromDrops(drops,vipNow.hitCrit,hour * SECONDS_PER_HOUR,shop.wing[1]);
       checkNow = evaluate(panelNow,item);
-      if (judge) {advanceCheck(hour);}
-      if (!judge && trace !== undefined) {
-        trace(`组${String(group)} ${item.name} h=${String(hour)} 攻=${fmt(panelNow.baseAtk)} 命中=${fmt(checkNow.hit)} `
-          + `速度=${fmt(checkNow.speed)} 伤害=${fmt(checkNow.damage)} 突破=${fmt(panelNow.breaks)} 元宝池=${nfmt(shop.vipPool)}`);
+      if (judge) {nextCheckHour = hour + CHECK_STEP;}
+      delta("物资转属性+三条件",true);
+
+      // ⑨ 扫荡:通天塔敌人不能被一击秒杀就拿扫荡奖励(春秋蝉1个=1小时);judge=false 每小时判定.
+      const sweepBefore = sweepHours;
+      if (!checkNow.killOk) {
+        const cq = Math.floor(drops["春秋蝉"] ?? 0) - sweepHours / CHUNQIU_HOURS;
+        const sweepThisHour = cq > 0 ? CHUNQIU_HOURS : 0;
+        if (sweepThisHour > 0) {
+          addSweepHours(drops,layers,sweepThisHour,item.sec);
+          sweepHours += sweepThisHour;
+        }
       }
+      delta("扫荡(春秋蝉)",sweepHours !== sweepBefore);
     }
 
-    // ④ 地图挂机掉落已在 8h 结算点一次性结算(见上);大循环只推5图(其余前置阶段已到目标).
-    // ⑤ 扫荡:通天塔敌人不能被一击秒杀就拿扫荡奖励(春秋蝉1个=1小时),仅在 8h 判定点处理.
-    if (checkNow !== undefined && !checkNow.killOk) {
-      const cq = Math.floor(drops["春秋蝉"] ?? 0) - sweepHours / CHUNQIU_HOURS;
-      const sweepThisHour = cq > 0 ? CHUNQIU_HOURS : 0;
-      if (sweepThisHour > 0) {
-        addSweepHours(drops,layers,sweepThisHour,item.sec);
-        sweepHours += sweepThisHour;
-      }
+    // judge=false:每小时把面板+每步记录交给 trace 输出.
+    if (!judge && trace !== undefined && panelNow !== undefined && checkNow !== undefined) {
+      trace({group,hero: item.hero,hour,panel: panelNow,check: checkNow,steps});
     }
 
-    // ⑥ 三条件判定(每 8h):第一次满足即跳出.
+    // 三条件第一次满足即跳出.
     if (checkNow !== undefined && checkNow.pass) {isReached = true; break;}
   }
 
@@ -1110,12 +1032,14 @@ function choujiangRound (drops: DropMap,cj: ChoujiangState): void {
   if (pool === CHOUJIANG_POOL_3) {cj.pool3Hit += 1;} else {cj.pool4Hit += 1;}
 }
 function poolExpectedValue (pool: string): number {
-  const rows = CHOUJIANG_ROWS[pool] ?? [];
-  let v = 0;
-  for (const [name,nums,weight] of rows) {
-    v += (CHOUJIANG_VALUE[name] ?? 0) * nums * weight / 1000;
-  }
-  return v;
+  return CALC_CACHE.get("poolExpectedValue",[pool],(): number => {
+    const rows = CHOUJIANG_ROWS[pool] ?? [];
+    let v = 0;
+    for (const [name,nums,weight] of rows) {
+      v += (CHOUJIANG_VALUE[name] ?? 0) * nums * weight / 1000;
+    }
+    return v;
+  });
 }
 
 // 前置抽奖阶梯(笔记明确):全部抽 pool4(三味真火/神速符/御灵宝典/后悔药/春秋蝉/忘情水)这一组,
@@ -1175,6 +1099,16 @@ function logDetail (log: (s?: string) => void,item: {hero: Hero; name: string; s
   log(`**⑧ 三条件判定**:命中 ${fmt(check.hit)}${check.hitOk ? "✓" : "✗"} / 速度 ${fmt(check.speed)}${check.speedOk ? "✓" : "✗"} / 伤害 ${fmt(check.damage)}${check.killOk ? "✓" : "✗"}(敌HP ${fmt(ENEMY_HP)});`);
   log(`  - **结论:${check.pass ? "可击败终局第5层" : "打不过"}**。`);
 }
+
+// judge=false 单小时记录格式化:面板摘要 + 每个步骤的执行/变化明细.
+function formatHourRecord (rec: HourRecord): string {
+  const {panel: p,check: c} = rec;
+  const head = `h=${String(rec.hour)} 面板[基础攻 ${fmt(p.baseAtk)} 攻% ${fmt(p.atkPct)} 命中 ${fmt(c.hit)} `
+    + `速度 ${fmt(c.speed)} 伤害 ${fmt(c.damage)} 突破 ${fmt(p.breaks)} 御灵宝典 ${nfmt(p.books)}] `
+    + `三条件[命中${c.hitOk ? "✓" : "✗"} 速度${c.speedOk ? "✓" : "✗"} 秒杀${c.killOk ? "✓" : "✗"}]`;
+  const steps = rec.steps.map(s => `    ${s.fired ? "●" : "○"} ${s.step}: ${s.detail}`).join("\n");
+  return `${head}\n${steps}`;
+}
 function main (): void {
   const lines: string[] = [];
   const log = (s = ""): void => {lines.push(s); console.log(s);};
@@ -1184,7 +1118,7 @@ function main (): void {
   log("- 逐小时大循环(finalcal.md):去掉 BASE_HOURS/二分,前置固定推层路线(为春秋蝉最大利用率),上移整数小时后逐小时行动,第一次满足三条件即跳出。");
   log(`- 前置推层:${PRE_ROUTE.map(([m,t]) => `${String(m)}图→${t < 0 ? "一直打" : `${nfmt(t)}层`}`).join(" → ")};每步 sec/层算实际时间(孙悟空 ${String(WUKONG_SEC)}s、云霄 ${String(YUNXIAO_SEC)}s,余数单独记录确保准确)。`);
   log("- 前置抽奖:1000抽Lv1、4000抽Lv3、5000抽Lv4、20000抽Lv5、20000抽Lv5;奖池权重期望来自游戏目录 JiangChi_Data_Json.txt(6级).");
-  log("- 每小时:任务奖励(4h刷新,配置不可得部分说明)/点卡(每1h净赚38.5万钱币)/元宝购物(8h与10h结算点核查)/抽奖(8h,两组选期望高)/阵营(8h)/寻宝(10h)/地图掉落/扫荡(不能秒杀时,春秋蝉1个=1h)/物资转面板/三条件判定.");
+  log("- 每小时:任务奖励(4h刷新,配置不可得部分说明)/点卡(每1h净赚38.5万钱币)/元宝购物(8h与10h结算点核查)/抽奖(8h,两组选期望高)/阵营(8h)/寻宝(10h)/地图掉落/扫荡(每1h判定,不能秒杀时春秋蝉1个=1h)/物资转面板/三条件判定.");
   log("- 购物正反馈:攒够整组买4翅膀(各2个/48888)+孟婆汤(2个/46888够转生不买)+藏宝图(1个/25888满974不买);翅膀买了立即升级,寻宝大奖+5%/级、阵营+5%/级、装备四维75+25L,剩余元宝升VIP.");
   log("- 抽奖券(prop10)只从地图/扫荡掉落产出;寻宝10h一轮(源码 RefreTime_min*60=36000s,非 Time_Per_Round),每格固定256万×权重‰(藏宝图补满必掉)×翻倍期望.");
   log("- 寒铁打造按时间串行:单件 min(30秒,3+0.2×炼器级);神兵默认23件全解锁;突破先堆幸运5W确保掉落100%.");
@@ -1202,6 +1136,21 @@ function main (): void {
   }
   writeFileSync(new URL("../output/finalCal.md",import.meta.url),`${lines.join("\n")}\n`,"utf8");
   console.log("\n[已写出] output/finalCal.md");
+
+  // judge=false:每组逐小时详细执行记录(战力+每步变化),仅前 100 次循环,group 指定组号.
+  const detail: string[] = [];
+  detail.push("# finalCal — 逐小时详细执行记录(judge=false,每组前100小时)");
+  detail.push("- 每小时输出当前面板/三条件 + 每个步骤(点卡/购物/抽奖/阵营/寻宝/地图/属性/扫荡)的触发与资源变化。●触发 ○未触发。");
+  detail.push("- 周期:点卡/购物/扫荡/属性/判定每小时;抽奖/阵营/地图8h;寻宝10h。");
+  GROUP_PLANS.forEach((item,idx) => {
+    detail.push("");
+    detail.push(`## 组${String(idx + 1)} ${item.name}`);
+    simulateHero(item,MAX_HOURS,false,idx + 1,(rec): void => {detail.push(formatHourRecord(rec));});
+  });
+  writeFileSync(new URL("../output/finalCal-detail.md",import.meta.url),`${detail.join("\n")}\n`,"utf8");
+  console.log("[已写出] output/finalCal-detail.md");
+  console.log(`[缓存] ${String(cacheSize())} 条 → output/calc-cache.json`);
+  cacheFlush();
 }
 if (process.argv[1] === import.meta.filename) {main();}
 
