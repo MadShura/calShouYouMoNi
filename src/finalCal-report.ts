@@ -4,21 +4,38 @@
  */
 import {writeFileSync} from "node:fs";
 import {
-  CB_TU_CAP,DK_PROFIT_PER_ROUND,ENEMY_HP,GROUP_PLANS,MAP_ORDER,PRE_ROUTE,
-  ZHUAN_SHENG_MAX,YUNXIAO_SEC,WUKONG_SEC,simulateHero,fmt,nfmt
+  CB_TU_CAP,DK_PROFIT_PER_ROUND,ENEMY_HP,fmt,GROUP_PLANS,MAP_ORDER,
+  nfmt,PRE_ROUTE,simulateHero,WUKONG_SEC,YUNXIAO_SEC,ZHUAN_SHENG_MAX
 } from "./finalCal.ts";
 import {cacheFlush,cacheSize} from "./calc-cache.ts";
 import type {GroupPlan,HourRecord,SimSnap} from "./types.ts";
 
 const MAX_HOURS = 10_0000; // 模拟上限(≈11.4年)
 
+// judge=false 单小时记录格式化:面板摘要 + 每个步骤的执行/变化明细.
+export function formatHourRecord (rec: HourRecord): string {
+  const {check: c,panel: p} = rec;
+  const head = `h=${String(rec.hour)} 面板[基础攻 ${fmt(p.baseAtk)} 攻% ${fmt(p.atkPct)} 命中 ${fmt(c.hit)} `
+    + `速度 ${fmt(c.speed)} 伤害 ${fmt(c.damage)} 突破 ${fmt(p.breaks)} 御灵宝典 ${nfmt(p.books)}] `
+    + `三条件[命中${c.hitOk ? "✓" : "✗"} 速度${c.speedOk ? "✓" : "✗"} 秒杀${c.killOk ? "✓" : "✗"}]`;
+  const steps = rec.steps.map(s => `    ${s.fired ? "●" : "○"} ${s.step}: ${s.detail}`).join("\n");
+  return `${head}\n${steps}`;
+}
+export function main (): void {
+  writeSummary();
+  writeDetail();
+  console.log(`[缓存] ${String(cacheSize())} 条 → output/calc-cache.json`);
+  cacheFlush();
+}
+
 // 输出单组完整推导(逐项写来源).
-function logDetail (log: (s?: string) => void,item: GroupPlan,snap: SimSnap): void {
+function logDetail (log: (s: string) => void,item: GroupPlan,snap: SimSnap): void {
   const {check,drops,layers,panel,shop,vip} = snap;
   const cj = snap.choujiang;
   log(`\n### ${item.name} — ${nfmt(snap.hours)} 小时${snap.reached ? "(达标跳出)" : "(达上限未达标)"}`);
   const layerText = MAP_ORDER.filter(m => layers[m] !== undefined)
-    .map(m => `${String(m)}:${nfmt(layers[m] ?? 0)}层`).join("、");
+    .map(m => `${String(m)}:${nfmt(layers[m] ?? 0)}层`)
+.join("、");
   log(`**① 推层路线(春秋蝉最大利用率)**:${layerText};合计 ${nfmt(Object.values(layers).reduce((s,v) => s + v,0))} 层。`);
   log(`  - 前置路线:${PRE_ROUTE.map(([m,t]) => `${String(m)}图→${t < 0 ? "一直打" : `${nfmt(t)}层`}`).join(" → ")};每步按 ${String(item.sec)}秒/层算实际时间,累加后上移到整数小时。`);
   log(`**② 前置抽奖阶梯**:抽数 Lv1×1000、Lv3×4000、Lv4×5000、Lv5×20000、Lv5×20000;共 ${nfmt(cj.draws)} 抽(组A ${nfmt(cj.pool3Hit)} / 组B ${nfmt(cj.pool4Hit)} 期望高者);`);
@@ -39,18 +56,22 @@ function logDetail (log: (s?: string) => void,item: GroupPlan,snap: SimSnap): vo
   log(`**⑧ 三条件判定**:命中 ${fmt(check.hit)}${check.hitOk ? "✓" : "✗"} / 速度 ${fmt(check.speed)}${check.speedOk ? "✓" : "✗"} / 伤害 ${fmt(check.damage)}${check.killOk ? "✓" : "✗"}(敌HP ${fmt(ENEMY_HP)});`);
   log(`  - **结论:${check.pass ? "可击败终局第5层" : "打不过"}**。`);
 }
-// judge=false 单小时记录格式化:面板摘要 + 每个步骤的执行/变化明细.
-export function formatHourRecord (rec: HourRecord): string {
-  const {panel: p,check: c} = rec;
-  const head = `h=${String(rec.hour)} 面板[基础攻 ${fmt(p.baseAtk)} 攻% ${fmt(p.atkPct)} 命中 ${fmt(c.hit)} `
-    + `速度 ${fmt(c.speed)} 伤害 ${fmt(c.damage)} 突破 ${fmt(p.breaks)} 御灵宝典 ${nfmt(p.books)}] `
-    + `三条件[命中${c.hitOk ? "✓" : "✗"} 速度${c.speedOk ? "✓" : "✗"} 秒杀${c.killOk ? "✓" : "✗"}]`;
-  const steps = rec.steps.map(s => `    ${s.fired ? "●" : "○"} ${s.step}: ${s.detail}`).join("\n");
-  return `${head}\n${steps}`;
+function writeDetail (): void {
+  const detail: string[] = [
+    "# finalCal — 逐小时详细执行记录(judge=false,每组前100小时)",
+    "- 每小时输出当前面板/三条件 + 每个步骤(点卡/购物/抽奖/阵营/寻宝/地图/属性/扫荡)的触发与资源变化。●触发 ○未触发。",
+    "- 周期:点卡/购物/扫荡/属性/判定每小时;抽奖/阵营/地图8h;寻宝10h。"
+  ];
+  for (const [idx,item] of GROUP_PLANS.entries()) {
+    detail.push("",`## 组${String(idx + 1)} ${item.name}`);
+    simulateHero(item,MAX_HOURS,false,idx + 1,(rec): void => {detail.push(formatHourRecord(rec));});
+  }
+  writeFileSync(new URL("../output/finalCal-detail.md",import.meta.url),`${detail.join("\n")}\n`,"utf8");
+  console.log("[已写出] output/finalCal-detail.md");
 }
 function writeSummary (): void {
   const lines: string[] = [];
-  const log = (s = ""): void => {lines.push(s); console.log(s);};
+  const log = (s: string): void => {lines.push(s); console.log(s);};
   log("# finalCal — 逐小时大循环:挂机收益与终局第 5 层判定");
   log("");
   log("## 1. 计算口径与公式来源");
@@ -71,23 +92,4 @@ function writeSummary (): void {
   }
   writeFileSync(new URL("../output/finalCal.md",import.meta.url),`${lines.join("\n")}\n`,"utf8");
   console.log("\n[已写出] output/finalCal.md");
-}
-function writeDetail (): void {
-  const detail: string[] = [
-    "# finalCal — 逐小时详细执行记录(judge=false,每组前100小时)",
-    "- 每小时输出当前面板/三条件 + 每个步骤(点卡/购物/抽奖/阵营/寻宝/地图/属性/扫荡)的触发与资源变化。●触发 ○未触发。",
-    "- 周期:点卡/购物/扫荡/属性/判定每小时;抽奖/阵营/地图8h;寻宝10h。"
-  ];
-  GROUP_PLANS.forEach((item,idx) => {
-    detail.push("",`## 组${String(idx + 1)} ${item.name}`);
-    simulateHero(item,MAX_HOURS,false,idx + 1,(rec): void => {detail.push(formatHourRecord(rec));});
-  });
-  writeFileSync(new URL("../output/finalCal-detail.md",import.meta.url),`${detail.join("\n")}\n`,"utf8");
-  console.log("[已写出] output/finalCal-detail.md");
-}
-export function main (): void {
-  writeSummary();
-  writeDetail();
-  console.log(`[缓存] ${String(cacheSize())} 条 → output/calc-cache.json`);
-  cacheFlush();
 }

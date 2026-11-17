@@ -34,12 +34,6 @@ interface XunBaoManagerSave {
   TiLiRecovery?:      number;
 }
 
-// 座位号 → 横纵坐标:源码 MayDajiangSeat 用 row*10+col+1 编码(如 21 = 第3行第1列)。
-// 源码 CheckCanOpen 用 ±1 左右、±10 上下,与 row/col 一一对应。
-function seatCoord (seat: number): string {
-  return `(行${String(Math.floor((seat - 1) / 10) + 1)},列${String((seat - 1) % 10 + 1)})`;
-}
-
 function main (): void {
   const args = parseArgs(process.argv.slice(2));
   const dir = resolveSaveDir(args);
@@ -109,6 +103,11 @@ function main (): void {
     // 逐项算仙葫芦需求:体力缺口 ÷10 向上取整,不用已有仙葫芦抵扣.
   const usableTili = tiliAtEnd;   // 本轮结算前体力,不含仙葫芦
   console.log(`  自然恢复 +${String(gainBeforeEnd)} → 体力 ${String(tiliAtEnd)}  可用体力 = ${String(usableTili)}（本轮结算前，不含仙葫芦）`);
-  console.log(`  注:计时满 ${String(REFRE_SECONDS)}s 会结算 Initial() 补满到 ${String(maxTili)} 并把层数重置为 1(下一轮)，本轮寻宝须在结算前走完，故不按补满后的 ${String(maxTili)} 计算`);
+}
+
+// 座位号 → 横纵坐标:源码 MayDajiangSeat 用 row*10+col+1 编码(如 21 = 第3行第1列).
+// 源码 CheckCanOpen 用 ±1 左右,±10 上下,与 row/col 一一对应.
+function seatCoord (seat: number): string {
+  return `(行${String(Math.floor((seat - 1) / 10) + 1)},列${String((seat - 1) % 10 + 1)})`;
 }
 runMain(main);

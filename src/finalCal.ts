@@ -30,7 +30,6 @@
  * - log:逐项写出每个数值来源与公式,结果写 output/finalCal.md.
  * 用法:pnpm exec tsx scripts/with-timeout.ts 30000 pnpm exec tsx src/finalCal.ts
  */
-import {writeFileSync} from "node:fs";
 import {
   hantieTozhanli,
   lingjingTozhanli,
@@ -54,14 +53,12 @@ import type {
   BreakAlloc,CheckResult,ChoujiangState,DropMap,FinalPanel,GroupPlan,Hero,
   HourRecord,HourStep,PreRouteResult,ShopState,SimSnap,VipDetail,XunbaoDetail,ZhenyingDetail
 } from "./types.ts";
-import {cacheFlush,cacheSize,CALC_CACHE} from "./calc-cache.ts";
+import {CALC_CACHE} from "./calc-cache.ts";
 
 // #region 常量
-const BASE_HOURS = 80;
 const SECONDS_PER_HOUR = 3600;
 const WUKONG_SEC = 1.1;
 const YUNXIAO_SEC = 0.85;
-const CAPPED_LAYERS: Partial<Record<MapID,number>> = {1: 1000,2: 10000,3: 10000,4: 10000};
 const MAP_ORDER: readonly MapID[] = [1,2,3,4,5];
 const VIP_EXTRA = 0.07;                       // VIP16 → min(100,16/2)=8 → (8-1)/100
 const EXTRA_TIER_START = 20000;               // roundTier>=2 起算额外掉落
@@ -90,12 +87,10 @@ const WAVE_COUNT: readonly (readonly [number,number,number])[] = [0,1,2,3,4].map
 const XB_FULL_TILI = 150;                   // 满体力 = 150 + 铭商科技(本计算取0)
 const XB_ROUND_SECONDS = 600 * 60;          // 一轮 = 10h:XunBaoManager.AddTimer 第103行 CulGameTime>RefreTime_min*60(600*60=36000s)→Initial();第48行 Time_Per_Round=28800f 全项目零引用,勿用
 const XB_RECOVER_SECONDS = 300;             // 第98行 TiLiRecovery>300f 每300s 回1点 → 一轮回 36000/300=120 点(翅膀4按 100+2%×min(L,250) 加速)
-const XB_TILI_PER_ROUND = XB_FULL_TILI + XB_ROUND_SECONDS / XB_RECOVER_SECONDS; // 270
 const XB_ADVANCE_LAYERS = 9;                // 前 9 层只走到大奖
 const XB_PAID_BLOCKS = 15;                  // 每层 16 格,入口免费 → 15 付费格
 const XB_FIRST_KNOWN = 3.2;                 // 已知大奖:第1层入口固定1,平均最短路径 48/15=3.2 格
 const XB_LATER_KNOWN = 640 / 240;           // 已知大奖:第2~9层入口/大奖枚举平均 2.667 格
-const XB_ROUNDS_PER_80H = BASE_HOURS * SECONDS_PER_HOUR / XB_ROUND_SECONDS; // 80h/10h = 8 轮
 const XB_JACKPOT = 20488;                   // 每轮第10层大奖元宝(yingling-output.ts:61)
 
 // 寻宝第 10 层每格固定数量(每格 2,560,000 个) × 掉落权重‰(MoNiShouYou_全部伤害加成清单.md:298-316).
@@ -183,11 +178,11 @@ function culDamagePercentBig (atk: bigint,def: bigint): bigint {
 
 // #endregion
 // #region 闭式工具
-// Σ_{i=0}^{n-1} floor((a*i+b)/m),AtCoder floor_sum(BigInt 版);a,b>=0,m>0.
-function floorSum (n: bigint,m: bigint,a: bigint,b: bigint): bigint {
-  return CALC_CACHE.get("floorSum",[n,m,a,b],(): bigint => {
+// Σ_{i=0}^{n-1} floor((5i+b)/m),AtCoder floor_sum(BigInt 版);系数固定 a=5,调用点均传5n.
+function floorSum (n: bigint,m: bigint,b: bigint): bigint {
+  return CALC_CACHE.get("floorSum",[n,m,b],(): bigint => {
     let ans = 0n;
-    let aa = a,
+    let aa = 5n,
 bb = b,
 mm = m,
 nn = n;
@@ -281,6 +276,9 @@ const add = (drops: DropMap,key: string,value: number): void => {
  * 单张地图推 layers 层的期望掉落.
  * 概率封顶 1000‰(LUCKY=50010)后,每行掉落 = nums + 期望额外个数,
  * 额外个数按 floorSum 闭式求和,不逐波循环.
+ * @param map - 地图 ID
+ * @param layers - 推层数
+ * @returns 该图推 layers 层的期望掉落表
  */
 function expectedDrops (map: MapID,layers: number): DropMap {
   return CALC_CACHE.get("expectedDrops",[map,Math.floor(layers)],(): DropMap => expectedDropsUncached(map,layers));
@@ -289,7 +287,7 @@ function expectedDropsUncached (map: MapID,layers: number): DropMap {
   const cfg = MAPS[map];
   const n = Math.floor(layers);
   const drops: DropMap = {};
-  if (n <= 0 || cfg === undefined) {return drops;}
+  if (cfg === undefined || n <= 0) {return drops;}
 
   // ① 各品质怪总数 + 加权额外掉落个数 / 加权波次系数(御力).
   const monsterCountByQuality: number[] = [0,0,0,0];
@@ -299,16 +297,16 @@ function expectedDropsUncached (map: MapID,layers: number): DropMap {
   for (let a = 0; a < 5; a++) {
     const cnt = residueCount(n,a);
     if (cnt <= 0) {continue;}
-    const wave = WAVE_COUNT[a] as readonly [number,number,number];
+    const wave: readonly [number,number,number] = WAVE_COUNT[a] ?? [0,0,0];
     const t0 = Math.max(0,Math.ceil((EXTRA_TIER_START + 1 - a) / 5));
     const extraCnt = cnt - t0;
     for (let p = 1; p <= 3; p++) {
       const q = wave[p - 1] ?? 0;
-      monsterCountByQuality[p] = monsterCountByQuality[p]! + q * cnt;
-      extraByQuality[p] = extraByQuality[p]! + q * VIP_EXTRA * cnt;
+      monsterCountByQuality[p] = (monsterCountByQuality[p] ?? 0) + q * cnt;
+      extraByQuality[p] = (extraByQuality[p] ?? 0) + q * VIP_EXTRA * cnt;
       if (extraCnt > 0) {
-        extraByQuality[p] = extraByQuality[p]! + q / 100 * Number(floorSum(
-          BigInt(extraCnt),10000n,5n,BigInt(5 * t0 + a - EXTRA_TIER_START)
+        extraByQuality[p] = (extraByQuality[p] ?? 0) + q / 100 * Number(floorSum(
+          BigInt(extraCnt),10000n,BigInt(5 * t0 + a - EXTRA_TIER_START)
         ));
       }
 
@@ -316,8 +314,8 @@ function expectedDropsUncached (map: MapID,layers: number): DropMap {
       const tStart = a === 0 ? 1 : 0;
       const tCnt = cnt - tStart;
       if (tCnt > 0) {
-        tierByQuality[p] = tierByQuality[p]! + q * Number(floorSum(
-          BigInt(tCnt),1000n,5n,BigInt(5 * tStart + a + baseRound + 1000)
+        tierByQuality[p] = (tierByQuality[p] ?? 0) + q * Number(floorSum(
+          BigInt(tCnt),1000n,BigInt(5 * tStart + a + baseRound + 1000)
         ));
       }
     }
@@ -330,7 +328,7 @@ function expectedDropsUncached (map: MapID,layers: number): DropMap {
     const table = p === 1 ? cfg.louLouDrops : p === 2 ? cfg.jingYingDrops : cfg.bossDrops;
     for (const [propID,nums] of table) {
       const key = PROP_NAMES[propID] ?? String(propID);
-      add(drops,key,nums * count + extraByQuality[p]!);
+      add(drops,key,nums * count + (extraByQuality[p] ?? 0));
     }
     const enemyID = p === 3 ? cfg.bossID : p === 2 ? cfg.jingYingID : cfg.louLouID;
     add(drops,"御灵师经验",p * count);
@@ -340,7 +338,7 @@ function expectedDropsUncached (map: MapID,layers: number): DropMap {
     add(drops,PROP_NAMES[900 + enemyID] ?? `Prop${String(900 + enemyID)}`,count);
     add(drops,"钱币",count); // 研究56:掉落钱币概率 +20 ×2 → 固定 2 枚
     const yuBase = Math.trunc(150 * (1 + p * 0.5));
-    add(drops,"御力",yuBase * tierByQuality[p]! * 2 * 4.2); // 研究31 ×2,VIP16 ×4.2
+    add(drops,"御力",yuBase * (tierByQuality[p] ?? 0) * 2 * 4.2); // 研究31 ×2,VIP16 ×4.2
   }
 
   // ③ 地图到达指定层的 getProp 一次性道具.
@@ -469,7 +467,7 @@ function capBreaksFor (panel: FinalPanel): bigint {
 function mkAlloc (panel: FinalPanel,hero: Hero,zhenfa: GroupPlan["zhenfa"],cap: bigint,luckyB: bigint,speedB: bigint,atkB: bigint,penB: bigint): BreakAlloc {
   const lucky = panel.lucky + sumGain(cap + luckyB);
   const speedBase = panel.speed + sumGain(speedB);
-  let atkPctExtra = 0n,
+  let atkPctExtra: bigint,
 dmgAddExtra = 0n,
 speed = speedBase;
   if (zhenfa === "tianfu") {
@@ -530,8 +528,8 @@ function yunxiaoBucket (hit: bigint): bigint {
     return b * (130n * HIT_SCALE / 100n) / HIT_SCALE;
   });
 }
-const wukongHitOk  = (hit: bigint): boolean => hitRate(Number(hit),ENEMY_5.dodge) >= 1;
-const yunxiaoHitOk = (_hit: bigint): boolean => true;
+const isWukongHitOk  = (hit: bigint): boolean => hitRate(Number(hit),ENEMY_5.dodge) >= 1;
+const isYunxiaoHitOk = (_hit: bigint): boolean => true;
 
 // #endregion
 // #region 逐小时大循环与输出
@@ -667,7 +665,7 @@ const GROUP_PLANS: readonly GroupPlan[] = [
     },
     bucket: wukongBucket,
 hero:   "wukong",
-hitOk:  wukongHitOk,
+hitOk:  isWukongHitOk,
     name:   "神悟空(神·人皇印)+天覆阵+突破幸运",
 sec:    WUKONG_SEC,
 zhenfa: "tianfu"
@@ -682,7 +680,7 @@ zhenfa: "tianfu"
     },
     bucket: yunxiaoBucket,
 hero:   "yunxiao",
-hitOk:  yunxiaoHitOk,
+hitOk:  isYunxiaoHitOk,
     name:   "云霄娘娘(基础·普攻80%)+天覆阵+突破攻击",
 sec:    YUNXIAO_SEC,
 zhenfa: "tianfu"
@@ -697,7 +695,7 @@ zhenfa: "tianfu"
     },
     bucket: yunxiaoBucket,
 hero:   "yunxiao",
-hitOk:  yunxiaoHitOk,
+hitOk:  isYunxiaoHitOk,
     name:   "云霄娘娘(基础·普攻80%)+天覆阵+突破穿透",
 sec:    YUNXIAO_SEC,
 zhenfa: "tianfu"
@@ -710,7 +708,7 @@ zhenfa: "tianfu"
     },
     bucket: yunxiaoBucket,
 hero:   "yunxiao",
-hitOk:  yunxiaoHitOk,
+hitOk:  isYunxiaoHitOk,
     name:   "云霄娘娘(基础·普攻80%)+鸟翔阵+突破速度(速度到顶金币只换灵纹)",
 sec:    YUNXIAO_SEC,
 zhenfa: "niaoxiang"
@@ -829,7 +827,7 @@ const CHOUJIANG_VALUE: Record<string,number> = {
 // 大循环参数:judge=true 按"是否击败终局5"判定到达标跳出;judge=false 每 1h 打印战力(仅 100 次循环)供研究参考.
 // item: 对比组(GroupPlan),自带 allocate 资源分配方法;循环通用,只调用 plan 不写按组分支.
 // group: 对比组号(仅 judge=false 有意义):1=悟空幸运,2=云霄攻击,3=云霄穿透,4=云霄鸟翔速度.
-export function simulateHero (item: GroupPlan,maxHours: number,judge = true,group = 1,trace?: (rec: HourRecord) => void): SimSnap {
+export function simulateHero (item: GroupPlan,maxHours: number,isJudge = true,group = 1,trace?: (rec: HourRecord) => void): SimSnap {
   const drops: DropMap = {};
   const layers: Partial<Record<MapID,number>> = {};
   const shop = newShop();
@@ -863,28 +861,32 @@ export function simulateHero (item: GroupPlan,maxHours: number,judge = true,grou
   // 面板判定频率:judge=false 每小时(逐小时输出+扫荡判定);judge=true 每 CHECK_STEP 小时(正式跑,避免40万次重面板超时).
   const CHECK_STEP = 512;
   let nextCheckHour = hour + CHECK_STEP;
-  const loopLimit = judge ? maxHours : Math.min(maxHours,hour + 99); // judge=false 仅 100 次循环
+  const loopLimit = isJudge ? maxHours : Math.min(maxHours,hour + 99); // isJudge=false 仅 100 次循环
   for (; hour <= loopLimit; hour++) {
     const steps: HourStep[] = [];                        // judge=false 逐步骤记录
 
     // 物资快照:掉落 + 元宝余额/元宝池 + 4翅膀等级 + 各图层数,统一成数值表,便于逐步算增量.
     const snapshot = (): Record<string,number> => {
-      const s: Record<string,number> = {...drops};
-      s["元宝余额"] = shop.yuanbao;
-      s["元宝池(VIP)"] = shop.vipPool;
+      const s: Record<string,number> = {
+        ...drops,
+        "元宝余额": shop.yuanbao,
+        "元宝池(VIP)": shop.vipPool
+      };
       for (const [i,lv] of shop.wing.entries()) {s[`翅膀${String(i + 1)}级`] = lv;}
-      for (const m of MAP_ORDER) {if (layers[m] !== undefined) {s[`${String(m)}图层`] = layers[m]!;}}
+      for (const m of MAP_ORDER) {if (layers[m] !== undefined) {s[`${String(m)}图层`] = layers[m] ?? 0;}}
       return s;
     };
     let before = snapshot();                             // 上一步结束时的物资快照
-    const delta = (step: string,fired: boolean,detailOverride?: string): void => {
-      if (judge) {return;}
+    const delta = (step: string,isFired: boolean,detailOverride?: string): void => {
+      if (isJudge) {return;}
       const now = snapshot();
-      const fmtDelta = (d: number): string => `${d >= 0 ? "+" : "-"}${nfmt(Math.abs(d))}`;
       const diff = Object.keys(now).filter(k => (now[k] ?? 0) !== (before[k] ?? 0))
-        .map(k => `${k}${fmtDelta(now[k]! - (before[k] ?? 0))}`)
-.join("、");
-      steps.push({detail: detailOverride ?? (fired ? diff || "已核查,本步无物资变化" : "未触发(非周期点)"),fired,step});
+        .map(k => {
+          const d = (now[k] ?? 0) - (before[k] ?? 0);
+          return `${k}${d >= 0 ? "+" : "-"}${nfmt(Math.abs(d))}`;
+        })
+        .join("、");
+      steps.push({detail: detailOverride ?? (isFired ? diff || "已核查,本步无物资变化" : "未触发(非周期点)"),fired: isFired,step});
       before = now;
     };
 
@@ -935,14 +937,14 @@ export function simulateHero (item: GroupPlan,maxHours: number,judge = true,grou
     delta("地图掉落",isZY);
 
     // ⑧ 面板/三条件判定:judge=false 每小时;judge=true 每 CHECK_STEP 小时(正式跑避免超时).
-    const isDoCheck = !judge || hour >= nextCheckHour;
+    const isDoCheck = !isJudge || hour >= nextCheckHour;
     let panelNow: FinalPanel | undefined;
     let checkNow: CheckResult | undefined;
     if (isDoCheck) {
       const vipNow = vipFromYuanbao(shop.vipPool);
       panelNow = panelFromDrops(drops,vipNow.hitCrit,hour * SECONDS_PER_HOUR,shop.wing[1]);
       checkNow = evaluate(panelNow,item);
-      if (judge) {nextCheckHour = hour + CHECK_STEP;}
+      if (isJudge) {nextCheckHour = hour + CHECK_STEP;}
       delta("物资转属性+三条件",true);
 
       // ⑨ 扫荡:通天塔敌人不能被一击秒杀就拿扫荡奖励(春秋蝉1个=1小时);judge=false 每小时判定.
@@ -959,8 +961,8 @@ export function simulateHero (item: GroupPlan,maxHours: number,judge = true,grou
     }
 
     // judge=false:每小时把面板+每步记录交给 trace 输出.
-    if (!judge && trace !== undefined && panelNow !== undefined && checkNow !== undefined) {
-      trace({check: checkNow,group,hero: item.hero,hour,panel: panelNow,steps});
+    if (!isJudge && panelNow !== undefined && checkNow !== undefined) {
+      trace?.({check: checkNow,group,hero: item.hero,hour,panel: panelNow,steps});
     }
 
     // 三条件第一次满足即跳出.
@@ -995,14 +997,14 @@ zhenyingRounds: Math.floor(hours / ZY_HOURS)
 
 // 某图一段层数的挂机掉落(复用 expectedDrops 的口径).
 function addMapDrops (drops: DropMap,map: MapID,fromLayer: number,toLayer: number): void {
-  const addN = toLayer - fromLayer;
-  if (addN <= 0) {return;}
-  const part = expectedDrops(map,addN);
+  const diffN = toLayer - fromLayer;
+  if (diffN <= 0) {return;}
+  const part = expectedDrops(map,diffN);
   for (const [k,v] of Object.entries(part)) {add(drops,k,v);}
 }
 
 // 扫荡一段小时(春秋蝉 1个=1小时,按已开扫荡的图):每图每 48s 一份喽啰原始掉落×速度倍率.
-function addSweepHours (drops: DropMap,layers: Partial<Record<MapID,number>>,hours: number,sec: number): void {
+function addSweepHours (drops: DropMap,layers: Partial<Record<MapID,number>>,hours: number,_sec: number): void {
   for (const map of MAP_ORDER) {
     const open = MAP_OPEN_SWEEP[map];
     if (open === undefined || (layers[map] ?? 0) < open) {continue;}
@@ -1052,8 +1054,8 @@ function runPreRoute (sec: number): PreRouteResult {
   const detail: string[] = [];
   let seconds = 0;
   for (const [map,target] of PRE_ROUTE) {
-    const from = layers[map] ?? 0;
     if (target < 0) {break;}          // 最后一步"回5图一直打"交给大循环
+    const from = layers[map] ?? 0;
     if (target <= from) {continue;}
     const need = target - from;
     layers[map] = target;
@@ -1072,5 +1074,6 @@ export {
   nfmt,PRE_ROUTE,WUKONG_SEC,YUNXIAO_SEC,ZHUAN_SHENG_MAX
 };
 if (process.argv[1] === import.meta.filename) {
-  void import("./finalCal-report.ts").then((m): void => {m.main();});
+  const report = await import("./finalCal-report.ts");
+  report.main();
 }

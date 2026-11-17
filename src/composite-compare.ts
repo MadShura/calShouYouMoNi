@@ -49,17 +49,19 @@ const ENEMY_SPEED = BigInt(ENEMY_5.speed);
 const ENEMY_REDUCE = BigInt(ENEMY_5.damageReduce > 80 ? 80 : ENEMY_5.damageReduce);
 
 // 暴击口径(zhanli-panel.ts:54-59 / DESIGN.md:63):不做暴击率期望,仅当对敌暴击率≥100%必暴才把暴伤/100计入乘区,否则按非暴击(=1).
-// 从零面板:暴击=0、暴伤=0;人皇印队(武松/唐三藏/猪八戒)与阵法1天覆/8鸟翔都不给暴击,也无阵法6的+30 critAdd.
+// 从零面板:暴击=0,暴伤=0;人皇印队(武松/唐三藏/猪八戒)与阵法1天覆/8鸟翔都不给暴击,也无阵法6的+30 critAdd.
 const ENEMY_CRIT_RESIST = BigInt(ENEMY_5.critResist);
 const PLAYER_BAOJI = 0n;
 const BAOJI_DAMAGE = 0n;
 const CRIT_ADD = 0n;   // 仅阵法6给 +30,本脚本用阵法1/8,故 0
-// 源码 BaoJiRecorder:暴击率 = clamp((暴击-敌抗暴+critAdd+1)/101,0,1);必暴 ⇔ 分子≥101(全整数,BigInt精确).
+
+// 源码 BaoJiRecorder:暴击率 = clamp((暴击-敌抗暴+critAdd+1)/101,0,1);必暴 ⇔ 分子≥101(全整数,BigInt 精确).
 const CRIT_SCORE = PLAYER_BAOJI - ENEMY_CRIT_RESIST + CRIT_ADD + 1n;
-const MUST_CRIT = CRIT_SCORE >= 101n;
-const CRIT_RATE_NUM = CRIT_SCORE <= 0n ? 0 : (MUST_CRIT ? 1 : Number(CRIT_SCORE) / 101);
+const IS_MUST_CRIT = CRIT_SCORE >= 101n;
+const CRIT_RATE_NUM = CRIT_SCORE <= 0n ? 0 : IS_MUST_CRIT ? 1 : Number(CRIT_SCORE) / 101;
+
 // 必暴取暴伤/100,否则乘区=1;定点放大 HIT_SCALE 与命中链一致.
-const CRIT_BUCKET_SCALED = MUST_CRIT ? BAOJI_DAMAGE * HIT_SCALE / 100n : HIT_SCALE;
+const CRIT_BUCKET_SCALED = IS_MUST_CRIT ? BAOJI_DAMAGE * HIT_SCALE / 100n : HIT_SCALE;
 
 // 前 n 次突破累计增益:Σ(2+7k) = 2n + 7n(n+1)/2.
 const sumGain = (n: bigint): bigint => (n <= 0n ? 0n : 2n * n + 7n * n * (n + 1n) / 2n);
@@ -392,8 +394,8 @@ export function logFormulaBreakdown (): void {
     log("\n④ 命中链乘区(逐项连乘)");
     log(`   命中=${formatSuoXie(Number(hit))}(命中率${(r.hitRateValue * 100).toFixed(2)}%) skill78 +${formatSuoXie(Number(hit))} 神通15 +${formatSuoXie(Number(shenTong15))} 西行 +${formatSuoXie(Number(xiPct))}`);
     log(`   num=${ratio((100n + hit) * HIT_SCALE / 100n)}×${ratio((100n + shenTong15) * HIT_SCALE / 100n)}×${ratio((100n + xiPct) * HIT_SCALE / 100n)} = ${ratio(r.pctBucketScaled)}`);
-    log(`\n④-暴击判定(必暴才乘暴伤,否则按非暴击 ×1)`);
-    log(`   暴击=${String(PLAYER_BAOJI)} 敌抗暴=${String(ENEMY_CRIT_RESIST)} critAdd=${String(CRIT_ADD)} → 对敌暴击率=${(CRIT_RATE_NUM * 100).toFixed(2)}% ${MUST_CRIT ? "≥100% 必暴 → ×暴伤/100" : "<100% 非必暴 → ×1 不计暴伤"}`);
+    log("\n④-暴击判定(必暴才乘暴伤,否则按非暴击 ×1)");
+    log(`   暴击=${String(PLAYER_BAOJI)} 敌抗暴=${String(ENEMY_CRIT_RESIST)} critAdd=${String(CRIT_ADD)} → 对敌暴击率=${(CRIT_RATE_NUM * 100).toFixed(2)}% ${IS_MUST_CRIT ? "≥100% 必暴 → ×暴伤/100" : "<100% 非必暴 → ×1 不计暴伤"}`);
     log("\n⑤ 伤害加成桶");
     log(`   [队伍免费] 武松+${String(WU_SONG_DAMAGE_ADD)}${isBird ? ` [御灵宝典→速度] 鸟翔速度差=${formatSuoXie(Number(r.zhenSpeedDmg))}` : ""}`);
     log(`   DamageAddition=${formatSuoXie(Number(r.dmgAdd))} → (100+)/100=${ratio((100n + r.dmgAdd) * HIT_SCALE / 100n)}`);

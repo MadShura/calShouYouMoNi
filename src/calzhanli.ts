@@ -90,6 +90,7 @@ export function hantieTozhanli (
   let ronglianSum = 0;    // 可熔炼装备的 ⌊等级/5⌋+品质 逐件累计
   let ronglianCount = 0;  // 被熔炼件数
   const wornLevels: number[] = []; // 最后造的 10 件(留身上,不熔炼)
+
   // 打造时间(PropHelper.cs:507-515 GetMakeEquipRemandJinDu):单件进度 = 3 + 炼器等级×0.2,封顶 30 秒;
   // 串行制作,maxSeconds 用完即停(game-data.json makeEquipTimeS=3).
   let timeUsed = 0;
@@ -106,13 +107,14 @@ export function hantieTozhanli (
       ronglianCount += 1;
     }
     lianqiExp += (CRAFT_EXP_BASE + lianqiLevel) * expScale;
+
     // 连升多级用闭式跳级(等价 while:exp>=needExp(L) 逐级扣经验升级):
     // L>=40 时 needExp(L)=300L-8300,累计 k 级需 150k²+(300L-8450)k;解最大 k ≤ exp.
     // L<40 保持逐级(线性分段,次数有限).expScale 大时一件可升几十~几百级,闭式避免内层大循环.
     if (lianqiLevel >= 40) {
       const c = 300 * lianqiLevel - 8450;         // 一次项系数
       const kF = (-c + Math.sqrt(c * c + 600 * lianqiExp)) / 300; // 解 150k²+c·k=exp
-      let k = Math.max(0,Math.floor(kF));
+      const k = Math.max(0,Math.floor(kF));
       if (k > 0) {
         lianqiExp -= 150 * k * k + c * k;         // 扣除 k 级累计经验
         lianqiLevel += k;
