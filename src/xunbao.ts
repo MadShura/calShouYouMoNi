@@ -7,7 +7,7 @@
  * - 开一格扣当前层数点体力:GetOpenReward 里 Cur_TuLi -= Cur_CengShu_Index(:117)
  * - 入口格免费(Initial/EnterNext 放进 OpenBlock),每层付费 15 格;开到大奖格才能进下一层(UIPanel_XunBao.cs:186-197)
  * - 仙葫药(prop 155)每个 +10 寻宝体力(PropEffect_Add_XunBaoTiLi.cs:23-26)
- * - 仙葫芦需求逐项算:①当前存档只走保底 ②逐层清单从第10层倒序写到当前层、已走过低层跳过(每层=保底+开满该层非大奖格),÷10向上取整,不抵扣已有仙葫芦
+ * - 仙葫芦需求逐项算:①当前存档只走保底 ②逐层清单从第10层倒序写到当前层,已走过低层跳过(每层=保底+开满该层非大奖格),÷10向上取整,不抵扣已有仙葫芦
  * 运行:pnpm xunbao
  */
 import {argNumber,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
@@ -24,14 +24,14 @@ const PAID_BLOCKS = 15;                   // 每层付费格(16格减入口格)
 const LAST_LAYER = 10;
 const HIDDEN_EXPECT_BLOCKS = 8;           // (15+1)/2,隐藏大奖固定顺序每层走到大奖的期望格数
 interface XunBaoManagerSave {
-  CulGameTime?:        number;
-  Cur_CengShu_Index?:  number;
-  Cur_TuLi?:           number;
-  DaJiang_Seat?:       number;
-  OpenBlock?:          number[];
-  Open?:               boolean;
-  OverTen?:            boolean;
-  TiLiRecovery?:       number;
+  CulGameTime?:       number;
+  Cur_CengShu_Index?: number;
+  Cur_TuLi?:          number;
+  DaJiang_Seat?:      number;
+  Open?:              boolean;
+  OpenBlock?:         number[];
+  OverTen?:           boolean;
+  TiLiRecovery?:      number;
 }
 
 function main (): void {
@@ -51,12 +51,11 @@ function main (): void {
   const layer = xb.Cur_CengShu_Index ?? 1;
   const openBlock = xb.OpenBlock ?? [];
   const daJiangSeat = xb.DaJiang_Seat ?? 0;
-  const daJiangOpened = openBlock.includes(daJiangSeat);
+  const isDaJiangOpened = openBlock.includes(daJiangSeat);
   const maxTili = BASE_MAX_TILI + getMarkCount(game,MINGSHANG_XUNBAO_TILI_LIMIT);
   const wing = getMarkCount(game,WING_CB_4);
   const recoveryRate = wing > 0 ? (100 + Math.min(wing,250) * 2) / 100 : 1;
   const xianhuNums = getPropNums(game,XIANHU_PROP_ID);
-  const xianhuTili = xianhuNums * TILI_PER_XIANHU;
   const remainSeconds = Math.max(0,REFRE_SECONDS - gameTime);
   const remainHours = remainSeconds / 3600;
 
@@ -74,7 +73,7 @@ function main (): void {
     remainNeed = remainBlocks * LAST_LAYER;
     stepNotes.push(`已在第${String(LAST_LAYER)}层:还差 ${String(remainBlocks)} 个付费格 × ${String(LAST_LAYER)} = ${String(remainNeed)} 体力`);
   } else {
-    if (daJiangOpened) {
+    if (isDaJiangOpened) {
       stepNotes.push(`第${String(layer)}层大奖 ${String(daJiangSeat)} 已开 → 直接进下一层,本层剩余 0 体力`);
     } else {
       const step = HIDDEN_EXPECT_BLOCKS * layer;
@@ -93,52 +92,17 @@ function main (): void {
   let baseNeed = remainNeed;   // 保底消耗:每层只走到大奖 + 第10层全开
   const overrideNeed = argNumber(args,"need");
   if (overrideNeed !== undefined) {baseNeed = overrideNeed;}
-
   console.log("\n=== 当前寻宝状态 ===");
-  console.log(`  层数 第${String(layer)}/${String(LAST_LAYER)}层，大奖位 ${String(daJiangSeat)}（${daJiangOpened ? "已开" : "未开"}）`);
+  console.log(`  层数 第${String(layer)}/${String(LAST_LAYER)}层，大奖位 ${String(daJiangSeat)}（${isDaJiangOpened ? "已开" : "未开"}）`);
   console.log(`  已开格 ${String(openBlock.length)}/16：${JSON.stringify(openBlock)}`);
   console.log(`  当前体力 ${String(curTuli)} / 上限 ${String(maxTili)}`);
   console.log(`  已计时 ${gameTime.toFixed(1)}s / 周期 ${String(REFRE_SECONDS)}s，剩余 ${remainSeconds.toFixed(1)}s（${remainHours.toFixed(2)} 小时）`);
   console.log(`  恢复累加 TiLiRecovery = ${recovery.toFixed(1)} / ${String(RECOVER_SECONDS)}；Wing_CB_4 = ${String(wing)}，恢复倍率 ×${recoveryRate.toFixed(2)}`);
-
   console.log("\n=== 本轮结算前还能补多少 ===");
-  console.log(`  自然恢复 +${String(gainBeforeEnd)} → 体力 ${String(tiliAtEnd)}`);
-  console.log(`  注:计时满 ${String(REFRE_SECONDS)}s 会结算 Initial() 补满到 ${String(maxTili)} 并把层数重置为 1(下一轮)，本轮寻宝须在结算前走完，故不按补满后的 ${String(maxTili)} 计算`);
 
-  console.log("\n=== 保底走法(每层只走到大奖,第10层全开)需体力 ===");
-  for (const note of stepNotes) {console.log(`  · ${note}`);}
-  console.log(`  保底需求 = ${String(baseNeed)} 体力`);
-
-  // 逐项算仙葫芦需求:体力缺口 ÷10 向上取整,不用已有仙葫芦抵扣.
-  // ① 当前存档只走保底  ② 逐层清单:从第10层倒序写到当前层,已走过的低层跳过;每层=走完本轮保底+开满该层非大奖格.
+    // 逐项算仙葫芦需求:体力缺口 ÷10 向上取整,不用已有仙葫芦抵扣.
   const usableTili = tiliAtEnd;   // 本轮结算前体力,不含仙葫芦
-  const extraPerLayer = PAID_BLOCKS - HIDDEN_EXPECT_BLOCKS;   // 未走层非大奖格 = 15付费格 − 走大奖8格 = 7格
-
-  console.log("\n=== 逐项仙葫芦需求 ===");
-  console.log(`  可用体力 = ${String(usableTili)}（本轮结算前，不含仙葫芦）`);
-  const baseGap = Math.max(0,baseNeed - usableTili);
-  console.log(`  ① 只走保底(当前第${String(layer)}层开始,含第${String(LAST_LAYER)}层全开) = ${String(baseNeed)} 体力：${String(baseNeed)} − ${String(usableTili)} = ${String(baseGap)} → 需 ${String(Math.ceil(baseGap / TILI_PER_XIANHU))} 个仙葫芦`);
-
-  console.log(`\n  ② 逐层开满非大奖格(从第${String(LAST_LAYER)}层倒序往下，已走过的第1~${String(layer - 1)}层跳过)：`);
-  for (let k = LAST_LAYER; k >= layer; k -= 1) {
-    let extraTili = 0;
-    let desc: string;
-    if (k === LAST_LAYER) {
-      desc = `保底已全开${String(PAID_BLOCKS)}格,无额外非大奖格`;
-    } else if (k === layer) {
-      const openedPaid = Math.max(0,openBlock.length - 1);
-      const paidLeft = Math.max(0,PAID_BLOCKS - openedPaid);
-      const extraBlocks = daJiangOpened ? paidLeft : Math.max(0,paidLeft - 1);
-      extraTili = extraBlocks * k;
-      desc = `当前层剩${String(paidLeft)}付费格,非大奖${String(extraBlocks)}格×${String(k)}`;
-    } else {
-      extraTili = extraPerLayer * k;
-      desc = `按期望${String(extraPerLayer)}格×${String(k)}`;
-    }
-    const totalNeed = baseNeed + extraTili;   // 走完本轮保底 + 第k层额外
-    const gap = Math.max(0,totalNeed - usableTili);
-    console.log(`     第${String(k)}层:${desc}=${String(extraTili)}体力 → 共${String(totalNeed)}体力,缺口${String(gap)} → 需 ${String(Math.ceil(gap / TILI_PER_XIANHU))} 个仙葫芦`);
-  }
-  console.log(`  （已有仙葫芦 ${String(xianhuNums)} 个 = ${String(xianhuTili)} 体力，本口径不抵扣）`);
+  console.log(`  自然恢复 +${String(gainBeforeEnd)} → 体力 ${String(tiliAtEnd)}  可用体力 = ${String(usableTili)}（本轮结算前，不含仙葫芦）`);
+  console.log(`  注:计时满 ${String(REFRE_SECONDS)}s 会结算 Initial() 补满到 ${String(maxTili)} 并把层数重置为 1(下一轮)，本轮寻宝须在结算前走完，故不按补满后的 ${String(maxTili)} 计算`);
 }
 runMain(main);
