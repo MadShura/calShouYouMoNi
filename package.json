@@ -11,11 +11,10 @@
     "build": "tsc",
     "cl": "pnpm prune && pnpm store prune",
     "cleanhis": "axl clean-history",
-    "compare": "pnpm exec tsx src/scripts/compare.ts",
     "compare2": "pnpm exec tsx src/composite-compare.ts",
     "dev": "vite",
-    "enemy": "pnpm exec tsx src/scripts/enemy-stats.ts",
-    "lianqi": "pnpm exec tsx src/scripts/lianqi.ts",
+    "enemy": "pnpm exec tsx src/enemy-stats.ts",
+    "lianqi": "pnpm exec tsx src/lianqi.ts",
     "lint": "run-s --continue-on-error lint:ox lint:es",
     "lint-rules": "axl lint-rules",
     "lint:es": "eslint . --fix --cache > lint-es.log 2>&1",
@@ -24,15 +23,15 @@
     "preview": "vite preview",
     "push": "axl push",
     "rei": "rimraf node_modules && pnpm i",
-    "source": "pnpm exec tsx src/scripts/resource-allocation.ts",
+    "source": "pnpm exec tsx src/resource-allocation.ts",
     "tc": "tsc --noEmit > tc.log 2>&1",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:all": "pnpm test",
     "up:tsConfig": "axl tsconfig-exclude",
     "xunbao": "pnpm exec tsx src/xunbao.ts",
-    "yuanbao": "pnpm exec tsx src/scripts/camp-yuanbao.ts",
-    "yuling": "pnpm exec tsx src/scripts/yulingshi-level.ts",
-    "zhizao": "pnpm exec tsx src/scripts/zhizao.ts"
+    "yuanbao": "pnpm exec tsx src/camp-yuanbao.ts",
+    "yuling": "pnpm exec tsx src/yulingshi-level.ts",
+    "zhizao": "pnpm exec tsx src/zhizao.ts"
   },
   "dependencies": {
     "axl-utils": "workspace:*"
