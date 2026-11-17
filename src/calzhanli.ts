@@ -106,6 +106,18 @@ export function hantieTozhanli (
       ronglianCount += 1;
     }
     lianqiExp += (CRAFT_EXP_BASE + lianqiLevel) * expScale;
+    // 连升多级用闭式跳级(等价 while:exp>=needExp(L) 逐级扣经验升级):
+    // L>=40 时 needExp(L)=300L-8300,累计 k 级需 150k²+(300L-8450)k;解最大 k ≤ exp.
+    // L<40 保持逐级(线性分段,次数有限).expScale 大时一件可升几十~几百级,闭式避免内层大循环.
+    if (lianqiLevel >= 40) {
+      const c = 300 * lianqiLevel - 8450;         // 一次项系数
+      const kF = (-c + Math.sqrt(c * c + 600 * lianqiExp)) / 300; // 解 150k²+c·k=exp
+      let k = Math.max(0,Math.floor(kF));
+      if (k > 0) {
+        lianqiExp -= 150 * k * k + c * k;         // 扣除 k 级累计经验
+        lianqiLevel += k;
+      }
+    }
     while (lianqiExp >= needExp(lianqiLevel)) {
       lianqiExp -= needExp(lianqiLevel);
       lianqiLevel += 1;
