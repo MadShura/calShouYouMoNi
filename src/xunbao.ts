@@ -7,7 +7,7 @@
  * - 开一格扣当前层数点体力:GetOpenReward 里 Cur_TuLi -= Cur_CengShu_Index(:117)
  * - 入口格免费(Initial/EnterNext 放进 OpenBlock),每层付费 15 格;开到大奖格才能进下一层(UIPanel_XunBao.cs:186-197)
  * - 仙葫药(prop 155)每个 +10 寻宝体力(PropEffect_Add_XunBaoTiLi.cs:23-26)
- * - 仙葫芦需求逐项算:①保底走完本轮缺口 ②当前层剩余非大奖格(低层 EnterNext 清空回不去),各自 ÷10 向上取整,不抵扣已有仙葫芦
+ * - 仙葫芦需求逐项算:①只走保底缺口 ②走完保底+当前层非大奖格(开当前层须先走完本轮,故含保底),各自 ÷10 向上取整,不抵扣已有仙葫芦
  * 运行:pnpm xunbao
  */
 import {argNumber,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
@@ -110,20 +110,24 @@ function main (): void {
   console.log(`  保底需求 = ${String(baseNeed)} 体力`);
 
   // 逐项算仙葫芦需求:每项各自算体力缺口 ÷10 向上取整,不用已有仙葫芦抵扣.
-  // ① 保底走完本轮(每层只走到大奖+第10层全开)  ② 当前层剩余非大奖格(低层 EnterNext 已清空回不去).
+  // ① 只走保底(每层只走到大奖+第10层全开) ② 走完保底 + 在当前层开非大奖格(要开当前层必须先把本轮走完).
   const usableTili = tiliAtEnd;   // 本轮结算前体力,不含仙葫芦
   console.log("\n=== 逐项仙葫芦需求 ===");
   console.log(`  可用体力 = ${String(usableTili)}（本轮结算前，不含仙葫芦）`);
   const baseGap = Math.max(0,baseNeed - usableTili);
-  console.log(`  ① 保底走完本轮 = ${String(baseNeed)} 体力：${String(baseNeed)} − ${String(usableTili)} = ${String(baseGap)} → 需 ${String(Math.ceil(baseGap / TILI_PER_XIANHU))} 个仙葫芦`);
+  console.log(`  ① 只走保底(含第${String(LAST_LAYER)}层全开) = ${String(baseNeed)} 体力：${String(baseNeed)} − ${String(usableTili)} = ${String(baseGap)} → 需 ${String(Math.ceil(baseGap / TILI_PER_XIANHU))} 个仙葫芦`);
   if (layer >= LAST_LAYER) {
-    console.log(`  ② 当前第${String(LAST_LAYER)}层：保底已全开，无剩余非大奖格 → 需 0 个仙葫芦`);
+    console.log(`  ② 当前第${String(LAST_LAYER)}层：保底已全开，无剩余非大奖格 → 与①相同，需 ${String(Math.ceil(baseGap / TILI_PER_XIANHU))} 个仙葫芦`);
   } else {
     const openedPaid = Math.max(0,openBlock.length - 1);   // 去掉入口格
     const paidLeft = Math.max(0,PAID_BLOCKS - openedPaid);  // 当前层剩余付费格
     const extraBlocks = daJiangOpened ? paidLeft : Math.max(0,paidLeft - 1);  // 大奖未开时留一格走大奖
     const extraTili = extraBlocks * layer;
-    console.log(`  ② 当前第${String(layer)}层：剩余 ${String(paidLeft)} 个付费格，其中 ${String(extraBlocks)} 个非大奖格 × ${String(layer)} = ${String(extraTili)} 体力 → 需 ${String(Math.ceil(extraTili / TILI_PER_XIANHU))} 个仙葫芦`);
+    // 要开当前层的非大奖格,必须先把本轮走完(保底)+开这些格,所以缺口要含保底
+    const totalNeed = baseNeed + extraTili;
+    const totalGap = Math.max(0,totalNeed - usableTili);
+    console.log(`  ② 开当前第${String(layer)}层非大奖格(须先走完本轮) = 保底 ${String(baseNeed)} + 第${String(layer)}层 ${String(extraBlocks)}格×${String(layer)}=${String(extraTili)} = ${String(totalNeed)} 体力`);
+    console.log(`     ${String(totalNeed)} − ${String(usableTili)} = ${String(totalGap)} → 需 ${String(Math.ceil(totalGap / TILI_PER_XIANHU))} 个仙葫芦（其中第${String(layer)}层额外 ${String(extraTili)} 体力相当于 ${String(Math.ceil(extraTili / TILI_PER_XIANHU))} 个）`);
   }
   console.log(`  （已有仙葫芦 ${String(xianhuNums)} 个 = ${String(xianhuTili)} 体力，本口径不抵扣）`);
 }
