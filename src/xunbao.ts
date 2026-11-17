@@ -7,7 +7,7 @@
  * - 开一格扣当前层数点体力:GetOpenReward 里 Cur_TuLi -= Cur_CengShu_Index(:117)
  * - 入口格免费(Initial/EnterNext 放进 OpenBlock),每层付费 15 格;开到大奖格才能进下一层(UIPanel_XunBao.cs:186-197)
  * - 仙葫药(prop 155)每个 +10 寻宝体力(PropEffect_Add_XunBaoTiLi.cs:23-26)
- * - 整轮口径:前9层数学期望 + 第10层全开 = 固定 488(见 src/xunbao-tili.ts);本脚本按当前状态只算剩余
+ * - 盈余分配:保底(每层只走到大奖+第10层全开)之外的体力,从高层往低层开非大奖格(每格扣层数点体力)
  * 运行:pnpm xunbao
  */
 import {argNumber,getMarkCount,getPropNums,loadSave,parseArgs,resolveSaveDir} from "./readSave.ts";
@@ -20,11 +20,9 @@ const MINGSHANG_XUNBAO_TILI_LIMIT = 62;  // Mark_Enum 序号
 const WING_CB_4 = 71;                     // 恢复加速 Mark 序号
 const XIANHU_PROP_ID = 155;               // 仙葫药
 const TILI_PER_XIANHU = 10;
-const XUNBAO_NEED_TILI = 488;             // 整轮(前9层期望+第10层全开)参考值
 const PAID_BLOCKS = 15;                   // 每层付费格(16格减入口格)
 const LAST_LAYER = 10;
 const HIDDEN_EXPECT_BLOCKS = 8;           // (15+1)/2,隐藏大奖固定顺序每层走到大奖的期望格数
-const XIANHU_COST = 1888;                 // 仙葫药元宝单价(config/mingshang.json)
 interface XunBaoManagerSave {
   CulGameTime?:        number;
   Cur_CengShu_Index?:  number;
@@ -92,6 +90,7 @@ function main (): void {
     remainNeed += lastCost;
     stepNotes.push(`第${String(LAST_LAYER)}层全开:${String(PAID_BLOCKS)} 格 × ${String(LAST_LAYER)} = ${String(lastCost)} 体力`);
   }
+  const baseNeed = remainNeed;   // 保底消耗:每层只走到大奖 + 第10层全开
   const overrideNeed = argNumber(args,"need");
   if (overrideNeed !== undefined) {remainNeed = overrideNeed;}
 
@@ -106,19 +105,43 @@ function main (): void {
   console.log(`  自然恢复 +${String(gainBeforeEnd)} → 体力 ${String(tiliAtEnd)}`);
   console.log(`  注:计时满 ${String(REFRE_SECONDS)}s 会结算 Initial() 补满到 ${String(maxTili)} 并把层数重置为 1(下一轮)，本轮寻宝须在结算前走完，故不按补满后的 ${String(maxTili)} 计算`);
 
-  console.log("\n=== 从当前状态走完本轮还需体力 ===");
+  console.log("\n=== 保底走法(每层只走到大奖,第10层全开)需体力 ===");
   for (const note of stepNotes) {console.log(`  · ${note}`);}
-  console.log(`  剩余需求 = ${String(remainNeed)} 体力（整轮从头参考值 ${String(XUNBAO_NEED_TILI)}：前9层期望+第10层全开，当前已进行到第${String(layer)}层）`);
+  console.log(`  保底需求 = ${String(baseNeed)} 体力`);
 
-  console.log("\n=== 还需仙葫芦才能走完本轮 ===");
-  console.log(`  体力缺口 = 剩余需求 ${String(remainNeed)} − 本轮结束前体力 ${String(tiliAtEnd)} = ${String(remainNeed - tiliAtEnd)}`);
-  const gap = remainNeed - tiliAtEnd;
-  if (gap > 0) {
-    const needPills = Math.ceil(gap / TILI_PER_XIANHU);
-    console.log(`  还需 ${String(needPills)} 个仙葫芦（${String(needPills * XIANHU_COST)} 元宝）才能搞完本轮`);
+  // 体力盈余分配:保底之外的溢出体力,从高层往低层开非大奖格(每格扣层数点体力).
+  // 可用体力 = 本轮结束前体力 + 已有仙葫芦(仙葫芦此时作为体力来源,与"缺口"口径不同).
+  const usableTili = tiliAtEnd + xianhuTili;
+  let spare = usableTili - baseNeed;
+  console.log("\n=== 体力盈余 → 该在第几层开非大奖格 ===");
+  console.log(`  可用体力 = 本轮结束前 ${String(tiliAtEnd)} + 仙葫芦 ${String(xianhuNums)}×${String(TILI_PER_XIANHU)}=${String(xianhuTili)} = ${String(usableTili)}`);
+  console.log(`  保底需求 = ${String(baseNeed)} → 溢出 ${String(spare)} 体力可用来开非大奖格`);
+  if (spare <= 0) {
+    console.log(`  体力不足，没有溢出：还差 ${String(-spare)} 体力（约 ${String(Math.ceil(-spare / TILI_PER_XIANHU))} 个仙葫芦）才能走完保底路线，更谈不上开非大奖格`);
   } else {
-    console.log(`  无需仙葫芦，本轮结束前体力已够（多 ${String(-gap)}）`);
+    const picks: string[] = [];
+    for (let lv = layer; lv >= 1 && spare > 0; lv -= 1) {
+      if (lv === LAST_LAYER) {continue;}   // 第10层已按全开计入保底
+      let available: number;
+      if (lv === layer) {
+        const openedPaid = Math.max(0,openBlock.length - 1);
+        available = Math.max(0,PAID_BLOCKS - openedPaid);   // 当前层按实际剩余付费格
+      } else {
+        available = PAID_BLOCKS;   // 更低层(已走过/下一轮)按可全开算
+      }
+      const blocks = Math.min(available,Math.floor(spare / lv));
+      if (blocks > 0) {
+        const cost = blocks * lv;
+        spare -= cost;
+        picks.push(`第${String(lv)}层开 ${String(blocks)} 格非大奖格(×${String(lv)}=${String(cost)}体力)`);
+      }
+    }
+    for (const pick of picks) {console.log(`  · ${pick}`);}
+    if (picks.length === 0) {
+      console.log("  溢出体力不够在当前层开一格非大奖格");
+    } else {
+      console.log(`  结论：从最高层往下，${picks.join("；")}；余 ${String(spare)} 体力`);
+    }
   }
-  console.log(`  参考：已有仙葫芦 ${String(xianhuNums)} 个 × ${String(TILI_PER_XIANHU)} = ${String(xianhuTili)} 体力（本口径不抵扣）`);
 }
 runMain(main);
