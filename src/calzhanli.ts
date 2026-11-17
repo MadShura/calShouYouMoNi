@@ -50,7 +50,8 @@ export {MATERIAL_COST_PER_UNIT} from "./data.ts";
 export function hantieTozhanli (
   hantie: number,
   wingLevel: number,
-  wucaiStones = 0
+  wucaiStones = 0,
+  maxSeconds = Infinity
 ): HantieToZhanliResult {
 
   // ① 器鼎:从 Lv.1700 起用五彩神石逐级往上顶(lianqi.ts:72-76,研究20 满 -50%),qiluCost 用模块顶层同名函数
@@ -89,7 +90,13 @@ export function hantieTozhanli (
   let ronglianSum = 0;    // 可熔炼装备的 ⌊等级/5⌋+品质 逐件累计
   let ronglianCount = 0;  // 被熔炼件数
   const wornLevels: number[] = []; // 最后造的 10 件(留身上,不熔炼)
+  // 打造时间(PropHelper.cs:507-515 GetMakeEquipRemandJinDu):单件进度 = 3 + 炼器等级×0.2,封顶 30 秒;
+  // 串行制作,maxSeconds 用完即停(game-data.json makeEquipTimeS=3).
+  let timeUsed = 0;
   while (hantieLeft >= hantieCost(lianqiLevel)) {
+    const makeSeconds = Math.min(30,3 + 0.2 * lianqiLevel);
+    if (timeUsed + makeSeconds > maxSeconds) {break;}
+    timeUsed += makeSeconds;
     hantieLeft -= hantieCost(lianqiLevel);
     craftCount += 1;
     wornLevels.push(lianqiLevel);
