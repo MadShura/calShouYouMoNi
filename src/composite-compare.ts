@@ -333,6 +333,27 @@ export function logFormulaBreakdown (): void {
     log(`总花费 ${amtCoin(r.coin)} 金币 = 御灵宝典 ${amtCoin(r.coinBook)} + 灵纹升阵法 ${amtCoin(r.coinZhen)}`);
     log(`  · 御灵宝典 ${amtCoin(r.coinBook)} → ${amt(r.books)}本 → 御灵师Lv.${formatSuoXie(Number(r.yuLevel))} → ${formatSuoXie(Number(r.totalBreaks))}次突破`);
     log(`  · 灵纹 ${amtCoin(r.coinZhen)} → ${amt(r.lingwen)}个 → 阵法Lv.${formatSuoXie(Number(r.zhenLevel))}(四维攻+${amt(r.zhenAtk)})`);
+
+    // 执行步骤:先升什么→到多少级→为什么,便于照着操作.
+    const shortLevel = r.shortBreaks * 10n;                 // 补短板阶段御灵等级(每10级一次突破)
+    const shortBooks = minBookCostForBreaks(r.shortBreaks) / BOOK_COST;
+    const shortCoin = minBookCostForBreaks(r.shortBreaks);
+    const shortAttr = isBird ? "幸运" : "速度";
+    const mainBreaks = r.totalBreaks - r.shortBreaks;      // 余下突破给主属性
+    const mainAttr = isBird ? "速度" : "幸运";
+    log("\n【执行步骤】先补门槛,再堆主属性,最后升阵法(每一步花多少/到哪级/为什么)");
+    log(`  ① 补门槛:御灵宝典先买 ${amt(shortBooks)} 本(花 ${amtCoin(shortCoin)} 金币),把御灵师升到 Lv.${formatSuoXie(Number(shortLevel))}`);
+    log(`     操作:前 ${formatSuoXie(Number(r.shortBreaks))} 次突破全选【${shortAttr}】;${isBird
+      ? `幸运=${formatSuoXie(Number(r.lucky))} → 命中=${formatSuoXie(Number(r.hit))} ≥ 敌闪避=${formatSuoXie(Number(ENEMY_DODGE))},命中率到100%`
+      : `速度=${formatSuoXie(Number(r.speed))} > 敌速=${formatSuoXie(Number(ENEMY_SPEED))},满足"速度更快"`}`);
+    log("     为什么:命中100%/速度更快是硬门槛,不先达标再多伤害也打不中/被先手;这一步用最少御灵宝典达标,不浪费");
+    log(`  ② 堆主属性:御灵宝典续买到累计 ${amt(r.books)} 本(共花 ${amtCoin(r.coinBook)}),御灵师到 Lv.${formatSuoXie(Number(r.yuLevel))}`);
+    log(`     操作:余下 ${formatSuoXie(Number(mainBreaks))} 次突破全选【${mainAttr}】;同时升级自带的四维攻/穿也一并增长`);
+    log(`     为什么:${isBird
+      ? `鸟翔阵把"速度−敌速"转伤害加成(封顶${formatSuoXie(Number(BIRD_DAMAGE_CAP))});但接近封顶时边际骤降,且阵法四维攻同时喂攻击/穿透/ K,故只把速度堆到接近封顶,余钱转阵法`
+      : "天覆阵靠命中喂三条乘区(技能/神通/西行),命中越高倍率越大;速度已达标,余下突破全给幸运换命中"}`);
+    log(`  ③ 升阵法:灵纹买 ${amt(r.lingwen)} 个(花 ${amtCoin(r.coinZhen)}),阵法到 Lv.${formatSuoXie(Number(r.zhenLevel))}`);
+    log(`     为什么:阵法每级四维攻+穿同增(${isBird ? "鸟翔无攻击%加成,全额吃四维" : "天覆额外给面板+15%与等级%攻击"}),是达标后剩余钱币收益最高的去向;三分搜索已验证此拆分最省`);
     const yuAtk = 125n * r.yuLevel * (r.yuLevel - 1n);
     const finalAtk = r.baseAtk * (100n + r.atkPct) / 100n;
     const defAfterPen = ENEMY_DEF > r.pen ? ENEMY_DEF - r.pen : 1n;
