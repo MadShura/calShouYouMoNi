@@ -15,7 +15,7 @@ import {towerAddition} from "./game-formulas.ts";
  */
 const HERE = import.meta.dirname;
 const CONFIG_DIR = join(HERE,"config");
-const OUT_DIR = join(HERE,"output");
+const OUT_DIR = join(HERE,"..","output");
 export interface EnemyStats {
   crit:         number;
   critResist:   number;
