@@ -42,19 +42,22 @@
  * 小怪(2173)×2;Entry_Skill_76.AfterAttakEnemy 每命中一个目标自身 +1 层 Mark,WhenAttack_Cul_1
  * 按 Mark×10 加桶 → 同品级两击相差 10%."小怪 688" 只是两个小怪中的一个(第 4 击 Mark3 或第 5 击 Mark4).
  * --obs=217,460,688 把观测到的暴击伤害逐个丢进 5 次命中的暴击范围(×0.95~1.05)里核对落点.
+ * --enemy=def=7116京,reduce=30,pinzhi=3 自选敌人:先按 pinzhi 重建场景敌人(属性+图鉴同步切换),
+ * 再用 hp/def/speed/hit/dodge/crit/critResist/reduce 覆盖,未给的字段沿用场景默认;支持中文单位与 1e21.
+ * --reduce=N 真实进入受击方减伤(不是只显示).
  * 所有乘区来自反编译源码;只读存档,不写游戏目录.
- * 数值计算全部委托给 damage-formula.ts(源码 1:1 移植:BigInteger/long → bigint,double 按 C# 求值顺序,
- * float → Math.fround,Math.Round → 银行家舍入,int32 溢出回绕).存档解析,装备解码,配置读取仍在本地.
+ * 伤害计算全部委托给 damage-calc.ts(面板组装+词条派发+一次技能逐目标);数值语义委托给
+ * damage-formula.ts(源码 1:1 移植:BigInteger/long → bigint,double 按 C# 求值顺序,float → Math.fround,
+ * Math.Round → 银行家舍入,int32 溢出回绕).存档解析,装备解码,配置读取仍在本地.
  */
 import {existsSync,readFileSync} from "node:fs";
 import {join} from "node:path";
 import {BattleDataManager,formatBigSuoXie,Prop} from "./damage-formula.ts";
 import type {StateEntry} from "./damage-formula.ts";
-import {computeDamageRange,managerFromRecords,wukongExtraEntries} from "./damage-calc.ts";
+import {computeDamageRange,wukongExtraEntries} from "./damage-calc.ts";
 import type {AttackerInput,DamageBuckets,DamageRange,EnemyStats,TeamContext} from "./damage-calc.ts";
 
 export type {DamageBuckets,DamageRange,EnemyStats,TeamContext};
-
 const CONFIG_DIR = join(import.meta.dirname,"config");
 const DEFAULT_SAVE_ROOT = String.raw`C:\Users\Administrator\AppData\LocalLow\SkyLight\MoNiShouYou`;
 
@@ -127,12 +130,7 @@ const ENTRY_SHENTONG_5 = 39;    // 神通19:技能动作 +20%/级
 const ENTRY_SHENTONG_11 = 45;   // 神通27:目标负面层数之和
 const ENTRY_SKILL_18 = 65;      // 武松3技能:最高攻 +35 伤害加成
 const ENTRY_SKILL_81 = 260;     // 唐三藏3技能:全体 +30 命中
-const ENTRY_SKILL_84 = 263;     // 猪八戒3技能:敌人 +2 流血,-20 闪避
 const ENTRY_SKILL_1011 = 203;   // 武松神转职:最高攻 +20 攻击
-
-// 羁绊类型(ZhenRongJiBanTypeEnum) = config/jiban.json 的 type 字段.
-const JI_BAN_SHEN_GUI = 4;      // 神鬼志异:(我方闪避−敌命中)×(0.2+0.2×级)
-const JI_BAN_XI_XING = 11;      // 西行取经:(命中−敌闪避)×(0.25+0.25×级)
 
 // 存档结构(只声明本文件用到的字段).
 export interface BattleRecorder {
@@ -188,6 +186,7 @@ export interface EffectRecoder {
   Params_1:       number;
   Params_2:       number;
 }
+
 // 一件御灵装备的实际解码结果.
 export interface EquipInfo {
   effect: string;   // 属性文本(来自 Prop_Data.Save 的 Property)
@@ -215,7 +214,6 @@ export interface SaveBundle {
   props:     Map<number,PropDefinition>;
   yingLings: YingLingEntry[];
 }
-
 export interface YingLingEntry {
   _id:                 number;
   BattleData_Manager?: {battleData_Recorders_List?: BattleRecorder[]};
@@ -353,7 +351,7 @@ export function damageRangeOf (
     tuJianDamagePct?: number;
   } = {}
 ): DamageRange {
-  return computeDamageRange(scene,layer,{...panel,extraEntries:wukongExtraEntries(team)},enemy,team,{
+  return computeDamageRange(scene,layer,{...panel,extraEntries: wukongExtraEntries(team)},enemy,team,{
     critDamagePct:   opts.critDamagePct,
     mark:            opts.mark,
     reducePct:       opts.reducePct,
@@ -573,7 +571,7 @@ export function verifyFinalDamage (sceneText: string,layerText?: number | string
   let scenePart = sceneText.trim();
   let challenge = 5;
   const colon = scenePart.lastIndexOf(":");
-  if (colon >= 0) {
+  if (colon !== -1) {
     challenge = Number(scenePart.slice(colon + 1)) || 5;
     scenePart = scenePart.slice(0,colon);
   }
@@ -589,35 +587,40 @@ export function verifyFinalDamage (sceneText: string,layerText?: number | string
   const reducePct = argNumber(args,"reduce");
   const critDamagePct = argNumber(args,"critdmg");
   const observed = parseObserved(argString(args,"obs"));
-  const tuJian = scene === "tower" ? tuJianDamagePctOf(save,presetIdx) : {level: 0,pct: 0,research: 0};
+  const presetPinzhiOf = (idx: number): number => (idx === presets.boss ? 3 : idx === presets.elite ? 2 : 1);
+
+  // 自选敌人:pinzhi 先重建场景敌人(属性+图鉴预设同步切换),再把显式字段覆盖上去.
+  const override = parseEnemyOverride(argString(args,"enemy"));
+  const effectivePinzhi = override.pinzhi ?? presetPinzhiOf(presetIdx);
+  const effectivePreset = effectivePinzhi === 3 ? presets.boss : effectivePinzhi === 2 ? presets.elite : presets.normal;
+  const tuJianPresetIdx = override.pinzhi === undefined ? presetIdx : effectivePreset;
+  const baseEnemy = enemyOf(scene,layer,challenge,effectivePinzhi);
+  const enemy = {...baseEnemy,...override.fields};
+  const tuJian = scene === "tower" ? tuJianDamagePctOf(save,tuJianPresetIdx) : {level: 0,pct: 0,research: 0};
   const tuJianDamagePct = tuJianArg ?? tuJian.pct;
   printRageCheck(save,panel);
   printTeamContext(save,team);
   printCarryPanelDetail(panel,team);
-  const presetPinzhi = presetIdx === presets.boss ? 3 : presetIdx === presets.elite ? 2 : 1;
-  const report = damageRangeOf(scene,layer,panel,enemyOf(scene,layer,challenge,presetPinzhi),team,{
+  const report = damageRangeOf(scene,layer,panel,enemy,team,{
     critDamagePct,
     mark: argNumber(args,"mark") ?? 0,
     reducePct,
     tuJianDamagePct
   });
-  const presetName = QUALITY_NAME[presetPinzhi] ?? "小怪";
+  const presetName = QUALITY_NAME[effectivePinzhi] ?? "小怪";
   printDamageRange(report,panel,{
     pct:    tuJianDamagePct,
-    source: scene !== "tower"
-      ? "非通天塔无图鉴增伤"
-      : tuJianArg !== undefined
+    source: scene === "tower"
+      ? tuJianArg !== undefined
         ? "手动 --tujian"
         : `${presetName}图鉴 Lv.${String(tuJian.level)}×研究54 Lv.${String(tuJian.research)}`
+      : "非通天塔无图鉴增伤"
   });
   if (scene === "tower") {
     printTowerLayerTable(save,layer,panel,team,{critDamagePct,observed,reducePct,tuJianArg});
   }
   return report;
 }
-
-// ============================== 队伍加成 ==============================
-// 战斗面板组装在 damage-calc.ts:buildBattlePanel(源码 InitailForBattle + 开战词条).
 
 // 当前佩戴阵法:天覆阵(1)才给最高攻 +等级% 攻击.
 function currentZhenFa (save: SaveBundle): {id: number; level: number} {
@@ -626,6 +629,8 @@ function currentZhenFa (save: SaveBundle): {id: number; level: number} {
   return {id,level: record?.Level ?? 0};
 }
 
+// ============================== 队伍加成 ==============================
+// 战斗面板组装在 damage-calc.ts:buildBattlePanel(源码 InitailForBattle + 开战词条).
 // 御灵装备的属性文本:EffectNameEnum=0(ChangeBattleProperty) 的 flat / percent 项.
 function effectTextOf (prop: PropDefinition | undefined): string {
   if (prop === undefined) {return "存档里找不到道具定义";}
@@ -695,26 +700,6 @@ function loadConfig<T> (name: string): T {
   return JSON.parse(readFileSync(join(CONFIG_DIR,`${name}.json`),"utf8")) as T;
 }
 
-/**
- * 非通天塔场景:把已算好的敌人数值灌进面板(百分比型属性同样进 Base).
- * @param enemy 敌人属性.
- * @param percentOf 属性是否百分比型.
- * @returns 面板.
- */
-function managerFromEnemyStats (enemy: EnemyStats,percentOf: (prop: number) => boolean): BattleDataManager {
-  const manager = new BattleDataManager(percentOf);
-  manager.initail(() => 0);
-  manager.getData(Prop.HP).baseValue = enemy.hp;
-  manager.getData(Prop.DEF).baseValue = enemy.def;
-  manager.getData(Prop.Speed).baseValue = enemy.speed;
-  manager.getData(Prop.MingZhong).baseValue = enemy.hit;
-  manager.getData(Prop.ShanBi).baseValue = enemy.dodge;
-  manager.getData(Prop.BaoJi).baseValue = enemy.crit;
-  manager.getData(Prop.BaoJi_Resist).baseValue = enemy.critResist;
-  manager.getData(Prop.DamageReduce).baseValue = enemy.damageReduce;
-  return manager;
-}
-
 // ============================== 伤害计算 ==============================
 /**
  * 把存档里的记录列表包成源码的 BattleData_Manager(base 保留 double,pct 保留 long).
@@ -752,6 +737,51 @@ function mergedFinal (
 }
 
 /**
+ * 解析自选敌人参数:`--enemy=key=value,key=value`.只返回覆盖项,由调用方先按 pinzhi
+ * 重建场景敌人再覆盖字段,这样 pinzhi 能同时切换敌人属性与图鉴预设.
+ * 支持的 key:hp / def / speed / hit / dodge / crit / critResist / reduce / pinzhi.
+ * @param text --enemy 的值.
+ * @returns 字段覆盖 + 可选品级(1 小怪 / 2 精英 / 3 首领).
+ */
+function parseEnemyOverride (text: string | undefined): {fields: Partial<EnemyStats>; pinzhi?: number} {
+  const fields: Partial<EnemyStats> = {};
+  if (text === undefined || text.trim() === "") {return {fields};}
+  let pinzhi: number | undefined;
+
+  // 分隔符兼容逗号/中文逗号/分号/空白(PowerShell 常把逗号转成空格).
+  for (const piece of text.split(/[,，;\s]+/u)) {
+    const trimmed = piece.trim();
+    if (trimmed === "") {continue;}
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) {throw new Error(`自选敌人写法不对：${trimmed}（应为 key=value，如 --enemy=hp=62.8垓,def=7116京）`);}
+    const key = trimmed.slice(0,eq).trim()
+.toLowerCase();
+    const raw = trimmed.slice(eq + 1);
+    if (key === "pinzhi" || key === "品级") {
+      pinzhi = Math.trunc(Number(raw));
+      if (![1,2,3].includes(pinzhi)) {throw new Error(`敌人品级只能是 1/2/3：${raw}`);}
+      continue;
+    }
+    const field: keyof EnemyStats | undefined = ({
+      crit:       "crit",
+critresist: "critResist",
+def:        "def",
+dodge:      "dodge",
+hit:        "hit",
+      hp:         "hp",
+kangbao:    "critResist",
+reduce:     "damageReduce",
+speed:      "speed"
+    } as Record<string,keyof EnemyStats>)[key];
+    if (field === undefined) {
+      throw new Error(`未知敌人字段：${key}（可用 hp/def/speed/hit/dodge/crit/critResist/reduce/pinzhi）`);
+    }
+    fields[field] = parseUnitNumber(raw);
+  }
+  return {fields,pinzhi};
+}
+
+/**
  * 解析 --obs=217,460,688:支持带单位(46.0垓)与不带单位(217);不带单位时按 5 次命中的量级自动补单位.
  * @param text 逗号/空格分隔的伤害值.
  * @returns 原始数值 + 显式单位;未传返回空数组.
@@ -763,10 +793,25 @@ function parseObserved (text: string | undefined): ObservedValue[] {
     const matched = (/^(\d+(?:\.\d+)?)([万亿兆京垓秭穰沟涧正载极]?)$/u).exec(piece.trim());
     if (matched?.[1] === undefined) {throw new Error(`伤害写法不对：${piece}（可用 217 / 46.0垓 / 1.5兆）`);}
     const raw = Number(matched[1]);
-    if (!Number.isFinite(raw)) {throw new Error(`伤害写法不对：${piece}`);}
+    if (!Number.isFinite(raw)) {throw new TypeError(`伤害写法不对：${piece}`);}
     values.push({raw,unit: matched[2] === undefined || matched[2] === "" ? undefined : matched[2]});
   }
   return values;
+}
+
+/**
+ * 解析可带中文单位/科学计数法的数值:62.8垓 / 7116京 / 1e21 / 2175.
+ * @param text 数值文本.
+ * @returns 绝对数值.
+ */
+function parseUnitNumber (text: string): number {
+  const matched = (/^(\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)([万亿兆京垓秭穰沟涧正载极]?)$/u).exec(text.trim());
+  if (matched?.[1] === undefined) {throw new Error(`数值写法不对：${text}（可用 2175 / 7116京 / 62.8垓 / 1e21）`);}
+  const unit = matched[2];
+  const power = unit === undefined || unit === "" ? 0 : CN_UNITS.indexOf(unit);
+  const value = Number(matched[1]) * 10000 ** power;
+  if (!Number.isFinite(value)) {throw new TypeError(`数值超出范围：${text}`);}
+  return value;
 }
 
 /**
@@ -999,29 +1044,6 @@ function resolveScene (text: string): "tower" | "trial" | "zhongju" {
     throw new Error(`未知目标：${text}（可用 通天塔 / 试炼 / 终局 或 tower / trial / zhongju）`);
   }
   return scene;
-}
-
-/**
- * 输出位在开战瞬间的 `_StateEntryList`(顺序即源码插入顺序,攻击时倒序遍历).
- * @param panel 输出位面板.
- * @param team 队伍开战加成.
- * @returns 状态词条列表.
- */
-function stateEntriesOf (panel: CarryPanel,team: TeamContext): StateEntry[] {
-  const entries: StateEntry[] = [...panel.battleEntry];
-
-  // 羁绊:ZhenRongData.JiBan() 按人数降序 → 西行取经(4 人) 在前,神鬼志异(3 人) 在后
-  const xiXing = team.jiban.get(JI_BAN_XI_XING) ?? 0;
-  if (xiXing > 0) {entries.push({level: xiXing,name: Entry.XiXingQuJing,stayRound: 0});}
-  const shenGui = team.jiban.get(JI_BAN_SHEN_GUI) ?? 0;
-  if (shenGui > 0) {entries.push({level: shenGui,name: Entry.ShenGuiZhiYi,stayRound: 0});}
-
-  // 阵法:TrrigerEffect_Player 里 TrrigeZhenFa 给全体玩家挂词条
-  if (team.zhenFaID === ZHENFA_NIAOXIANG) {entries.push({level: 0,name: Entry.ZhenFa_8,stayRound: 0});}
-
-  // 沙僧神转职 Skill_1056:给其他队友各挂 1 层 Skill_87(防御向)
-  entries.push({level: 1,name: Entry.Skill_87,stayRound: 0});
-  return entries;
 }
 
 // 通天塔 True_Round 的通用倍率:ClearAddtion(层数),见 game-formulas towerAddition 源码口径.
